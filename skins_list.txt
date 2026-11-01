@@ -1,0 +1,111 @@
+СКИНЫ ОРУЖИЯ (121)
+
+AK-47::gold  |  AK-47 «Царская позолота» нужно переименовать в золотой дракон
+
+UZI «Царская позолота» - Золотое безумие
+
+
+
+
+
+
+UZI::neon  |  UZI «Электрический угорь»
+UZI::camo  |  UZI «Болотный дух»
+UZI::stealth  |  UZI «Ночной охотник»
+P90::gold  |  P90 «Золотая лихорадка»
+P90::neon  |  P90 «Лазерный дождь»
+P90::camo  |  P90 «Лесной призрак»
+P90::stealth  |  P90 «Живая тень»
+Benelli_M4::gold  |  BENELLI M4 «Наследие Мидаса»
+Benelli_M4::neon  |  BENELLI M4 «Неоновый шторм»
+Benelli_M4::camo  |  BENELLI M4 «Пустынный скорпион»
+Benelli_M4::stealth  |  BENELLI M4 «Чёрная вдова»
+M249::gold  |  M249 «Золотой дракон»
+M249::neon  |  M249 «Киберпанк»
+M249::camo  |  M249 «Таёжный волк»
+M249::stealth  |  M249 «Полуночник»
+M1918::gold  |  M1918 «Царская позолота»
+M1918::neon  |  M1918 «Электрический угорь»
+M1918::camo  |  M1918 «Болотный дух»
+M1918::stealth  |  M1918 «Ночной охотник»
+SSG::gold  |  SSG 3000 «Золотая лихорадка»
+SSG::neon  |  SSG 3000 «Лазерный дождь»
+SSG::camo  |  SSG 3000 «Лесной призрак»
+SSG::stealth  |  SSG 3000 «Живая тень»
+LAR::gold  |  LAR «Наследие Мидаса»
+LAR::neon  |  LAR «Неоновый шторм»
+LAR::camo  |  LAR «Пустынный скорпион»
+LAR::stealth  |  LAR «Чёрная вдова»
+Barrett_M82::gold  |  BARRETT M82 «Золотой дракон»
+Barrett_M82::neon  |  BARRETT M82 «Киберпанк»
+Barrett_M82::camo  |  BARRETT M82 «Таёжный волк»
+Barrett_M82::stealth  |  BARRETT M82 «Полуночник»
+Remington_700::gold  |  REMINGTON 700 «Царская позолота»
+Remington_700::neon  |  REMINGTON 700 «Электрический угорь»
+Remington_700::camo  |  REMINGTON 700 «Болотный дух»
+Remington_700::stealth  |  REMINGTON 700 «Ночной охотник»
+Winchester::gold  |  WINCHESTER «Золотая лихорадка»
+Winchester::neon  |  WINCHESTER «Лазерный дождь»
+Winchester::camo  |  WINCHESTER «Лесной призрак»
+Winchester::stealth  |  WINCHESTER «Живая тень»
+Makarov::gold  |  MAKAROV «Наследие Мидаса»
+Makarov::neon  |  MAKAROV «Неоновый шторм»
+Makarov::camo  |  MAKAROV «Пустынный скорпион»
+Makarov::stealth  |  MAKAROV «Чёрная вдова»
+Glock::gold  |  GLOCK «Золотой дракон»
+Glock::neon  |  GLOCK «Киберпанк»
+Glock::camo  |  GLOCK «Таёжный волк»
+Glock::stealth  |  GLOCK «Полуночник»
+M1911::gold  |  M1911 «Царская позолота»
+M1911::neon  |  M1911 «Электрический угорь»
+M1911::camo  |  M1911 «Болотный дух»
+M1911::stealth  |  M1911 «Ночной охотник»
+Deagle::gold  |  DESERT EAGLE «Золотая лихорадка»
+Deagle::neon  |  DESERT EAGLE «Лазерный дождь»
+Deagle::camo  |  DESERT EAGLE «Лесной призрак»
+Deagle::stealth  |  DESERT EAGLE «Живая тень»
+revolver::gold  |  REVOLVER «Наследие Мидаса»
+revolver::neon  |  REVOLVER «Неоновый шторм»
+revolver::camo  |  REVOLVER «Пустынный скорпион»
+revolver::stealth  |  REVOLVER «Чёрная вдова»
+Knife::gold  |  KNIFE «Золотой дракон»
+Knife::neon  |  KNIFE «Киберпанк»
+Knife::camo  |  KNIFE «Таёжный волк»
+Сайга::gold  |  САЙГА «Царская позолота»
+Сайга::neon  |  САЙГА «Электрический угорь»
+Сайга::camo  |  САЙГА «Болотный дух»
+Сайга::stealth  |  САЙГА «Ночной охотник»
+катана::gold  |  КАТАНА «Золотая лихорадка»
+катана::neon  |  КАТАНА «Лазерный дождь»
+катана::camo  |  КАТАНА «Лесной призрак»
+мачете::gold  |  МАЧЕТЕ «Наследие Мидаса»
+мачете::neon  |  МАЧЕТЕ «Неоновый шторм»
+мачете::camo  |  МАЧЕТЕ «Пустынный скорпион»
+SIG_SG_543::gold  |  SIG SG 543 «Золотой дракон»
+SIG_SG_543::neon  |  SIG SG 543 «Киберпанк»
+SIG_SG_543::camo  |  SIG SG 543 «Таёжный волк»
+SIG_SG_543::stealth  |  SIG SG 543 «Полуночник»
+AUG::gold  |  AUG «Царская позолота»
+AUG::neon  |  AUG «Электрический угорь»
+AUG::camo  |  AUG «Болотный дух»
+AUG::stealth  |  AUG «Ночной охотник»
+minigun::gold  |  MINIGUN «Золотая лихорадка»
+minigun::neon  |  MINIGUN «Лазерный дождь»
+minigun::camo  |  MINIGUN «Лесной призрак»
+minigun::stealth  |  MINIGUN «Живая тень»
+RPG::gold  |  RPG-7 «Наследие Мидаса»
+RPG::neon  |  RPG-7 «Неоновый шторм»
+RPG::camo  |  RPG-7 «Пустынный скорпион»
+RPG::stealth  |  RPG-7 «Чёрная вдова»
+VKS::gold  |  VKS «Золотой дракон»
+VKS::neon  |  VKS «Киберпанк»
+VKS::camo  |  VKS «Таёжный волк»
+VKS::stealth  |  VKS «Полуночник»
+М16::gold  |  M16 «Царская позолота»
+М16::neon  |  M16 «Электрический угорь»
+М16::camo  |  M16 «Болотный дух»
+М16::stealth  |  M16 «Ночной охотник»
+Remington::gold  |  REMINGTON 870 «Золотая лихорадка»
+Remington::neon  |  REMINGTON 870 «Лазерный дождь»
+Remington::camo  |  REMINGTON 870 «Лесной призрак»
+Remington::stealth  |  REMINGTON 870 «Живая тень»

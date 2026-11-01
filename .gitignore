@@ -1,0 +1,11 @@
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+# Артефакты Android-сборки: перегенерируются (copy-www.cjs + cap sync + build)
+android/app/build/
+android/.gradle/
+www/
+*.apk
+*.aab
+tmp/

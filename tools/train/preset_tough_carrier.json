@@ -1,0 +1,9 @@
+{
+  "escort": {
+    "lead": 180,
+    "side": 60
+  },
+  "carry": {
+    "dmgMul": 0.7
+  }
+}

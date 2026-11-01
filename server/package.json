@@ -1,0 +1,12 @@
+{
+  "name": "kontakt-lan-server",
+  "version": "0.1.0",
+  "description": "Dedicated LAN server for KONTAKT (phase 1: rooms + handshake)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
