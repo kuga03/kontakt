@@ -1,7 +1,8 @@
-// campaign.js — кампания: сюжетный экран и обучение (было в GameScene).
-// Функции принимают сцену; баннеры/подборы/звуки — через обёртки сцены
-// (trackModalElems/hoverSfx/spawnPickup/groundHeightAt), своих импортов нет.
+﻿// campaign.js тАФ ╨║╨░╨╝╨┐╨░╨╜╨╕╤П: ╤Б╤О╨╢╨╡╤В╨╜╤Л╨╣ ╤Н╨║╤А╨░╨╜ ╨╕ ╨╛╨▒╤Г╤З╨╡╨╜╨╕╨╡ (╨▒╤Л╨╗╨╛ ╨▓ GameScene).
+// ╨д╤Г╨╜╨║╤Ж╨╕╨╕ ╨┐╤А╨╕╨╜╨╕╨╝╨░╤О╤В ╤Б╤Ж╨╡╨╜╤Г; ╨▒╨░╨╜╨╜╨╡╤А╤Л/╨┐╨╛╨┤╨▒╨╛╤А╤Л/╨╖╨▓╤Г╨║╨╕ тАФ ╤З╨╡╤А╨╡╨╖ ╨╛╨▒╤С╤А╤В╨║╨╕ ╤Б╤Ж╨╡╨╜╤Л
+// (trackModalElems/hoverSfx/spawnPickup/groundHeightAt), ╤Б╨▓╨╛╨╕╤Е ╨╕╨╝╨┐╨╛╤А╤В╨╛╨▓ ╨╜╨╡╤В.
 import { gameW } from '../ui/layout.js?v=3';
+
 
 export function showStory(scene, text, onComplete, btnLabel) {
   let finished = false;
@@ -10,16 +11,16 @@ export function showStory(scene, text, onComplete, btnLabel) {
   text = text || '';
   const t0 = (scene.time && scene.time.now) || 0;
   try { scene.input.setDefaultCursor('default'); } catch (e) {}
-  // Зум в 1 на время заставки (интро и аутро): размер текста фиксирован
-  // и не зависит от дальности оружия/камеры. Возвращаем в finish.
+  // ╨Ч╤Г╨╝ ╨▓ 1 ╨╜╨░ ╨▓╤А╨╡╨╝╤П ╨╖╨░╤Б╤В╨░╨▓╨║╨╕ (╨╕╨╜╤В╤А╨╛ ╨╕ ╨░╤Г╤В╤А╨╛): ╤А╨░╨╖╨╝╨╡╤А ╤В╨╡╨║╤Б╤В╨░ ╤Д╨╕╨║╤Б╨╕╤А╨╛╨▓╨░╨╜
+  // ╨╕ ╨╜╨╡ ╨╖╨░╨▓╨╕╤Б╨╕╤В ╨╛╤В ╨┤╨░╨╗╤М╨╜╨╛╤Б╤В╨╕ ╨╛╤А╤Г╨╢╨╕╤П/╨║╨░╨╝╨╡╤А╤Л. ╨Т╨╛╨╖╨▓╤А╨░╤Й╨░╨╡╨╝ ╨▓ finish.
   try {
     scene._storyPrevZoom = scene.cameras.main.zoom;
     scene.cameras.main.setZoom(1);
     scene._storyOpen = true;
   } catch (e) {}
 
-  // Адаптив: затемнение на всю ширину (центр выставит _trackModalElems
-  // сдвигом ox, поэтому x=640, а не середина — иначе двойной сдвиг).
+  // ╨Р╨┤╨░╨┐╤В╨╕╨▓: ╨╖╨░╤В╨╡╨╝╨╜╨╡╨╜╨╕╨╡ ╨╜╨░ ╨▓╤Б╤О ╤И╨╕╤А╨╕╨╜╤Г (╤Ж╨╡╨╜╤В╤А ╨▓╤Л╤Б╤В╨░╨▓╨╕╤В _trackModalElems
+  // ╤Б╨┤╨▓╨╕╨│╨╛╨╝ ox, ╨┐╨╛╤Н╤В╨╛╨╝╤Г x=640, ╨░ ╨╜╨╡ ╤Б╨╡╤А╨╡╨┤╨╕╨╜╨░ тАФ ╨╕╨╜╨░╤З╨╡ ╨┤╨▓╨╛╨╣╨╜╨╛╨╣ ╤Б╨┤╨▓╨╕╨│).
   const _sw = gameW(scene);
   const overlay = scene.add.rectangle(
     640, 360, _sw, 720, 0x000000, 0.75
@@ -37,13 +38,17 @@ export function showStory(scene, text, onComplete, btnLabel) {
     lineSpacing: 8
   }).setOrigin(0.5).setScrollFactor(0).setDepth(401);
 
-  const hint = scene.add.text(640, 520, 'Нажми — показать текст сразу', {
+  const hint = scene.add.text(640, 520, '╨Э╨░╨╢╨╝╨╕ тАФ ╨┐╨╛╨║╨░╨╖╨░╤В╤М ╤В╨╡╨║╤Б╤В ╤Б╤А╨░╨╖╤Г', {
     fontSize: '16px',
     color: '#aaaaaa'
   }).setOrigin(0.5).setScrollFactor(0).setDepth(401);
   hint.setVisible(false);
 
-  const goBtn = scene.add.text(640, 570, btnLabel || 'В БОЙ!', {
+  // ╨Я╤А╨╛╨│╤А╨╡╤Б╤Б╨▒╨░╤А ╨╕ ╨┐╤А╨╛╨│╤А╨╡╨▓ ╨▒╨╛╤В╨╛╨▓ ╨╜╤Г╨╢╨╜╤Л ╨в╨Ю╨Ы╨м╨Ъ╨Ю ╨▓ ╨╕╨╜╤В╤А╨╛ ╨┐╨╡╤А╨╡╨┤ ╨▒╨╛╨╡╨╝ (╨╜╨╡ ╨▓ ╨░╤Г╤В╤А╨╛ ╨┐╨╛╨▒╨╡╨┤╤Л)
+  const isIntro = !scene.gameOver && !scene._introDone;
+
+  const btnY = isIntro ? 560 : 570;
+  const goBtn = scene.add.text(640, btnY, btnLabel || '╨Т ╨С╨Ю╨Щ!', {
     fontSize: '26px',
     color: '#ffffff',
     backgroundColor: '#287a45',
@@ -51,18 +56,112 @@ export function showStory(scene, text, onComplete, btnLabel) {
   }).setOrigin(0.5).setScrollFactor(0).setDepth(401);
   goBtn.setVisible(false);
 
-  const isIntro = !scene.gameOver && !scene._introDone;
-  let barBg = null;
-  let barFg = null;
-  const BAR_W = 420;
+  const elements = [overlay, titleText, storyText, hint, goBtn];
+
+  let warmTimer = null;
+  let animTimer = null;
+
   if (isIntro) {
-    barBg = scene.add.rectangle(640, 470, BAR_W, 8, 0x333344).setScrollFactor(0).setDepth(401);
-    barFg = scene.add.rectangle(640 - BAR_W / 2, 470, 1, 8, 0x55aaff).setOrigin(0, 0.5).setScrollFactor(0).setDepth(402);
-    barFg.setDisplaySize(0, 8);
+    // ╨б╤В╨╕╨╗╤М╨╜╤Л╨╣ ╨┐╤А╨╛╨│╤А╨╡╤Б╤Б╨▒╨░╤А ╨┐╨╛╨┤╨│╨╛╤В╨╛╨▓╨║╨╕ ╨▒╨╛╤В╨╛╨▓ (╨║╨╕╨▒╨╡╤А╨┐╨░╨╜╨║ / ╨╝╨╕╨╗╨╕╤В╨░╤А╨╕ HUD)
+    const barW = 340, barH = 10;
+    const barY = 620;
+    const barGfx = scene.add.graphics().setScrollFactor(0).setDepth(401);
+    const barLabel = scene.add.text(640, barY + 16, '╨Я╨Ю╨Ф╨У╨Ю╨в╨Ю╨Т╨Ъ╨Р ╨Я╨Ю╨Ф╨а╨Р╨Ч╨Ф╨Х╨Ы╨Х╨Э╨Ш╨п...', {
+      fontSize: '13px',
+      color: '#00e5ff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(401);
+
+    elements.push(barGfx, barLabel);
+
+    // ╨д╨╛╨╜╨╛╨▓╤Л╨╣ ╨┐╤А╨╛╨│╤А╨╡╨▓ ╨▒╨╛╤В╨╛╨▓ ╨┐╨╛ ╤З╨░╤Б╤В╤П╨╝:
+    const aiBots = (scene.players || []).filter(p => p && p.isAI && p.ai);
+    let warmIdx = 0;
+    let warmDone = false;
+    let curPct = 0;
+    let targetPct = 0;
+
+    const redrawBar = (pct) => {
+      if (finished) return;
+      barGfx.clear();
+      const bx = 640 - barW / 2;
+      // ╨в╤С╨╝╨╜╨░╤П ╤А╨░╨╝╨║╨░-╨┐╨╛╨┤╨╗╨╛╨╢╨║╨░
+      barGfx.fillStyle(0x070c18, 0.9);
+      barGfx.fillRoundedRect(bx - 3, barY - barH / 2 - 3, barW + 6, barH + 6, 6);
+      barGfx.lineStyle(1.5, 0x1f3b5c, 0.9);
+      barGfx.strokeRoundedRect(bx - 3, barY - barH / 2 - 3, barW + 6, barH + 6, 6);
+
+      // ╨Ч╨░╨┐╨╛╨╗╨╜╨╡╨╜╨╕╨╡ ╤Б ╨╜╨╡╨╛╨╜╨╛╨▓╤Л╨╝ ╨│╤А╨░╨┤╨╕╨╡╨╜╤В╨╛╨╝
+      const fillW = Math.max(0, barW * pct);
+      if (fillW > 0) {
+        if (pct >= 1) {
+          // ╨Я╨╛╨╗╨╜╨░╤П ╨│╨╛╤В╨╛╨▓╨╜╨╛╤Б╤В╤М тАФ ╨╕╨╖╤Г╨╝╤А╤Г╨┤╨╜╨╛-╨╖╨╡╨╗╤С╨╜╤Л╨╣ ╨╜╨╡╨╛╨╜
+          barGfx.fillGradientStyle(0x00ff88, 0x00ff88, 0x00aa55, 0x00aa55, 1);
+        } else {
+          // ╨Ч╨░╨│╤А╤Г╨╖╨║╨░ тАФ ╨║╨╕╨▒╨╡╤А╨┐╨░╨╜╨║ ╤Ж╨╕╨░╨╜/╨╗╨░╨╖╤Г╤А╤М
+          barGfx.fillGradientStyle(0x00e5ff, 0x00e5ff, 0x0077cc, 0x0077cc, 1);
+        }
+        barGfx.fillRoundedRect(bx, barY - barH / 2, fillW, barH, 4);
+
+        // ╨б╨║╨╛╨╗╤М╨╖╤П╤Й╨╕╨╣ ╨▒╨╗╨╕╨║-╨┐╨╛╨┤╤Б╨▓╨╡╤В╨║╨░
+        barGfx.fillStyle(0xffffff, 0.35);
+        barGfx.fillRoundedRect(bx + 1, barY - barH / 2 + 1, Math.max(0, fillW - 2), Math.floor(barH / 2) - 1, 2);
+      }
+    };
+
+    redrawBar(0);
+
+    // ╨Я╨╗╨░╨▓╨╜╨░╤П ╨░╨╜╨╕╨╝╨░╤Ж╨╕╤П ╨┐╤А╨╛╤Ж╨╡╨╜╤В╨╛╨▓
+    animTimer = scene.time.addEvent({
+      delay: 30,
+      loop: true,
+      callback: () => {
+        if (finished) return;
+        if (curPct < targetPct) {
+          curPct = Math.min(targetPct, curPct + 0.04);
+          redrawBar(curPct);
+          const p100 = Math.round(curPct * 100);
+          if (curPct >= 1) {
+            barLabel.setText(`тЬУ ╨С╨Ю╨Щ╨ж╨л ╨У╨Ю╨в╨Ю╨Т╨л ╨Ъ ╨С╨Ю╨о (${p100}%)`);
+            barLabel.setColor('#00ff88');
+          } else {
+            barLabel.setText(`╨Я╨Ю╨Ф╨У╨Ю╨в╨Ю╨Т╨Ъ╨Р ╨Я╨Ю╨Ф╨а╨Р╨Ч╨Ф╨Х╨Ы╨Х╨Э╨Ш╨п... ${p100}%`);
+          }
+        }
+      }
+    });
+
+    // ╨Я╨╛╤И╨░╨│╨╛╨▓╤Л╨╣ ╨┐╤А╨╛╨│╤А╨╡╨▓ ╨Ш╨Ш ╨▒╨╛╤В╨╛╨▓ (╨┐╨╛ 1 ╨▒╨╛╤В╤Г ╨▓ ╤В╨╕╨║ ╨┤╨╗╤П ╨╜╤Г╨╗╨╡╨▓╨╛╨╣ ╨╜╨░╨│╤А╤Г╨╖╨║╨╕)
+    warmTimer = scene.time.addEvent({
+      delay: 70,
+      loop: true,
+      callback: () => {
+        if (finished || warmDone) return;
+        if (aiBots.length === 0) {
+          warmDone = true;
+          targetPct = 1;
+          if (warmTimer) { warmTimer.remove(); warmTimer = null; }
+          return;
+        }
+        const bot = aiBots[warmIdx];
+        if (bot && bot.ai) {
+          try {
+            const now = scene.time ? scene.time.now : 0;
+            // Прогрев ИИ: разовый проход update для предварительной инициализации
+            bot.ai.update(now, 33);
+          } catch (eWarm) {}
+        }
+        warmIdx++;
+        targetPct = Math.min(1, warmIdx / aiBots.length);
+        if (warmIdx >= aiBots.length) {
+          warmDone = true;
+          targetPct = 1;
+          if (warmTimer) { warmTimer.remove(); warmTimer = null; }
+        }
+      }
+    });
   }
 
-  const elements = [overlay, titleText, storyText, hint, goBtn];
-  if (barBg) elements.push(barBg, barFg);
   scene._trackModalElems(elements);
   let chars = 0;
 
@@ -72,7 +171,6 @@ export function showStory(scene, text, onComplete, btnLabel) {
     callback: () => {
       chars = Math.min(text.length, chars + 3);
       storyText.setText(text.slice(0, chars));
-      if (barFg) barFg.setDisplaySize(BAR_W * chars / Math.max(1, text.length), 8);
       if (chars >= text.length) {
         typeTimer.remove();
         if (scene.typeTimer === typeTimer) scene.typeTimer = null;
@@ -85,14 +183,13 @@ export function showStory(scene, text, onComplete, btnLabel) {
   const reveal = (byTimer) => {
     if (revealed || finished) return;
     revealed = true;
-    if (barFg) { try { barFg.setDisplaySize(BAR_W, 8); } catch (e) {} }
     try { revealT = scene.time ? scene.time.now : 0; } catch (e) {}
     try {
       typeTimer.remove();
       if (scene.typeTimer === typeTimer) scene.typeTimer = null;
     } catch (e) {}
     storyText.setText(text);
-    hint.setText(byTimer ? 'Enter — в бой' : 'Текст показан · жми В БОЙ! или Enter');
+    hint.setText(byTimer ? 'Enter тАФ ╨▓ ╨▒╨╛╨╣' : '╨в╨╡╨║╤Б╤В ╨┐╨╛╨║╨░╨╖╨░╨╜ ┬╖ ╨╢╨╝╨╕ ╨Т ╨С╨Ю╨Щ! ╨╕╨╗╨╕ Enter');
     hint.setVisible(true);
     goBtn.setVisible(true);
   };
@@ -106,9 +203,13 @@ export function showStory(scene, text, onComplete, btnLabel) {
       typeTimer.remove();
       if (scene.typeTimer === typeTimer) scene.typeTimer = null;
     } catch (e) {}
+    try {
+      if (warmTimer) warmTimer.remove();
+      if (animTimer) animTimer.remove();
+    } catch (e) {}
     scene._storyDismiss = null;
     scene._storyKeyHandler = null;
-    // Зум назад как был до заставки.
+    // ╨Ч╤Г╨╝ ╨╜╨░╨╖╨░╨┤ ╨║╨░╨║ ╨▒╤Л╨╗ ╨┤╨╛ ╨╖╨░╤Б╤В╨░╨▓╨║╨╕.
     try {
       scene._storyOpen = false;
       if (Number.isFinite(scene._storyPrevZoom) && scene._storyPrevZoom > 0) {
@@ -116,6 +217,7 @@ export function showStory(scene, text, onComplete, btnLabel) {
       }
     } catch (e) {}
     elements.forEach(e => { try { e.destroy(); } catch (e2) {} });
+    // ╨Ъ╤Г╤А╤Б╨╛╤А ╨╜╨░╨╖╨░╨┤ ╨┐╨╛╨┤ ╨┐╤А╨╕╤Ж╨╡╨╗ (╨░╤Г╤В╤А╨╛ ╤Б╨░╨╝╨╛ ╨▓╨╡╤А╨╜╤С╤В ╨╛╨▒╤Л╤З╨╜╤Л╨╣ ╨┐╨╛╤Б╨╗╨╡ ╨╜╨░╤Б).
     try { scene.input.setDefaultCursor('none'); } catch (e) {}
     if (onComplete) onComplete();
   };
@@ -125,14 +227,14 @@ export function showStory(scene, text, onComplete, btnLabel) {
     try {
       if (scene.time && scene.time.now - t0 < 800) return;
     } catch (e) {}
-    // Клик мимо кнопки историю не закрывает — только допечатывает.
+    // ╨Ъ╨╗╨╕╨║ ╨╝╨╕╨╝╨╛ ╨║╨╜╨╛╨┐╨║╨╕ ╨╕╤Б╤В╨╛╤А╨╕╤О ╨╜╨╡ ╨╖╨░╨║╤А╤Л╨▓╨░╨╡╤В тАФ ╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╛╨┐╨╡╤З╨░╤В╤Л╨▓╨░╨╡╤В.
     if (!revealed) reveal(false);
   };
 
   const onKey = (event) => {
     if (finished) return;
     const k = event && event.key;
-    if (k === 'Escape') return; // ESC сюжет не пропускает
+    if (k === 'Escape') return; // ESC ╤Б╤О╨╢╨╡╤В ╨╜╨╡ ╨┐╤А╨╛╨┐╤Г╤Б╨║╨░╨╡╤В
     try {
       if (scene.time && scene.time.now - t0 < 800) return;
     } catch (e) {}
@@ -140,7 +242,7 @@ export function showStory(scene, text, onComplete, btnLabel) {
       reveal(false);
       return;
     }
-    // Enter — только после полного показа и с паузой от него.
+    // Enter тАФ ╤В╨╛╨╗╤М╨║╨╛ ╨┐╨╛╤Б╨╗╨╡ ╨┐╨╛╨╗╨╜╨╛╨│╨╛ ╨┐╨╛╨║╨░╨╖╨░ ╨╕ ╤Б ╨┐╨░╤Г╨╖╨╛╨╣ ╨╛╤В ╨╜╨╡╨│╨╛.
     if (k === 'Enter') {
       try {
         if (scene.time && scene.time.now - revealT > 1200) finish();
@@ -182,9 +284,9 @@ export function setupTutorial(scene) {
     640, 100
   );
 
-  // Маркер-стрелка над целью учебки (жёлтый треугольник): на месте,
-  // путаницу давала золотая заглушка пистолета рядом — её заменили
-  // настоящим PNG (см. Pickup).
+  // ╨Ь╨░╤А╨║╨╡╤А-╤Б╤В╤А╨╡╨╗╨║╨░ ╨╜╨░╨┤ ╤Ж╨╡╨╗╤М╤О ╤Г╤З╨╡╨▒╨║╨╕ (╨╢╤С╨╗╤В╤Л╨╣ ╤В╤А╨╡╤Г╨│╨╛╨╗╤М╨╜╨╕╨║): ╨╜╨░ ╨╝╨╡╤Б╤В╨╡,
+  // ╨┐╤Г╤В╨░╨╜╨╕╤Ж╤Г ╨┤╨░╨▓╨░╨╗╨░ ╨╖╨╛╨╗╨╛╤В╨░╤П ╨╖╨░╨│╨╗╤Г╤И╨║╨░ ╨┐╨╕╤Б╤В╨╛╨╗╨╡╤В╨░ ╤А╤П╨┤╨╛╨╝ тАФ ╨╡╤С ╨╖╨░╨╝╨╡╨╜╨╕╨╗╨╕
+  // ╨╜╨░╤Б╤В╨╛╤П╤Й╨╕╨╝ PNG (╤Б╨╝. Pickup).
   scene.tutMarker = scene.add.triangle(
     0, 0, 0, 14, -9, 0, 9, 0, 0xffdd00
   ).setOrigin(0.5).setDepth(21);
@@ -195,17 +297,17 @@ export function setupTutorial(scene) {
     scene.tutorialSpawns.weapon.y,
     'Makarov'
   );
-  // Учебные подборы не протухают: иначе медленный игрок теряет кит
-  // (у гранат всего 15с) и шаг «подбери» висит вечно.
-  // Стоят низом ровно на грунте (коробка 20px — центр на GT-10),
-  // а не в воздухе/в земле как раньше.
+  // ╨г╤З╨╡╨▒╨╜╤Л╨╡ ╨┐╨╛╨┤╨▒╨╛╤А╤Л ╨╜╨╡ ╨┐╤А╨╛╤В╤Г╤Е╨░╤О╤В: ╨╕╨╜╨░╤З╨╡ ╨╝╨╡╨┤╨╗╨╡╨╜╨╜╤Л╨╣ ╨╕╨│╤А╨╛╨║ ╤В╨╡╤А╤П╨╡╤В ╨║╨╕╤В
+  // (╤Г ╨│╤А╨░╨╜╨░╤В ╨▓╤Б╨╡╨│╨╛ 15╤Б) ╨╕ ╤И╨░╨│ ┬л╨┐╨╛╨┤╨▒╨╡╤А╨╕┬╗ ╨▓╨╕╤Б╨╕╤В ╨▓╨╡╤З╨╜╨╛.
+  // ╨б╤В╨╛╤П╤В ╨╜╨╕╨╖╨╛╨╝ ╤А╨╛╨▓╨╜╨╛ ╨╜╨░ ╨│╤А╤Г╨╜╤В╨╡ (╨║╨╛╤А╨╛╨▒╨║╨░ 20px тАФ ╤Ж╨╡╨╜╤В╤А ╨╜╨░ GT-10),
+  // ╨░ ╨╜╨╡ ╨▓ ╨▓╨╛╨╖╨┤╤Г╤Е╨╡/╨▓ ╨╖╨╡╨╝╨╗╨╡ ╨║╨░╨║ ╤А╨░╨╜╤М╤И╨╡.
   try {
     const GTw = scene.mapHeight - 50;
     scene.pickups.getChildren().forEach(pk => {
       if (pk) {
         pk.expires = Infinity;
         pk.y = GTw - 10;
-        // Учебное — только своим: боты врага не растащат.
+        // ╨г╤З╨╡╨▒╨╜╨╛╨╡ тАФ ╤В╨╛╨╗╤М╨║╨╛ ╤Б╨▓╨╛╨╕╨╝: ╨▒╨╛╤В╤Л ╨▓╤А╨░╨│╨░ ╨╜╨╡ ╤А╨░╤Б╤В╨░╤Й╨░╤В.
         pk.team = 'blue';
       }
     });
@@ -218,8 +320,8 @@ export function updateTutorial(scene, time) {
   if (!tut.started || tut.started <= 0) return;
   if (time - tut.started < 800) return;
 
-  // Пока игрок не подобрал пистолет (шаги 0–1) — враги спят:
-  // иначе обстрел безоружного. Хвост 1.5с после подбора для плавности.
+  // ╨Я╨╛╨║╨░ ╨╕╨│╤А╨╛╨║ ╨╜╨╡ ╨┐╨╛╨┤╨╛╨▒╤А╨░╨╗ ╨┐╨╕╤Б╤В╨╛╨╗╨╡╤В (╤И╨░╨│╨╕ 0тАУ1) тАФ ╨▓╤А╨░╨│╨╕ ╤Б╨┐╤П╤В:
+  // ╨╕╨╜╨░╤З╨╡ ╨╛╨▒╤Б╤В╤А╨╡╨╗ ╨▒╨╡╨╖╨╛╤А╤Г╨╢╨╜╨╛╨│╨╛. ╨е╨▓╨╛╤Б╤В 1.5╤Б ╨┐╨╛╤Б╨╗╨╡ ╨┐╨╛╨┤╨▒╨╛╤А╨░ ╨┤╨╗╤П ╨┐╨╗╨░╨▓╨╜╨╛╤Б╤В╨╕.
   if (tut.step < 2 && scene.time) {
     scene.enemiesActiveAt = Math.max(scene.enemiesActiveAt || 0, time + 1500);
   }
@@ -231,20 +333,20 @@ export function updateTutorial(scene, time) {
 
   switch (tut.step) {
     case 0:
-      text = 'Управление: A/D — движение, W/ПРОБЕЛ — прыжок, S — присесть\nЛКМ — стрелять, R — перезарядка, мышь — прицел';
+      text = '╨г╨┐╤А╨░╨▓╨╗╨╡╨╜╨╕╨╡: A/D тАФ ╨┤╨▓╨╕╨╢╨╡╨╜╨╕╨╡, W/╨Я╨а╨Ю╨С╨Х╨Ы тАФ ╨┐╤А╤Л╨╢╨╛╨║, S тАФ ╨┐╤А╨╕╤Б╨╡╤Б╤В╤М\n╨Ы╨Ъ╨Ь тАФ ╤Б╤В╤А╨╡╨╗╤П╤В╤М, R тАФ ╨┐╨╡╤А╨╡╨╖╨░╤А╤П╨┤╨║╨░, ╨╝╤Л╤И╤М тАФ ╨┐╤А╨╕╤Ж╨╡╨╗';
       if (time - tut.started > 2800) {
         tut.step = 1;
       }
       break;
     case 1:
-      text = 'Подбери пистолет! Встань на него и стой (стрельба — ЛКМ).';
+      text = '╨Я╨╛╨┤╨▒╨╡╤А╨╕ ╨┐╨╕╤Б╤В╨╛╨╗╨╡╤В! ╨Т╤Б╤В╨░╨╜╤М ╨╜╨░ ╨╜╨╡╨│╨╛ ╨╕ ╤Б╤В╨╛╨╣ (╤Б╤В╤А╨╡╨╗╤М╨▒╨░ тАФ ╨Ы╨Ъ╨Ь).';
       marker = true;
       if (scene.tutMarker) scene.tutMarker.x = T.weapon.x;
       if (scene.player.inventory.length > 0) {
         tut.step = 2;
         const pkf = scene.spawnPickup('frag', T.frag.x, T.frag.y);
-        // Учебная: не протухает + выдаётся даже без навыка (см. Pickup).
-        // Низом на грунт (арт 39px — центр на GT-19). Только своим.
+        // ╨г╤З╨╡╨▒╨╜╨░╤П: ╨╜╨╡ ╨┐╤А╨╛╤В╤Г╤Е╨░╨╡╤В + ╨▓╤Л╨┤╨░╤С╤В╤Б╤П ╨┤╨░╨╢╨╡ ╨▒╨╡╨╖ ╨╜╨░╨▓╤Л╨║╨░ (╤Б╨╝. Pickup).
+        // ╨Э╨╕╨╖╨╛╨╝ ╨╜╨░ ╨│╤А╤Г╨╜╤В (╨░╤А╤В 39px тАФ ╤Ж╨╡╨╜╤В╤А ╨╜╨░ GT-19). ╨в╨╛╨╗╤М╨║╨╛ ╤Б╨▓╨╛╨╕╨╝.
         if (pkf) {
           pkf.expires = Infinity;
           pkf.tutorial = true;
@@ -254,7 +356,7 @@ export function updateTutorial(scene, time) {
       }
       break;
     case 2:
-      text = 'Подбери осколочную гранату: встань на неё и стой.';
+      text = '╨Я╨╛╨┤╨▒╨╡╤А╨╕ ╨╛╤Б╨║╨╛╨╗╨╛╤З╨╜╤Г╤О ╨│╤А╨░╨╜╨░╤В╤Г: ╨▓╤Б╤В╨░╨╜╤М ╨╜╨░ ╨╜╨╡╤С ╨╕ ╤Б╤В╨╛╨╣.';
       marker = true;
       if (scene.tutMarker) scene.tutMarker.x = T.frag.x;
       if (scene.player.fragGrenades > tut.baseFrag) {
@@ -263,11 +365,11 @@ export function updateTutorial(scene, time) {
       }
       break;
     case 3:
-      text = 'Брось гранату по манекену:\nклавиша G (прицелься мышью), дым — H';
+      text = '╨С╤А╨╛╤Б╤М ╨│╤А╨░╨╜╨░╤В╤Г ╨┐╨╛ ╨╝╨░╨╜╨╡╨║╨╡╨╜╤Г:\n╨║╨╗╨░╨▓╨╕╤И╨░ G (╨┐╤А╨╕╤Ж╨╡╨╗╤М╤Б╤П ╨╝╤Л╤И╤М╤О), ╨┤╤Л╨╝ тАФ H';
       if (scene.tutMarker) scene.tutMarker.x = dummyPos;
       marker = true;
-      // Манекен убит раньше подсказки (расстрелял заранее) — бросать
-      // не в кого: прыгаем дальше, шаг 4 сам увидит труп и пойдёт к 5.
+      // ╨Ь╨░╨╜╨╡╨║╨╡╨╜ ╤Г╨▒╨╕╤В ╤А╨░╨╜╤М╤И╨╡ ╨┐╨╛╨┤╤Б╨║╨░╨╖╨║╨╕ (╤А╨░╤Б╤Б╤В╤А╨╡╨╗╤П╨╗ ╨╖╨░╤А╨░╨╜╨╡╨╡) тАФ ╨▒╤А╨╛╤Б╨░╤В╤М
+      // ╨╜╨╡ ╨▓ ╨║╨╛╨│╨╛: ╨┐╤А╤Л╨│╨░╨╡╨╝ ╨┤╨░╨╗╤М╤И╨╡, ╤И╨░╨│ 4 ╤Б╨░╨╝ ╤Г╨▓╨╕╨┤╨╕╤В ╤В╤А╤Г╨┐ ╨╕ ╨┐╨╛╨╣╨┤╤С╤В ╨║ 5.
       if (scene.tutDummy && scene.tutDummy.dead) {
         tut.step = 4;
         break;
@@ -283,7 +385,7 @@ export function updateTutorial(scene, time) {
       }
       break;
     case 4:
-      text = 'Уничтожь манекен. Стреляй или брось гранату!';
+      text = '╨г╨╜╨╕╤З╤В╨╛╨╢╤М ╨╝╨░╨╜╨╡╨║╨╡╨╜. ╨б╤В╤А╨╡╨╗╤П╨╣ ╨╕╨╗╨╕ ╨▒╤А╨╛╤Б╤М ╨│╤А╨░╨╜╨░╤В╤Г!';
       marker = true;
       if (scene.tutMarker) scene.tutMarker.x = dummyPos;
       if (scene.tutDummy && scene.tutDummy.dead) {
@@ -291,7 +393,7 @@ export function updateTutorial(scene, time) {
       }
       break;
     case 5:
-      text = 'Осталось два врага. Зачисти уровень!';
+      text = '╨Ю╤Б╤В╨░╨╗╨╛╤Б╤М ╨┤╨▓╨░ ╨▓╤А╨░╨│╨░. ╨Ч╨░╤З╨╕╤Б╤В╨╕ ╤Г╤А╨╛╨▓╨╡╨╜╤М!';
       break;
   }
 
