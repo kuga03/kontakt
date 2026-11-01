@@ -38,7 +38,7 @@ export function showStory(scene, text, onComplete, btnLabel) {
     lineSpacing: 8
   }).setOrigin(0.5).setScrollFactor(0).setDepth(401);
 
-  const hint = scene.add.text(640, 520, '╨Э╨░╨╢╨╝╨╕ тАФ ╨┐╨╛╨║╨░╨╖╨░╤В╤М ╤В╨╡╨║╤Б╤В ╤Б╤А╨░╨╖╤Г', {
+  const hint = scene.add.text(640, 520, 'Нажми — показать текст сразу', {
     fontSize: '16px',
     color: '#aaaaaa'
   }).setOrigin(0.5).setScrollFactor(0).setDepth(401);
@@ -48,7 +48,7 @@ export function showStory(scene, text, onComplete, btnLabel) {
   const isIntro = !scene.gameOver && !scene._introDone;
 
   const btnY = isIntro ? 560 : 570;
-  const goBtn = scene.add.text(640, btnY, btnLabel || '╨Т ╨С╨Ю╨Щ!', {
+  const goBtn = scene.add.text(640, btnY, btnLabel || 'В БОЙ!', {
     fontSize: '26px',
     color: '#ffffff',
     backgroundColor: '#287a45',
@@ -189,7 +189,7 @@ export function showStory(scene, text, onComplete, btnLabel) {
       if (scene.typeTimer === typeTimer) scene.typeTimer = null;
     } catch (e) {}
     storyText.setText(text);
-    hint.setText(byTimer ? 'Enter тАФ ╨▓ ╨▒╨╛╨╣' : '╨в╨╡╨║╤Б╤В ╨┐╨╛╨║╨░╨╖╨░╨╜ ┬╖ ╨╢╨╝╨╕ ╨Т ╨С╨Ю╨Щ! ╨╕╨╗╨╕ Enter');
+    hint.setText(byTimer ? 'Enter — в бой' : 'Текст показан · жми В БОЙ! или Enter');
     hint.setVisible(true);
     goBtn.setVisible(true);
   };
@@ -333,13 +333,13 @@ export function updateTutorial(scene, time) {
 
   switch (tut.step) {
     case 0:
-      text = '╨г╨┐╤А╨░╨▓╨╗╨╡╨╜╨╕╨╡: A/D тАФ ╨┤╨▓╨╕╨╢╨╡╨╜╨╕╨╡, W/╨Я╨а╨Ю╨С╨Х╨Ы тАФ ╨┐╤А╤Л╨╢╨╛╨║, S тАФ ╨┐╤А╨╕╤Б╨╡╤Б╤В╤М\n╨Ы╨Ъ╨Ь тАФ ╤Б╤В╤А╨╡╨╗╤П╤В╤М, R тАФ ╨┐╨╡╤А╨╡╨╖╨░╤А╤П╨┤╨║╨░, ╨╝╤Л╤И╤М тАФ ╨┐╤А╨╕╤Ж╨╡╨╗';
+    text = 'Управление: A/D — движение, W/ПРОБЕЛ — прыжок, S — присесть\nЛКМ — стрелять, R — перезарядка, мышь — прицел';
       if (time - tut.started > 2800) {
         tut.step = 1;
       }
       break;
     case 1:
-      text = '╨Я╨╛╨┤╨▒╨╡╤А╨╕ ╨┐╨╕╤Б╤В╨╛╨╗╨╡╤В! ╨Т╤Б╤В╨░╨╜╤М ╨╜╨░ ╨╜╨╡╨│╨╛ ╨╕ ╤Б╤В╨╛╨╣ (╤Б╤В╤А╨╡╨╗╤М╨▒╨░ тАФ ╨Ы╨Ъ╨Ь).';
+    text = 'Подбери пистолет! Встань на него и стой (стрельба — ЛКМ).';
       marker = true;
       if (scene.tutMarker) scene.tutMarker.x = T.weapon.x;
       if (scene.player.inventory.length > 0) {
@@ -356,7 +356,7 @@ export function updateTutorial(scene, time) {
       }
       break;
     case 2:
-      text = '╨Я╨╛╨┤╨▒╨╡╤А╨╕ ╨╛╤Б╨║╨╛╨╗╨╛╤З╨╜╤Г╤О ╨│╤А╨░╨╜╨░╤В╤Г: ╨▓╤Б╤В╨░╨╜╤М ╨╜╨░ ╨╜╨╡╤С ╨╕ ╤Б╤В╨╛╨╣.';
+    text = 'Подбери осколочную гранату: встань на неё и стой.';
       marker = true;
       if (scene.tutMarker) scene.tutMarker.x = T.frag.x;
       if (scene.player.fragGrenades > tut.baseFrag) {
@@ -365,7 +365,7 @@ export function updateTutorial(scene, time) {
       }
       break;
     case 3:
-      text = '╨С╤А╨╛╤Б╤М ╨│╤А╨░╨╜╨░╤В╤Г ╨┐╨╛ ╨╝╨░╨╜╨╡╨║╨╡╨╜╤Г:\n╨║╨╗╨░╨▓╨╕╤И╨░ G (╨┐╤А╨╕╤Ж╨╡╨╗╤М╤Б╤П ╨╝╤Л╤И╤М╤О), ╨┤╤Л╨╝ тАФ H';
+    text = 'Брось гранату по манекену:\nклавиша G (прицелься мышью), дым — H';
       if (scene.tutMarker) scene.tutMarker.x = dummyPos;
       marker = true;
       // ╨Ь╨░╨╜╨╡╨║╨╡╨╜ ╤Г╨▒╨╕╤В ╤А╨░╨╜╤М╤И╨╡ ╨┐╨╛╨┤╤Б╨║╨░╨╖╨║╨╕ (╤А╨░╤Б╤Б╤В╤А╨╡╨╗╤П╨╗ ╨╖╨░╤А╨░╨╜╨╡╨╡) тАФ ╨▒╤А╨╛╤Б╨░╤В╤М
@@ -385,7 +385,7 @@ export function updateTutorial(scene, time) {
       }
       break;
     case 4:
-      text = '╨г╨╜╨╕╤З╤В╨╛╨╢╤М ╨╝╨░╨╜╨╡╨║╨╡╨╜. ╨б╤В╤А╨╡╨╗╤П╨╣ ╨╕╨╗╨╕ ╨▒╤А╨╛╤Б╤М ╨│╤А╨░╨╜╨░╤В╤Г!';
+    text = 'Уничтожь манекен. Стреляй или брось гранату!';
       marker = true;
       if (scene.tutMarker) scene.tutMarker.x = dummyPos;
       if (scene.tutDummy && scene.tutDummy.dead) {
@@ -393,7 +393,7 @@ export function updateTutorial(scene, time) {
       }
       break;
     case 5:
-      text = '╨Ю╤Б╤В╨░╨╗╨╛╤Б╤М ╨┤╨▓╨░ ╨▓╤А╨░╨│╨░. ╨Ч╨░╤З╨╕╤Б╤В╨╕ ╤Г╤А╨╛╨▓╨╡╨╜╤М!';
+    text = 'Осталось два врага. Зачисти уровень!';
       break;
   }
 
