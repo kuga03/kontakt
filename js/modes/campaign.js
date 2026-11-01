@@ -66,7 +66,7 @@ export function showStory(scene, text, onComplete, btnLabel) {
     const barW = 340, barH = 10;
     const barY = 620;
     const barGfx = scene.add.graphics().setScrollFactor(0).setDepth(401);
-    const barLabel = scene.add.text(640, barY + 16, '╨Я╨Ю╨Ф╨У╨Ю╨в╨Ю╨Т╨Ъ╨Р ╨Я╨Ю╨Ф╨а╨Р╨Ч╨Ф╨Х╨Ы╨Х╨Э╨Ш╨п...', {
+    const barLabel = scene.add.text(640, barY + 16, 'ПОДГОТОВКА ПОДРАЗДЕЛЕНИЯ...', {
       fontSize: '13px',
       color: '#00e5ff',
       fontStyle: 'bold'
@@ -122,10 +122,10 @@ export function showStory(scene, text, onComplete, btnLabel) {
           redrawBar(curPct);
           const p100 = Math.round(curPct * 100);
           if (curPct >= 1) {
-            barLabel.setText(`тЬУ ╨С╨Ю╨Щ╨ж╨л ╨У╨Ю╨в╨Ю╨Т╨л ╨Ъ ╨С╨Ю╨о (${p100}%)`);
+            barLabel.setText(`✓ БОЙЦЫ ГОТОВЫ К БОЮ (${p100}%)`);
             barLabel.setColor('#00ff88');
           } else {
-            barLabel.setText(`╨Я╨Ю╨Ф╨У╨Ю╨в╨Ю╨Т╨Ъ╨Р ╨Я╨Ю╨Ф╨а╨Р╨Ч╨Ф╨Х╨Ы╨Х╨Э╨Ш╨п... ${p100}%`);
+            barLabel.setText(`ПОДГОТОВКА ПОДРАЗДЕЛЕНИЯ... ${p100}%`);
           }
         }
       }
