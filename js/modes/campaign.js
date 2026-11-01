@@ -51,12 +51,18 @@ export function showStory(scene, text, onComplete, btnLabel) {
   }).setOrigin(0.5).setScrollFactor(0).setDepth(401);
   goBtn.setVisible(false);
 
+  const isIntro = !scene.gameOver && !scene._introDone;
+  let barBg = null;
+  let barFg = null;
   const BAR_W = 420;
-  const barBg = scene.add.rectangle(640, 470, BAR_W, 8, 0x333344).setScrollFactor(0).setDepth(401);
-  const barFg = scene.add.rectangle(640 - BAR_W / 2, 470, 1, 8, 0x55aaff).setOrigin(0, 0.5).setScrollFactor(0).setDepth(402);
-  barFg.setDisplaySize(0, 8);
+  if (isIntro) {
+    barBg = scene.add.rectangle(640, 470, BAR_W, 8, 0x333344).setScrollFactor(0).setDepth(401);
+    barFg = scene.add.rectangle(640 - BAR_W / 2, 470, 1, 8, 0x55aaff).setOrigin(0, 0.5).setScrollFactor(0).setDepth(402);
+    barFg.setDisplaySize(0, 8);
+  }
 
-  const elements = [overlay, titleText, storyText, hint, goBtn, barBg, barFg];
+  const elements = [overlay, titleText, storyText, hint, goBtn];
+  if (barBg) elements.push(barBg, barFg);
   scene._trackModalElems(elements);
   let chars = 0;
 
@@ -66,7 +72,7 @@ export function showStory(scene, text, onComplete, btnLabel) {
     callback: () => {
       chars = Math.min(text.length, chars + 3);
       storyText.setText(text.slice(0, chars));
-      barFg.setDisplaySize(BAR_W * chars / Math.max(1, text.length), 8);
+      if (barFg) barFg.setDisplaySize(BAR_W * chars / Math.max(1, text.length), 8);
       if (chars >= text.length) {
         typeTimer.remove();
         if (scene.typeTimer === typeTimer) scene.typeTimer = null;
@@ -79,7 +85,7 @@ export function showStory(scene, text, onComplete, btnLabel) {
   const reveal = (byTimer) => {
     if (revealed || finished) return;
     revealed = true;
-    try { barFg.setDisplaySize(BAR_W, 8); } catch (e) {}
+    if (barFg) { try { barFg.setDisplaySize(BAR_W, 8); } catch (e) {} }
     try { revealT = scene.time ? scene.time.now : 0; } catch (e) {}
     try {
       typeTimer.remove();

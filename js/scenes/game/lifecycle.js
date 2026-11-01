@@ -526,6 +526,7 @@ export function create(data) {
       this._storyT0 = this.time.now;
       this.showStory(this.campaignLevel.storyIntro, () => {
         this._introDone = true;
+        this.enemiesActiveAt = 0;
         if (this.tut) this.tut.started = this.time.now;
         // Сдвиг часов матча на чтение интро (та же механика, что выход из паузы).
         // Ключи — только живые loop-якоря (дедлайны идут от _modeT0loop).
