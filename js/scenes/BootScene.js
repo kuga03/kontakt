@@ -388,7 +388,9 @@ export default class BootScene extends Phaser.Scene {
         // Рисованный декор/укрытия/здания (всегда кодом, PNG не грузим).
         ['map_barrel', 'map_barrel1', 'map_barrel2', 'map_barrel3', 'map_barrel4', 'map_barrel5',
          'map_barrel6', 'map_barrel7', 'map_barrel8', 'map_barrel9',
-         'map_wall_iron2', 'map_wall_metal', 'map_wire', 'map_rabica', 'map_eji', 'map_crate',
+         'map_crate', 'map_crate1', 'map_crate2', 'map_crate3', 'map_crate4', 'map_crate5',
+         'map_crate6', 'map_crate7', 'map_crate8', 'map_crate9',
+         'map_wall_iron2', 'map_wall_metal', 'map_wire', 'map_rabica', 'map_eji',
          'map_jerry', 'map_ammo', 'map_tires', 'map_crate_stack'].forEach(k => {
           try { this.generateMapArt(k); } catch (e) {}
         });

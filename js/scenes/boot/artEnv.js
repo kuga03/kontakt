@@ -7,8 +7,9 @@ export function generateMapArt(key) {
       map_jerry: [40, 52], map_ammo: [66, 40], map_tires: [60, 44], map_crate_stack: [56, 62]
     };
     let sz = SIZES[key];
-    // Варианты бочек живут под map_barrel1..9 тем же размером.
+    // Варианты бочек и ящиков живут под map_barrel1..9 и map_crate1..9 тем же размером.
     if (!sz && /^map_barrel[1-9]$/.test(key)) sz = [64, 64];
+    if (!sz && /^map_crate[1-9]$/.test(key)) sz = [120, 100];
     if (!sz) return false;
     if (this.textures.exists(key)) return true;
     const W = sz[0], H = sz[1];
@@ -421,50 +422,74 @@ export function generateMapArt(key) {
       ctx.beginPath();
       ctx.ellipse(cx, H - 8, 30, 6, 0, 0, Math.PI * 2);
       ctx.fill();
-    } else if (key === 'map_crate') {
-      // Деревянный ящик: тот же вид, что рисованные укрытия в бою
-      // (createCover): доски, диагональ, гвозди. Ключ нужен палитре
-      // редактора и exists()-проверкам арен; пиксели PNG не используются.
-      ctx.fillStyle = '#8b6b43';
+    } else if (key === 'map_crate' || /^map_crate[1-9]$/.test(key)) {
+      // 10 уникальных вариантов ящиков (map_crate и map_crate1..9):
+      // разная расцветка досок, усиленные уголки, металлические пластины,
+      // маркировка, кресты, полосы и кастомный оттенок.
+      const cv = key === 'map_crate' ? 0 : parseInt(key.slice(-1), 10);
+      const cPal = [
+        ['#8b6b43', '#6e542f', '#4e3a22', '#3e2d1a', '#a8834f'],
+        ['#6b7a8a', '#546270', '#3e4a56', '#2e3842', '#8aa0b4'],
+        ['#7a5e44', '#5f4734', '#443324', '#34261a', '#9a7c5e'],
+        ['#5e7a5c', '#466044', '#324630', '#263824', '#7da47a'],
+        ['#8a7a44', '#6e5f34', '#504424', '#3e351a', '#a8985e'],
+        ['#7a4444', '#5f3434', '#462424', '#381c1c', '#9a5e5e'],
+        ['#505050', '#3c3c3c', '#282828', '#1c1c1c', '#787878'],
+        ['#8a5c44', '#6e4734', '#513426', '#3e261c', '#a87a5e'],
+        ['#447a72', '#345f59', '#244642', '#1c3431', '#5ea49a'],
+        ['#7c6844', '#615034', '#463924', '#362b1a', '#9e845e']
+      ][cv];
+
+      ctx.fillStyle = cPal[0];
       ctx.fillRect(0, 0, W, H);
-      // доски-горизонтали
       const planks = Math.max(2, Math.round(H / 26));
-      ctx.fillStyle = '#6e542f';
+      ctx.fillStyle = cPal[1];
       for (let i = 1; i < planks; i++) {
         ctx.fillRect(4, Math.round(H / planks * i) - 1, W - 8, 2);
       }
-      // верх-блик, низ-тень
-      ctx.fillStyle = '#a8834f';
+      ctx.fillStyle = cPal[4];
       ctx.fillRect(3, 1, W - 6, 3);
-      ctx.fillStyle = '#3e2d1a';
+      ctx.fillStyle = cPal[3];
       ctx.fillRect(3, H - 4, W - 6, 3);
-      // диагональ
-      ctx.strokeStyle = '#77592f';
-      ctx.lineWidth = Math.max(4, Math.min(W, H) * 0.09);
-      ctx.beginPath();
-      ctx.moveTo(7, H - 7);
-      ctx.lineTo(W - 7, 7);
-      ctx.stroke();
-      // рамка + внутренняя
-      ctx.strokeStyle = '#4e3a22';
+      
+      // Декоративные элементы в зависимости от варианта
+      if (cv % 2 === 1) {
+        // Металлические уголки
+        ctx.fillStyle = '#2c3036';
+        ctx.fillRect(0, 0, 14, 14);
+        ctx.fillRect(W - 14, 0, 14, 14);
+        ctx.fillRect(0, H - 14, 14, 14);
+        ctx.fillRect(W - 14, H - 14, 14, 14);
+      }
+      if (cv % 3 === 0) {
+        // Диагональные крепления
+        ctx.strokeStyle = cPal[2];
+        ctx.lineWidth = Math.max(4, Math.min(W, H) * 0.08);
+        ctx.beginPath();
+        ctx.moveTo(7, H - 7);
+        ctx.lineTo(W - 7, 7);
+        ctx.stroke();
+      }
+      if (cv === 4 || cv === 8) {
+        // Полосы опасности/маркировка
+        ctx.fillStyle = '#d8b23c';
+        ctx.fillRect(0, H / 2 - 6, W, 12);
+        ctx.fillStyle = '#202020';
+        for (let stripe = 10; stripe < W; stripe += 24) {
+          ctx.fillRect(stripe, H / 2 - 6, 8, 12);
+        }
+      }
+
+      ctx.strokeStyle = cPal[3];
       ctx.lineWidth = Math.max(3, W * 0.035);
       ctx.strokeRect(1, 1, W - 2, H - 2);
-      ctx.strokeStyle = 'rgba(78,58,34,0.8)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(6, 6, W - 12, H - 12);
-      // гвозди
-      ctx.fillStyle = '#2e2114';
+      ctx.fillStyle = '#1c150e';
       const nx = W / 2 - 9, ny = H / 2 - 9;
       [[-nx, -ny], [nx, -ny], [-nx, ny], [nx, ny]].forEach(([gx, gy]) => {
         ctx.beginPath();
         ctx.arc(W / 2 + gx, H / 2 + gy, 2.2, 0, Math.PI * 2);
         ctx.fill();
       });
-      // по потёртости
-      for (let i = 0; i < 8; i++) {
-        ctx.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.14)' : 'rgba(255,230,190,0.10)';
-        ctx.fillRect(Math.round(4 + rnd() * (W - 10)), Math.round(4 + rnd() * (H - 10)), 1 + Math.floor(rnd() * 3), 2);
-      }
     } else {
       return false;
     }

@@ -145,58 +145,48 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
   let texKey = null, alpha = 1;
   if (typeof texOrAlpha === 'string') texKey = texOrAlpha;
   else if (typeof texOrAlpha === 'number') alpha = texOrAlpha;
-  if (texKey && CRATE_KEYS.includes(texKey)) texKey = null;
-  if (texKey && !scene.textures.exists(texKey)) texKey = null;
-  // Бочки: 10 фасонов (map_barrelN, BootScene/artEnv). Выбор детерминирован
-  // координатами/размером — одна и та же бочка в каждом матче выглядит
-  // одинаково (важно для нетматчей), соседние — отличаются.
-  if (texKey === 'map_barrel' && scene.textures.exists('map_barrel9')) {
+
+  if (!texKey || CRATE_KEYS.includes(texKey)) {
+    let bseed = ((Math.round(x) * 73856093) ^ (Math.round(y) * 19349663) ^ (width * 83492791)) >>> 0;
+    bseed = ((bseed ^ (bseed >>> 13)) * 2654435761) >>> 0;
+    const ci = bseed % 10;
+    texKey = ci === 0 ? 'map_crate' : 'map_crate' + ci;
+  } else if (texKey === 'map_barrel') {
     let bseed = ((Math.round(x) * 73856093) ^ (Math.round(y) * 19349663) ^ (width * 83492791)) >>> 0;
     bseed = ((bseed ^ (bseed >>> 13)) * 2654435761) >>> 0;
     const bi = bseed % 10;
     texKey = bi === 0 ? 'map_barrel' : 'map_barrel' + bi;
   }
-  const o = opts || {};
-  const rows = Math.max(1, o.rows | 0 || 1);
+
   const body = scene.add.rectangle(x, y, width, height, 0xffffff, 0);
   scene.physics.add.existing(body, true);
   body.setVisible(false);
   if (alpha < 1) body.setAlpha(alpha);
   scene.covers.add(body);
 
-  const paintArt = (key) => {
-    const src = scene.textures.exists(key) ? scene.textures.get(key).getSourceImage() : null;
-    const sw = (src && src.width) || 64, sh = (src && src.height) || 64;
-    const bw = (typeof opts !== 'undefined' && opts.dw) || width, bh = (typeof opts !== 'undefined' && opts.dh) || height;
-    const s = Math.max(bw / sw, bh / sh);
-    const baseOy = ((typeof opts !== 'undefined' && opts.anchorBottom) ? (height - sh * s) / 2 : 0);
-    const rows = Math.max(1, (typeof opts !== 'undefined' && (opts.rows | 0)) || 1);
-    for (let i = 0; i < rows; i++) {
-      const oy = (rows === 1 ? 0 : (i / (rows - 1) - 0.5) * height * 0.5) + baseOy;
-      const img = scene.add.image(x, y + oy, key).setDepth(300);
-      img.setScale(s);
-      if (rows === 1) {
-        const cw = Math.min(sw, bw / s), ch = Math.min(sh, bh / s);
-        img.setCrop((sw - cw) / 2, (sh - ch) / 2, cw, ch);
+  // На всякий случай гарантируем, что текстура сгенерирована в текущей сцене
+  if (scene.sys && scene.sys.game && scene.sys.game.textures) {
+    try {
+      if (!scene.textures.exists(texKey) && typeof scene.generateMapArt === 'function') {
+        scene.generateMapArt(texKey);
       }
-      if (alpha < 1) img.setAlpha(alpha);
-    }
-  };
-
-  if (!texKey) {
-    texKey = 'map_barrel';
-    let bseed = ((Math.round(x) * 73856093) ^ (Math.round(y) * 19349663) ^ (width * 83492791)) >>> 0;
-    bseed = ((bseed ^ (bseed >>> 13)) * 2654435761) >>> 0;
-    const bi = bseed % 10;
-    texKey = bi === 0 ? 'map_barrel' : 'map_barrel' + bi;
+    } catch (e) {}
   }
 
-  paintArt(texKey);
-  scene.add.ellipse(x, y + height / 2 + 2, width * 0.9, 8, 0x000000, 0.35).setDepth(299);
-  const rim = scene.add.rectangle(x, y, width, height, 0x000000, 0).setStrokeStyle(2, 0x0a0806, 0.9).setDepth(301);
-  if (alpha < 1) rim.setAlpha(alpha);
+  // Всегда рисуем надежную текстурную подложку нужного оттенка под спрайтом
+  const bgCol = (texKey && texKey.indexOf('barrel') >= 0) ? 0x5a6068 : 0x8b6b43;
+  const img = scene.add.rectangle(x, y, width, height, bgCol).setStrokeStyle(2, 0x3e2d1a).setDepth(300);
+  if (alpha < 1) img.setAlpha(alpha);
 
-  // Инвалидация LOS-кэша: геометрия изменилась.
+  if (scene.textures.exists(texKey)) {
+    try { img.destroy(); } catch (e) {}
+    const spr = scene.add.image(x, y, texKey).setDepth(300);
+    spr.setDisplaySize(width, height);
+    if (alpha < 1) spr.setAlpha(alpha);
+  }
+
+  scene.add.ellipse(x, y + height / 2 + 2, width * 0.9, 8, 0x000000, 0.35).setDepth(299);
+
   try { if (scene) scene._losRects = []; } catch (e) {}
   return body;
 }
@@ -216,7 +206,10 @@ export function createBuilding(scene, x, y, width, height, texKey, alpha = 1) {
   body.setVisible(false);
   if (alpha < 1) body.setAlpha(alpha);
   scene.covers.add(body);
-  const img = scene.add.image(x, y, texKey).setDisplaySize(width, height).setDepth(2);
+  const img = scene.add.image(x, y, texKey).setDepth(300);
+  const src = scene.textures.exists(texKey) ? scene.textures.get(texKey).getSourceImage() : null;
+  const sw = (src && src.width) || width, sh = (src && src.height) || height;
+  img.setDisplaySize(width, height);
   if (alpha < 1) img.setAlpha(alpha);
   try { scene._losRects = []; } catch (e) {}
 }
