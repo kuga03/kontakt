@@ -312,9 +312,11 @@ export function updateParts(player) {
     // вниз и между торсом и бёдрами появляется дыра.
     const _torsoH = player.torso.displayHeight || 1;
     player.torso.setPosition(player.x + (side < 0 ? tc.mx : tc.ox) + bobX, legsY - (1 - tc.py) * _torsoH + (side < 0 ? tc.my : tc.oy));
-    // GEO: торс-фигурка симметрична — зеркалить нечего, масштаб стоит с создания.
+    // GEO: профильный торс отражаем по направлению взгляда (scale не трогаем).
     if (!(typeof GEO_HUMAN !== 'undefined' && GEO_HUMAN)) {
       flipX(player, player.torso, 'chr_torso', 'torso', side);
+    } else {
+      try { player.torso.setFlipX(side < 0); } catch (e) {}
     }
     // наклон торса = ПОЛОВИНА наклона головы (в 2 раза меньше). Угол считаем от
     // «шеи» на ещё вертикальном торсе; затем доворачиваем торс. Голова/руки цепляются
@@ -647,20 +649,33 @@ export function followHeadPuppet(player) {
       const fside = player.aimX >= player.x ? 1 : -1;
       const hr = player._geoHeadR || 8;
       const eY = headY - hr * 0.12 + _leanY * hr * 0.15;
+      if (player._neckVis) player._neckVis.setPosition(headX - fside * hr * 0.14, headY + hr * 0.72);
       if (player._eyeWF) player._eyeWF.setPosition(headX + fside * hr * 0.02, eY);
       if (player._faceOv) {
         player._faceOv.setPosition(headX, headY);
         try { player._faceOv.setScale((hr * 2) / 20); } catch (e2) {}
         try { player._faceOv.setFlipX(fside < 0); } catch (e) {}
       }
-      if (player._eyePF) player._eyePF.setPosition(headX + fside * (hr * 0.02 + hr * 0.12) + _leanX * hr * 0.12, eY);
+      if (player._eyePF) player._eyePF.setPosition(headX + fside * (hr * 0.02 + hr * 0.10) + _leanX * hr * 0.10, eY);
       if (player._eyeWB) player._eyeWB.setPosition(headX + fside * hr * 0.42, eY - hr * 0.04);
-      if (player._eyePB) player._eyePB.setPosition(headX + fside * (hr * 0.42 + hr * 0.1) + _leanX * hr * 0.12, eY - hr * 0.04);
-      if (player._browF) player._browF.setPosition(headX + fside * hr * 0.02, headY - hr * 0.52);
-      if (player._browB) player._browB.setPosition(headX + fside * hr * 0.42, headY - hr * 0.56);
+      if (player._eyePB) player._eyePB.setPosition(headX + fside * (hr * 0.42 + hr * 0.08) + _leanX * hr * 0.10, eY - hr * 0.04);
+      if (player._browF) {
+        player._browF.setPosition(headX + fside * hr * 0.02, headY - hr * 0.44);
+        try { player._browF.setRotation(fside * 0.10); } catch (e) {}
+      }
+      if (player._browB) {
+        player._browB.setPosition(headX + fside * hr * 0.42, headY - hr * 0.48);
+        try { player._browB.setRotation(fside * 0.08); } catch (e) {}
+      }
       if (player._ear) player._ear.setPosition(headX - fside * hr * 0.78, headY + hr * 0.05);
-      if (player._nose) player._nose.setPosition(headX + fside * hr * 0.9, headY + hr * 0.14);
-      if (player._mouth) player._mouth.setPosition(headX + fside * hr * 0.38, headY + hr * 0.5);
+      if (player._nose) {
+        player._nose.setPosition(headX + fside * hr * 0.86, headY + hr * 0.10);
+        try { player._nose.setRotation(-fside * 0.18); } catch (e) {}
+      }
+      if (player._mouth) {
+        player._mouth.setPosition(headX + fside * hr * 0.38, headY + hr * 0.48);
+        try { player._mouth.setRotation(fside * 0.04); } catch (e) {}
+      }
     }
     try {
       const neck = anchorFor(player, 'head');

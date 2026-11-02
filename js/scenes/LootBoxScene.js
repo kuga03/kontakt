@@ -190,7 +190,7 @@ export default class LootBoxScene extends Phaser.Scene {
 
     this.refreshCase();
     this.refreshCoins();
-    this._restorePendingSpin();
+    try { localStorage.removeItem('pendingLootSpin'); } catch (e) {}
   }
 
   _savePendingSpin(rewards) {
@@ -1036,8 +1036,9 @@ export default class LootBoxScene extends Phaser.Scene {
         const list = (this._multiRewards && this._multiRewards.length ? this._multiRewards : [reward]) || [];
         const hasGun = list.some(rw => rw && rw.type === 'weapon' && rw.weapon && rw.weapon.category === 'melee');
         const hasSkin = list.some(rw => rw && rw.type === 'skin' && rw.skin && (rw.skin.rarity | 0) >= 4);
-        if (hasGun) this._legendaryWeaponFx('gun');
-        else if (hasSkin) this._legendaryWeaponFx('skin');
+        const hasEpic = list.some(rw => rw && ((rw.type === 'skin' && rw.skin && (rw.skin.rarity | 0) === 3) || (rw.type === 'gear' && rw.gear && (rw.gear.rarity | 0) === 3)));
+        if (hasGun || hasSkin) this._legendaryWeaponFx('skin');
+        else if (hasEpic) this._epicItemFx();
       }
     } catch (e) {}
     this._pendingReels--;
@@ -1061,8 +1062,7 @@ export default class LootBoxScene extends Phaser.Scene {
     if (this._backBtn) this._backBtn.setStyle({ color: '#ffffff' });
   }
 
-  // Салют легендарному стволу: вспышка, кольца, баннер, тряска, фанфары.
-  // Всё поверх иконок (глубина 70+), всё умирает само по таймерам.
+  // Салют легендарному предмету: вспышка, кольца, баннер, тряска, фанфары.
   _legendaryWeaponFx(kind) {
     try {
       const D = 70;
@@ -1072,15 +1072,15 @@ export default class LootBoxScene extends Phaser.Scene {
         targets: flash, alpha: { from: 0.5, to: 0 }, duration: 800,
         onComplete: () => { try { flash.destroy(); } catch (e) {} }
       });
-      [0, 200, 400].forEach(delay => {
+      [0, 180, 360, 540].forEach(delay => {
         const ring = this.add.graphics().setDepth(D + 1);
-        const st = { r: 30, a: 0.9 };
+        const st = { r: 20, a: 0.95 };
         this.tweens.add({
-          targets: st, r: 340, a: 0, duration: 1100, delay,
+          targets: st, r: 380, a: 0, duration: 1200, delay,
           onUpdate: () => {
             try {
               ring.clear();
-              ring.lineStyle(7, 0xffd24a, Math.max(0, st.a));
+              ring.lineStyle(6, 0xffd24a, Math.max(0, st.a));
               ring.strokeCircle(gameW(this) / 2, 380, Math.max(1, st.r));
             } catch (e) {}
           },
@@ -1089,8 +1089,8 @@ export default class LootBoxScene extends Phaser.Scene {
       });
       const title = kind === 'skin' ? 'ЛЕГЕНДАРНЫЙ СКИН!' : 'ЛЕГЕНДАРНОЕ ОРУЖИЕ!';
       const t = this.add.text(gameW(this) / 2, 200, title, {
-        fontSize: '44px', color: '#ffd24a', fontStyle: 'bold',
-        stroke: '#000000', strokeThickness: 8
+        fontSize: '34px', color: '#ffd24a', fontStyle: 'bold',
+        stroke: '#000000', strokeThickness: 7
       }).setOrigin(0.5).setDepth(D + 2).setScale(0.3).setAlpha(0);
       this.tweens.add({
         targets: t, scale: 1.05, alpha: 1, duration: 450, ease: 'Back.easeOut',
@@ -1102,6 +1102,47 @@ export default class LootBoxScene extends Phaser.Scene {
         }
       });
       this._legendaryFanfare();
+    } catch (e) {}
+  }
+
+  // Эффект при выпадении эпического предмета
+  _epicItemFx() {
+    try {
+      const D = 70;
+      try { this.cameras.main.shake(300, 0.008); } catch (e) {}
+      const flash = this.add.rectangle(gameW(this) / 2, 360, gameW(this), 720, 0xb44dff, 0).setDepth(D);
+      this.tweens.add({
+        targets: flash, alpha: { from: 0.35, to: 0 }, duration: 600,
+        onComplete: () => { try { flash.destroy(); } catch (e) {} }
+      });
+      [0, 200].forEach(delay => {
+        const ring = this.add.graphics().setDepth(D + 1);
+        const st = { r: 20, a: 0.8 };
+        this.tweens.add({
+          targets: st, r: 280, a: 0, duration: 900, delay,
+          onUpdate: () => {
+            try {
+              ring.clear();
+              ring.lineStyle(5, 0xb44dff, Math.max(0, st.a));
+              ring.strokeCircle(gameW(this) / 2, 380, Math.max(1, st.r));
+            } catch (e) {}
+          },
+          onComplete: () => { try { ring.destroy(); } catch (e) {} }
+        });
+      });
+      const t = this.add.text(gameW(this) / 2, 200, 'ЭПИЧЕСКИЙ ПРЕДМЕТ!', {
+        fontSize: '32px', color: '#b44dff', fontStyle: 'bold',
+        stroke: '#000000', strokeThickness: 6
+      }).setOrigin(0.5).setDepth(D + 2).setScale(0.3).setAlpha(0);
+      this.tweens.add({
+        targets: t, scale: 1.05, alpha: 1, duration: 400, ease: 'Back.easeOut',
+        onComplete: () => {
+          this.tweens.add({
+            targets: t, alpha: 0, y: 170, duration: 800, delay: 1200,
+            onComplete: () => { try { t.destroy(); } catch (e) {} }
+          });
+        }
+      });
     } catch (e) {}
   }
 

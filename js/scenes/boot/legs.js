@@ -74,7 +74,11 @@ export function makeLegsRunFrames() {
       const fk = key + '_' + i;
       const t = this.textures.exists(fk) ? this.textures.get(fk) : null;
       const img = t ? t.getSourceImage() : null;
-      if (!img || !img.width || !img.height) return; // не все кадры есть — фолбэк
+      if (!img || !img.width || !img.height) {
+        // Кадры не загружены с диска (удалены PNG) — используем процедурный фолбэк
+        this.generateRunSheet(key, def);
+        return;
+      }
       imgs.push(img);
     }
     const fw = Math.max(...imgs.map(im => im.width));

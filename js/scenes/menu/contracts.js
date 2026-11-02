@@ -449,11 +449,11 @@ export function _closeContracts() {
     const cbCy = PY + PH / 2 - 34;
     const cb = this.add.graphics().setDepth(D);
     cb.fillStyle(0x3a2020, 1);
-    cb.fillRoundedRect(PX - cbw / 2, cbCy - cbh / 2, cbw, cbh, 10);
+    cb.fillRoundedRect(PX + 230 - cbw / 2, cbCy - cbh / 2, cbw, cbh, 10);
     cb.lineStyle(2, 0x8a4a4a, 1);
-    cb.strokeRoundedRect(PX - cbw / 2, cbCy - cbh / 2, cbw, cbh, 10);
+    cb.strokeRoundedRect(PX + 230 - cbw / 2, cbCy - cbh / 2, cbw, cbh, 10);
     cb.fillStyle(0xffffff, 0.08);
-    cb.fillRoundedRect(PX - cbw / 2 + 3, cbCy - cbh / 2 + 3, cbw - 6, 4, 2);
+    cb.fillRoundedRect(PX + 230 - cbw / 2 + 3, cbCy - cbh / 2 + 3, cbw - 6, 4, 2);
     put(cb);
     closeBtn.setInteractive({ useHandCursor: true });
     closeBtn.on('pointerdown', () => this._closeContracts());

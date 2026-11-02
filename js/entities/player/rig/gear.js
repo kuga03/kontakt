@@ -8,269 +8,476 @@ export function ensureGeoTextures(player, scene) {
       bakeGear(player, tm, (scene || player.scene).make);
     } catch (e2) {}
     if (!tm.exists('__geo_torso')) {
-      // ПРОФИЛЬ (вид сбоку): боец стоит боком по направлению взгляда —
-      // узкий силуэт груди, плечо вперёд, спина сзади, ворот сбоку.
-      // Было «передом» (широкая футболка с карманом) — теперь боковой
-      // срез: грудь выступает вперёд (+x — сторона взгляда по умолчанию),
-      // лопатка сзади, рукав один спереди. Зеркалит flipX движка.
+      // ПРОФИЛЬ (вид сбоку): анатомический силуэт бойца с объёмной светотенью,
+      // грудной пластиной, воротником, лямкой, складками ткани и тактическим ремнём.
+      // Палитра ахроматическая (под командный/пользовательский setTint), размер 24x36.
       const g = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W = 24, H = 36;
-      // спина (тёмная полоса сзади)
-      g.fillStyle(0xd9dfe8, 1);
-      g.fillRoundedRect(2, 4, 7, 27, 4);
-      // грудь/живот (светлый объём спереди)
+      // 1. Спина и поясница (глубокая тень сзади)
+      g.fillStyle(0xb8c2d2, 1);
+      g.fillRoundedRect(2, 4, 8, 25, 4);
+      g.fillStyle(0xc9d2e0, 1);
+      g.fillRoundedRect(4, 4, 7, 25, 3);
+      // 2. Основной объём груди и живота (с анатомическим сужением к талии)
+      g.fillStyle(0xe6ebf3, 1);
+      g.fillRoundedRect(7, 3, 13, 26, 6);
+      // Выступающая грудная клетка / пекторальная зона спереди
+      g.fillStyle(0xf5f7fb, 1);
+      g.fillRoundedRect(10, 5, 11, 15, 5);
       g.fillStyle(0xffffff, 1);
-      g.fillRoundedRect(8, 3, 12, 28, 7);
-      // грудная пластина — выступ вперёд
-      g.fillStyle(0xf2f4f8, 1);
-      g.fillRoundedRect(14, 8, 7, 14, 3);
-      // плечо спереди (короткий рукав в профиль — один, не два)
-      g.fillStyle(0xf2f4f8, 1);
-      g.fillRoundedRect(12, 5, 9, 10, 4);
-      g.fillStyle(0xd9dfe8, 1);
-      g.fillRect(12, 12, 9, 3);
-      // ворот сбоку (не круг спереди)
-      g.lineStyle(2, 0x8a93a3, 1);
-      g.lineBetween(9, 4, 15, 4);
-      g.fillStyle(0x8a93a3, 1);
-      g.fillCircle(12, 6, 1);
-      // боковой шов и подол с ремнём
-      g.lineStyle(1, 0x9aa3b5, 1);
+      g.fillRoundedRect(13, 6, 8, 11, 4);
+      // Тень под грудной мышцей и складки на животе
+      g.fillStyle(0xc5cfde, 1);
+      g.fillRect(10, 19, 10, 1.5);
+      g.fillRect(9, 23, 10, 1.2);
+      g.fillRect(9, 26, 10, 1.2);
+      // 3. Воротник-стойка с тенью горловины
+      g.fillStyle(0x525c6e, 1);
+      g.fillEllipse(12, 3.5, 8, 3);
+      g.fillStyle(0xd5deeb, 1);
+      g.fillRoundedRect(7, 2.5, 10, 3, 1.5);
+      g.lineStyle(1, 0x7a8599, 1);
+      g.strokeRoundedRect(7, 2.5, 10, 3, 1.5);
+      // 4. Диагональная разгрузочная лямка с ячейками MOLLE и нагрудный карман
+      g.lineStyle(2.2, 0x9aa4b8, 1);
+      g.lineBetween(10, 4, 20, 10);
+      g.lineStyle(1, 0x687387, 1);
+      g.lineBetween(12, 5, 19, 9.5);
+      g.fillStyle(0xdce3ee, 1);
+      g.fillRoundedRect(14.5, 11, 6.5, 7, 1.5);
+      g.fillStyle(0xffffff, 0.7);
+      g.fillRect(15, 11.5, 5.5, 2); // клапан кармана
+      g.lineStyle(1, 0x7c879b, 1);
+      g.strokeRoundedRect(14.5, 11, 6.5, 7, 1.5);
+      g.lineBetween(14.5, 13.5, 21, 13.5);
+      g.fillStyle(0x545f73, 1);
+      g.fillCircle(17.8, 12.8, 0.9); // кнопка клапана
+      // Боковой шов и центральная планка
+      g.lineStyle(1, 0x8d97ab, 1);
       g.lineBetween(8, 6, 8, 28);
-      // ДЕТАЛИ: нагрудный карман, застёжка, строчки, лямка
-      g.fillStyle(0xe4e9f0, 1);
-      g.fillRoundedRect(15, 12, 6, 6, 1.5); // карман на груди
-      g.lineStyle(1, 0x8a93a3, 1);
-      g.strokeRoundedRect(15, 12, 6, 6, 1.5); // шов кармана
-      g.lineStyle(1.5, 0xb8c0cc, 1);
-      g.lineBetween(11.5, 5, 11.5, 28); // застёжка посередине
-      g.lineStyle(0.8, 0x9aa3b5, 1);
-      g.lineBetween(4, 27, 20, 27); // строчка подола
-      g.lineBetween(12, 5, 19, 7); // лямка рюкзака через плечо
-      g.lineBetween(12, 8, 19, 10); // вторая строчка лямки
-      g.fillStyle(0x6a7686, 1);
-      g.fillCircle(16.5, 14.5, 0.8); // кнопка кармана
-      g.fillStyle(0xe6ebf2, 1);
-      g.fillRect(4, 28, 16, 3);
-      g.fillStyle(0x3a3f52, 1);
-      g.fillRect(4, 31, 16, 4);
-      g.fillStyle(0xc8cfdb, 1);
-      g.fillRect(10, 31, 4, 4);
+      g.lineStyle(1.2, 0xb0bac9, 1);
+      g.lineBetween(12, 5, 12, 28);
+      // 5. Плечо и дельтовидный рукав в профиль (с шевроном и манжетой)
+      g.fillStyle(0xd0d8e6, 1);
+      g.fillRoundedRect(10.5, 5, 9.5, 11, 4);
+      g.fillStyle(0xf2f5fa, 1);
+      g.fillRoundedRect(11.5, 5, 8, 9.5, 3.5);
+      g.fillStyle(0xffffff, 0.85);
+      g.fillEllipse(15.5, 8.5, 4.5, 5.5); // блик на дельте
+      // Наплечный щиток-шеврон
+      g.fillStyle(0xc2ccdc, 1);
+      g.fillRoundedRect(13.5, 6.5, 4, 4.5, 1);
+      g.lineStyle(0.8, 0x7a8599, 1);
+      g.strokeRoundedRect(13.5, 6.5, 4, 4.5, 1);
+      // Манжета рукава и складка сгиба
+      g.fillStyle(0xbec8d8, 1);
+      g.fillRect(11, 13, 9, 2.5);
+      g.lineStyle(1, 0x6e788c, 1);
+      g.strokeRoundedRect(10.5, 5, 9.5, 11, 4);
+      // 6. Напуск рубахи и детальный тактический ремень с пряжкой и подсумком
+      g.fillStyle(0xd8e0ec, 1);
+      g.fillRoundedRect(3.5, 28, 16.5, 3, 1);
+      g.lineStyle(0.8, 0x8d97ab, 1);
+      g.lineBetween(4, 28.5, 19.5, 28.5);
+      // Полотно ремня
+      g.fillStyle(0x252b3b, 1);
+      g.fillRoundedRect(3.5, 30.5, 16.5, 4.5, 1);
+      g.fillStyle(0x3e465c, 1);
+      g.fillRect(4, 31, 15.5, 1.2); // верхний кант ремня
+      // Боковой мини-подсумок на поясе сзади
+      g.fillStyle(0x32394d, 1);
+      g.fillRoundedRect(4.5, 29.8, 4.5, 5.2, 1);
+      g.lineStyle(0.8, 0x161a24, 1);
+      g.strokeRoundedRect(4.5, 29.8, 4.5, 5.2, 1);
+      // Шлёвки ремня
+      g.fillStyle(0x161a24, 1);
+      g.fillRect(9.5, 30.3, 1.4, 4.8);
+      g.fillRect(16.5, 30.3, 1.4, 4.8);
+      // Металлическая пряжка Cobra
+      g.fillStyle(0xc8d2e0, 1);
+      g.fillRoundedRect(11.5, 30.3, 4.5, 4.8, 1);
+      g.fillStyle(0x252b3b, 1);
+      g.fillRect(12.6, 31.3, 2.3, 2.8);
+      g.fillStyle(0xffffff, 0.9);
+      g.fillRect(11.8, 30.6, 3.8, 1);
+      // 7. Чёткий внешний контур корпуса
+      g.lineStyle(1.2, 0x1c2438, 0.95);
+      g.strokeRoundedRect(2, 3.5, 19, 26.5, 5);
       g.generateTexture('__geo_torso', W, H);
       g.destroy();
     }
-    // Кепки классов: купол + козырёк вправо + кнопка, плюс знак класса.
-    // deco: null | 'cross' (медик) | 'band' (снайпер) | 'rivets' (танк).
+    // Кепки классов: объёмный 6-клинный купол, околыш, изогнутый козырёк с бликом,
+    // люверсы вентиляции и детальная эмблема класса. Размер строго 30x14.
     const bakeCap = (key, dome, visor, button, deco) => {
       if (tm.exists(key)) return;
       const g2 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W2 = 30, H2 = 14;
+      // Основной купол
       g2.fillStyle(dome, 1);
-      g2.fillEllipse(W2 * 0.42, H2 * 0.42, W2 * 0.72, H2 * 0.8);
+      g2.fillEllipse(W2 * 0.42, H2 * 0.44, W2 * 0.74, H2 * 0.82);
+      // Затылочная тень и нижний околыш для 3D-объёма
+      g2.fillStyle(0x000000, 0.24);
+      g2.fillEllipse(W2 * 0.24, H2 * 0.48, W2 * 0.34, H2 * 0.68);
+      g2.fillRoundedRect(W2 * 0.08, H2 * 0.56, W2 * 0.66, H2 * 0.22, 2);
+      // Верхний блик купола
+      g2.fillStyle(0xffffff, 0.18);
+      g2.fillEllipse(W2 * 0.44, H2 * 0.24, W2 * 0.44, H2 * 0.32);
+      // Клинья (швы тульи) и вентиляционные люверсы
+      g2.lineStyle(0.9, 0x000000, 0.28);
+      g2.lineBetween(W2 * 0.42, H2 * 0.05, W2 * 0.42, H2 * 0.72);
+      g2.lineBetween(W2 * 0.42, H2 * 0.05, W2 * 0.22, H2 * 0.66);
+      g2.lineBetween(W2 * 0.42, H2 * 0.05, W2 * 0.60, H2 * 0.62);
+      g2.fillStyle(0x000000, 0.38);
+      g2.fillCircle(W2 * 0.31, H2 * 0.26, 0.8);
+      g2.fillCircle(W2 * 0.52, H2 * 0.26, 0.8);
       if (deco === 'band') {
+        // Снайпер: тактическая стропа с ячейками под маскировку
         g2.fillStyle(visor, 1);
-        g2.fillRect(W2 * 0.12, H2 * 0.3, W2 * 0.6, H2 * 0.24);
+        g2.fillRoundedRect(W2 * 0.09, H2 * 0.36, W2 * 0.65, H2 * 0.24, 1.5);
+        g2.fillStyle(button, 0.75);
+        [0.16, 0.28, 0.40, 0.52, 0.64].forEach(f => {
+          g2.fillRect(W2 * f, H2 * 0.38, 1.4, H2 * 0.20);
+        });
       }
       if (deco === 'rivets') {
-        g2.fillStyle(button, 1);
-        g2.fillCircle(W2 * 0.22, H2 * 0.3, 1.4);
-        g2.fillCircle(W2 * 0.42, H2 * 0.22, 1.4);
-        g2.fillCircle(W2 * 0.62, H2 * 0.3, 1.4);
+        // Танк: бронепластина на лбу и объёмные стальные заклёпки с бликами
+        g2.fillStyle(visor, 0.9);
+        g2.fillRoundedRect(W2 * 0.14, H2 * 0.24, W2 * 0.56, H2 * 0.32, 2);
+        [
+          [W2 * 0.22, H2 * 0.36],
+          [W2 * 0.42, H2 * 0.28],
+          [W2 * 0.60, H2 * 0.36]
+        ].forEach(([rx, ry]) => {
+          g2.fillStyle(0x1a1208, 0.7);
+          g2.fillCircle(rx + 0.4, ry + 0.5, 1.7);
+          g2.fillStyle(button, 1);
+          g2.fillCircle(rx, ry, 1.5);
+          g2.fillStyle(0xffffff, 0.8);
+          g2.fillCircle(rx - 0.4, ry - 0.4, 0.5);
+        });
       }
-      // козырёк вперёд (вправо — сторона взгляда по умолчанию)
+      if (deco === null) {
+        // Штурмовик: тактическая велкро-панель спереди
+        g2.fillStyle(visor, 0.85);
+        g2.fillRoundedRect(W2 * 0.50, H2 * 0.26, W2 * 0.20, H2 * 0.26, 1);
+        g2.lineStyle(0.8, button, 0.7);
+        g2.strokeRoundedRect(W2 * 0.50, H2 * 0.26, W2 * 0.20, H2 * 0.26, 1);
+      }
+      // Изогнутый козырёк вперёд (вправо): нижняя тень + верх + блик
+      g2.fillStyle(0x000000, 0.45);
+      g2.fillRoundedRect(W2 * 0.54, H2 * 0.56, W2 * 0.44, H2 * 0.24, 2);
       g2.fillStyle(visor, 1);
-      g2.fillRoundedRect(W2 * 0.55, H2 * 0.5, W2 * 0.42, H2 * 0.26, 2);
-      // ДЕТАЛИ: строчка по козырьку и шов тульи (кепка не плоская плашка)
-      g2.lineStyle(1, 0x000000, 0.25);
-      g2.lineBetween(W2 * 0.58, H2 * 0.52, W2 * 0.95, H2 * 0.52); // кант козырька
-      g2.lineBetween(W2 * 0.42, H2 * 0.06, W2 * 0.42, H2 * 0.62); // шов тульи
+      g2.fillRoundedRect(W2 * 0.54, H2 * 0.48, W2 * 0.44, H2 * 0.26, 2);
+      g2.lineStyle(1, 0xffffff, 0.22);
+      g2.lineBetween(W2 * 0.57, H2 * 0.52, W2 * 0.94, H2 * 0.54);
       if (deco === 'cross') {
-        // красный крест медика
-        g2.fillStyle(0xd23b3b, 1);
-        g2.fillRect(W2 * 0.36, H2 * 0.08, W2 * 0.12, H2 * 0.5);
-        g2.fillRect(W2 * 0.27, H2 * 0.18, W2 * 0.3, H2 * 0.3);
+        // Медик: нашивка-щиток и рельефный красный крест
+        g2.fillStyle(0xd9dfe8, 1);
+        g2.fillRoundedRect(W2 * 0.25, H2 * 0.06, W2 * 0.34, H2 * 0.54, 2);
+        g2.lineStyle(0.8, 0x8a95a8, 1);
+        g2.strokeRoundedRect(W2 * 0.25, H2 * 0.06, W2 * 0.34, H2 * 0.54, 2);
+        g2.fillStyle(0x8f1d1d, 1);
+        g2.fillRect(W2 * 0.37, H2 * 0.11, W2 * 0.12, H2 * 0.46);
+        g2.fillRect(W2 * 0.28, H2 * 0.21, W2 * 0.30, H2 * 0.26);
+        g2.fillStyle(0xe03434, 1);
+        g2.fillRect(W2 * 0.36, H2 * 0.09, W2 * 0.12, H2 * 0.46);
+        g2.fillRect(W2 * 0.27, H2 * 0.19, W2 * 0.30, H2 * 0.26);
       } else {
-        // кнопка на макушке
+        // Кнопка на макушке с тенью и бликом
+        g2.fillStyle(0x000000, 0.35);
+        g2.fillCircle(W2 * 0.42, H2 * 0.09, 2.1);
         g2.fillStyle(button, 1);
-        g2.fillCircle(W2 * 0.42, H2 * 0.08, 2);
+        g2.fillCircle(W2 * 0.42, H2 * 0.08, 1.8);
+        g2.fillStyle(0xffffff, 0.65);
+        g2.fillCircle(W2 * 0.40, H2 * 0.06, 0.6);
       }
+      // Чёткий внешний контур кепки
+      g2.lineStyle(1.2, 0x141a29, 0.9);
+      g2.strokeEllipse(W2 * 0.42, H2 * 0.44, W2 * 0.74, H2 * 0.82);
+      g2.strokeRoundedRect(W2 * 0.54, H2 * 0.48, W2 * 0.44, H2 * 0.26, 2);
       g2.generateTexture(key, W2, H2);
       g2.destroy();
     };
-    bakeCap('__geo_cap', 0x2e4a7a, 0x22375e, 0x9fb6dd, null); // базовый/штурмовик — синяя
-    bakeCap('__geo_cap_Assault', 0x2e4a7a, 0x22375e, 0x9fb6dd, null);
-    bakeCap('__geo_cap_Tank', 0x8a5a24, 0x6b4218, 0xd8b46a, 'rivets'); // танк — оранжевая, клёпки
-    bakeCap('__geo_cap_Medic', 0xf2f4f8, 0xd9dfe8, 0xffffff, 'cross'); // медик — белая с крестом
-    bakeCap('__geo_cap_Sniper', 0x5e3a6e, 0x472b54, 0xc79bdd, 'band'); // снайпер — тёмная с полосой
+    bakeCap('__geo_cap', 0x2e4a7a, 0x1e3154, 0x9fb6dd, null); // базовый/штурмовик — синяя
+    bakeCap('__geo_cap_Assault', 0x2e4a7a, 0x1e3154, 0x9fb6dd, null);
+    bakeCap('__geo_cap_Tank', 0x8a5a24, 0x5c3812, 0xd8b46a, 'rivets'); // танк — бронза, клёпки
+    bakeCap('__geo_cap_Medic', 0xf2f4f8, 0xc8d0de, 0xffffff, 'cross'); // медик — белая с крестом
+    bakeCap('__geo_cap_Sniper', 0x5e3a6e, 0x3d2449, 0xc79bdd, 'band'); // снайпер — тёмная со стропой
     if (!tm.exists('__geo_shoe')) {
-      // Кед в профиль, носок вправо: тёмный верх, светлая подошва,
-      // светлый носок, шнурки. Зеркалит код (scaleX) под сторону взгляда.
+      // Тактический ботинок/кед в профиль (22x13), носок вправо:
+      // мягкий валик лодыжки, усиленный задник, защитный мысок, шнуровка с люверсами
+      // и рельефная подошва с зубчатым протектором.
       const g3 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W3 = 22, H3 = 13;
-      // верх
+      // Мягкий манжет лодыжки сверху
+      g3.fillStyle(0x1e2638, 1);
+      g3.fillRoundedRect(1.5, 0.5, 10, 4, 2);
+      // Основной корпус обуви
       g3.fillStyle(0x3a4a6b, 1);
-      g3.fillRoundedRect(1, 1, 20, 9, 4);
-      // пятка темнее
-      g3.fillStyle(0x2c3a57, 1);
-      g3.fillRoundedRect(1, 2, 5, 8, 2);
-      // носок светлее
-      g3.fillStyle(0x6f87b8, 1);
-      g3.fillRoundedRect(14, 3, 7, 7, 3);
-      // шнурки
-      g3.lineStyle(1.5, 0xe8edf5, 1);
-      g3.lineBetween(10, 3, 12, 7);
-      g3.lineBetween(12.5, 3, 14.5, 7);
-      // ДЕТАЛИ: люверсы и блик на носке
-      g3.fillStyle(0x9aa7c7, 1);
-      g3.fillCircle(10, 2.5, 0.8);
-      g3.fillCircle(12.5, 2.5, 0.8);
-      g3.lineStyle(0.8, 0xd5dbe7, 1);
-      g3.lineBetween(15, 3.5, 19, 6); // блик на резине носка
-      // подошва
-      g3.fillStyle(0xd5dbe7, 1);
-      g3.fillRoundedRect(0, 9, 22, 4, 2);
-      g3.lineStyle(1, 0x8a93a3, 1);
-      g3.strokeRoundedRect(0, 9, 22, 4, 2);
-      // контур верха для читаемости
-      g3.lineStyle(1.5, 0x1c2438, 1);
-      g3.strokeRoundedRect(1, 1, 20, 9, 4);
+      g3.fillRoundedRect(1, 1.5, 20, 8.5, 3.5);
+      // Усиленный кожаный задник (пятка)
+      g3.fillStyle(0x25324c, 1);
+      g3.fillRoundedRect(1, 2.5, 6.5, 7, 2.5);
+      // Боковая поддерживающая накладка
+      g3.fillStyle(0x4e638f, 1);
+      g3.fillRoundedRect(6.5, 3, 6, 6, 1.5);
+      // Защитный прорезиненный носок с объёмным бликом
+      g3.fillStyle(0x6880b2, 1);
+      g3.fillRoundedRect(13.5, 3, 7.5, 6.5, 3);
+      g3.fillStyle(0x98aed9, 0.85);
+      g3.fillRoundedRect(15, 3.8, 4.5, 2.2, 1);
+      // Язычок и крестообразная шнуровка с металлическими люверсами
+      g3.lineStyle(1.3, 0xe8edf5, 1);
+      g3.lineBetween(9, 2.2, 11.5, 6.2);
+      g3.lineBetween(11, 2.5, 13.5, 6.5);
+      g3.lineBetween(13, 3, 15, 6.8);
+      g3.fillStyle(0xa8b5d1, 1);
+      g3.fillCircle(9, 2.2, 0.75);
+      g3.fillCircle(11, 2.5, 0.75);
+      g3.fillCircle(13, 3, 0.75);
+      // Двухслойная подошва с каблуком и зубчатым протектором
+      g3.fillStyle(0xd8dfe9, 1);
+      g3.fillRoundedRect(0, 8.8, 22, 3.4, 1.5);
+      g3.fillStyle(0x8d97ab, 1);
+      g3.fillRect(0.5, 10.6, 21, 1.8);
+      // Зубья протектора снизу
+      g3.fillStyle(0x1c2438, 1);
+      [2, 5, 8, 12, 15, 18].forEach(tx => g3.fillRect(tx, 11.4, 1.6, 1.6));
+      g3.lineStyle(0.9, 0x6c768a, 1);
+      g3.strokeRoundedRect(0, 8.8, 22, 3.4, 1.5);
+      // Чёткий внешний контур верха
+      g3.lineStyle(1.3, 0x161d2e, 1);
+      g3.strokeRoundedRect(1, 1.5, 20, 8.5, 3.5);
       g3.generateTexture('__geo_shoe', W3, H3);
       g3.destroy();
     }
     if (!tm.exists('__geo_arm_up')) {
-      // Рукав футболки (белый — красится тинтом тела).
-      // Текстура СТОИТ вертикально: верх = плечо, низ = локоть
-      // (поза доворачивает её вдоль кости).
+      // Плечо / рукав футболки (14x24, белый под командный тинт):
+      // объёмная дельтовидная мышца, тень трицепса, наплечная нашивка,
+      // складки ткани у локтя и прошитая манжета.
       const g4 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W4 = 14, H4 = 24;
-      g4.fillStyle(0xffffff, 1);
+      // Базовый объём рукава
+      g4.fillStyle(0xe6ebf3, 1);
       g4.fillRoundedRect(1, 0, 12, 22, 5);
-      g4.fillStyle(0xd9dfe8, 1);
-      g4.fillRoundedRect(1, 0, 4, 22, 3);
-      // манжета у локтя
-      g4.fillStyle(0xd9dfe8, 1);
-      g4.fillRect(1, 19, 12, 3);
-      g4.lineStyle(1.5, 0x1c2438, 1);
+      // Задняя тень (трицепс)
+      g4.fillStyle(0xbac4d4, 1);
+      g4.fillRoundedRect(1, 1, 4.5, 20, 3);
+      // Передний свет и блик на дельте/бицепсе
+      g4.fillStyle(0xffffff, 1);
+      g4.fillRoundedRect(5.5, 1, 6.5, 17, 3.5);
+      // Тактическая велкро-нашивка на плече
+      g4.fillStyle(0xcfd8e6, 1);
+      g4.fillRoundedRect(3.5, 4, 7, 6.5, 1.5);
+      g4.lineStyle(0.8, 0x7e889c, 1);
+      g4.strokeRoundedRect(3.5, 4, 7, 6.5, 1.5);
+      g4.lineBetween(4.5, 8.5, 9.5, 5.5); // шевронная полоса
+      // Складки ткани у локтевого сгиба
+      g4.lineStyle(0.9, 0x9aa4b8, 1);
+      g4.lineBetween(3, 15, 10, 16);
+      g4.lineBetween(4, 17, 11, 17.5);
+      // Плотная манжета рукава со строчкой
+      g4.fillStyle(0xc5cfde, 1);
+      g4.fillRect(1.5, 18.5, 11, 3.5);
+      g4.lineStyle(0.8, 0x7e889c, 1);
+      g4.lineBetween(1.5, 18.5, 12.5, 18.5);
+      g4.lineStyle(1.3, 0x1c2438, 1);
       g4.strokeRoundedRect(1, 0, 12, 22, 5);
       g4.generateTexture('__geo_arm_up', W4, H4);
       g4.destroy();
     }
     if (!tm.exists('__geo_arm_fore')) {
-      // Предплечье — голая рука (телесный, фиксированный).
-      // Верх = локоть, низ = запястье.
+      // Предплечье (10x22) — мускулистая рука с анатомическим рельефом,
+      // тенью локтевого сгиба и тактическими часами/манжетой у запястья.
       const g5 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W5 = 10, H5 = 22;
-      g5.fillStyle(0xeec9a0, 1);
+      // Основной тон кожи
+      g5.fillStyle(0xe6bc94, 1);
       g5.fillRoundedRect(1, 0, 8, 21, 4);
-      // мышца-блик
-      g5.fillStyle(0xf6dcbb, 1);
-      g5.fillRoundedRect(3, 2, 4, 14, 2);
-      // браслет у запястья
-      g5.fillStyle(0x8a93a3, 1);
-      g5.fillRect(1, 18, 8, 3);
-      g5.lineStyle(1, 0x1c2438, 1);
+      // Тень по локтевой стороне
+      g5.fillStyle(0xc49066, 1);
+      g5.fillRoundedRect(1, 1, 3, 16, 2);
+      // Рельеф мышцы-разгибателя (светлый блик)
+      g5.fillStyle(0xf7dbb8, 1);
+      g5.fillRoundedRect(3.8, 1.5, 4.2, 13, 2);
+      // Локтевая складка и сухожилие
+      g5.lineStyle(0.9, 0xad7850, 0.85);
+      g5.lineBetween(2.5, 2, 7.5, 2.5);
+      g5.lineBetween(4, 6, 4.5, 15);
+      // Тактический ремешок / часы и манжета перчатки у запястья
+      g5.fillStyle(0x252b3b, 1);
+      g5.fillRoundedRect(1, 16.5, 8, 4, 1);
+      g5.fillStyle(0x4a556b, 1);
+      g5.fillRoundedRect(2.5, 16.8, 5, 3.2, 1); // корпус часов
+      g5.fillStyle(0x9aa6b8, 1);
+      g5.fillRect(3.2, 17.3, 3.6, 2.2);
+      g5.fillStyle(0x39ff6a, 0.9);
+      g5.fillRect(4.2, 17.9, 1.6, 1); // подсветка циферблата
+      g5.lineStyle(1.1, 0x1c2438, 1);
       g5.strokeRoundedRect(1, 0, 8, 21, 4);
       g5.generateTexture('__geo_arm_fore', W5, H5);
       g5.destroy();
     }
     if (!tm.exists('__geo_hand')) {
-      // Кисть с пальцами (нос смотрит ВПРАВО — вдоль кости, без доворота).
+      // Кисть в тактической беспалой перчатке с кастетом-накладкой и пальцами,
+      // обхватывающими рукоятку/цевьё (12x8, смотрит вправо вдоль кости).
       const g6 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W6 = 12, H6 = 8;
-      g6.fillStyle(0xeec9a0, 1);
+      // Пальцы (телесный тон спереди)
+      g6.fillStyle(0xe6bc94, 1);
       g6.fillRoundedRect(0, 0, 12, 8, 3);
-      g6.fillStyle(0xf6dcbb, 1);
-      g6.fillRoundedRect(1, 1, 7, 6, 2);
-      // пальцы: две борозды + большой палец снизу
-      g6.lineStyle(1, 0xb98a5e, 1);
-      g6.lineBetween(8, 1, 8, 7);
-      g6.lineBetween(10, 1.5, 10, 6.5);
-      g6.fillStyle(0xeec9a0, 1);
-      g6.fillCircle(3, 8, 2);
-      g6.lineStyle(1, 0x1c2438, 1);
+      g6.fillStyle(0xf7dbb8, 1);
+      g6.fillRoundedRect(6, 1, 5.2, 6, 2);
+      // Беспалая тактическая перчатка на тыльной стороне ладони
+      g6.fillStyle(0x262d3d, 1);
+      g6.fillRoundedRect(0, 0, 7.2, 8, 2.5);
+      // Защитная карбоновая накладка на костяшках
+      g6.fillStyle(0x434f66, 1);
+      g6.fillRoundedRect(3.5, 1, 3.2, 6, 1.5);
+      g6.fillStyle(0x7c8ba6, 1);
+      g6.fillCircle(5.2, 2.3, 0.6);
+      g6.fillCircle(5.2, 4.0, 0.6);
+      g6.fillCircle(5.2, 5.7, 0.6);
+      // Фаланги пальцев и борозды хвата
+      g6.lineStyle(1, 0x9e6b43, 1);
+      g6.lineBetween(8.2, 0.8, 8.2, 7.2);
+      g6.lineBetween(10.0, 1.2, 10.0, 6.8);
+      g6.lineBetween(7.2, 3.8, 11.4, 3.8);
+      // Большой палец снизу в обхвате
+      g6.fillStyle(0xdba97e, 1);
+      g6.fillRoundedRect(2.2, 5.2, 5.2, 2.8, 1.4);
+      g6.lineStyle(0.9, 0x1c2438, 1);
+      g6.strokeRoundedRect(2.2, 5.2, 5.2, 2.8, 1.4);
+      g6.lineStyle(1.1, 0x1c2438, 1);
       g6.strokeRoundedRect(0, 0, 12, 8, 3);
       g6.generateTexture('__geo_hand', W6, H6);
       g6.destroy();
     }
     if (!tm.exists('__geo_face_ov')) {
-      // Детали лица поверх головы-круга: нейтральные полупрозрачные —
-      // работают на любом цвете кожи (голова красится скином). Раньше
-      // белый глаз-круг висел «на коже» и читался выпученным; глазница
-      // сажает его внутрь морды. Центр текстуры = центр головы, R —
-      // радиус головы в текстуре, +x — сторона взгляда (флипается).
+      // Реалистичная анатомическая светотень лица поверх головы-круга (20x20, R=10):
+      // объём черепа и челюсти, армейская стрижка с виском, глубокие глазницы с веками,
+      // рельеф скулы, переносицы, ноздри и подбородка + лёгкая небритость.
       const W = 20, H = 20, R = 10;
       const g10 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const fx = R, fy = R;
-      // глазницы (тень «впадины»)
-      g10.fillStyle(0x000000, 0.16);
-      g10.fillEllipse(fx + 0.02 * R, fy - 0.02 * R, 0.62 * R, 0.52 * R);
-      g10.fillEllipse(fx + 0.40 * R, fy - 0.06 * R, 0.48 * R, 0.48 * R);
-      // веки: тёмные полоски над глазами
-      g10.fillStyle(0x5a4232, 0.30);
-      g10.fillRoundedRect(fx + -0.10 * R, fy - 0.30 * R, 0.62 * R, 0.14 * R, 0.5);
-      g10.fillRoundedRect(fx + 0.36 * R, fy - 0.28 * R, 0.42 * R, 0.15 * R, 0.5);
-      // тень под носом и подбородком
-      g10.fillStyle(0x000000, 0.10);
-      g10.fillEllipse(fx + 0.84 * R, fy + 0.34 * R, 0.28 * R, 0.16 * R);
-      g10.fillEllipse(fx + 0.42 * R, fy + 0.76 * R, 0.9 * R, 0.26 * R);
-      // скула-блик спереди
-      g10.fillStyle(0xffffff, 0.10);
-      g10.fillEllipse(fx + 0.55 * R, fy + 0.05 * R, 0.30 * R, 0.24 * R);
-      // прядь волос на затылке (выглядывает из-под убора)
-      g10.fillStyle(0x3a2a1c, 0.55);
-      g10.fillEllipse(fx - 0.68 * R, fy - 0.26 * R, 0.55 * R, 0.85 * R);
+      // 1. Объёмная тень затылка и нижней челюсти (убирает «плоский кружок»)
+      g10.fillStyle(0x1a0e08, 0.16);
+      g10.fillEllipse(fx - 0.52 * R, fy + 0.12 * R, 0.55 * R, 1.45 * R);
+      g10.fillEllipse(fx + 0.15 * R, fy + 0.78 * R, 1.15 * R, 0.34 * R);
+      // 2. Короткая армейская стрижка на затылке и аккуратный висок перед ухом
+      g10.fillStyle(0x241810, 0.68);
+      g10.fillEllipse(fx - 0.68 * R, fy - 0.24 * R, 0.56 * R, 0.92 * R);
+      g10.fillRoundedRect(fx - 0.52 * R, fy - 0.32 * R, 0.22 * R, 0.48 * R, 1);
+      g10.fillStyle(0x241810, 0.38);
+      g10.fillEllipse(fx - 0.15 * R, fy - 0.78 * R, 0.95 * R, 0.28 * R);
+      // 3. Свет на лбу и скуле + суровая впадина щеки и лёгкая щетина на челюсти
+      g10.fillStyle(0xffffff, 0.16);
+      g10.fillEllipse(fx + 0.32 * R, fy - 0.42 * R, 0.55 * R, 0.28 * R);
+      g10.fillEllipse(fx + 0.48 * R, fy + 0.08 * R, 0.36 * R, 0.26 * R);
+      g10.fillStyle(0x2a160c, 0.14);
+      g10.fillEllipse(fx + 0.20 * R, fy + 0.36 * R, 0.38 * R, 0.28 * R);
+      g10.fillStyle(0x1c1612, 0.13);
+      g10.fillEllipse(fx + 0.34 * R, fy + 0.58 * R, 0.76 * R, 0.42 * R);
+      // 4. Глубокие глазницы, верхние веки и тень под глазами
+      g10.fillStyle(0x24120a, 0.24);
+      g10.fillEllipse(fx + 0.02 * R, fy - 0.10 * R, 0.50 * R, 0.36 * R);
+      g10.fillEllipse(fx + 0.42 * R, fy - 0.13 * R, 0.40 * R, 0.34 * R);
+      g10.fillStyle(0x2a1810, 0.48);
+      g10.fillRoundedRect(fx - 0.20 * R, fy - 0.26 * R, 0.46 * R, 0.10 * R, 0.4);
+      g10.fillRoundedRect(fx + 0.24 * R, fy - 0.28 * R, 0.36 * R, 0.10 * R, 0.4);
+      g10.lineStyle(0.7, 0x24120a, 0.22);
+      g10.lineBetween(fx - 0.14 * R, fy + 0.05 * R, fx + 0.18 * R, fy + 0.03 * R);
+      // 5. Тень под носом, ноздря, впадина под нижней губой и рельеф уха
+      g10.fillStyle(0xffffff, 0.15);
+      g10.fillRect(fx + 0.72 * R, fy - 0.08 * R, 0.12 * R, 0.22 * R);
+      g10.fillStyle(0x24120a, 0.26);
+      g10.fillEllipse(fx + 0.78 * R, fy + 0.28 * R, 0.26 * R, 0.14 * R);
+      g10.fillEllipse(fx + 0.38 * R, fy + 0.62 * R, 0.32 * R, 0.12 * R);
+      g10.fillEllipse(fx - 0.76 * R, fy + 0.05 * R, 0.16 * R, 0.24 * R);
       g10.generateTexture('__geo_face_ov', W, H);
       g10.destroy();
     }
     if (!tm.exists('__geo_thigh')) {
-      // Бедро-штанина (деним). Верх = таз (карман), низ = колено.
+      // Бедро-штанина (16x28, тактический деним): анатомический объём квадрицепса,
+      // косой врезной карман с заклёпкой, объёмный накладной карго-карман с клапаном,
+      // двойная джинсовая строчка и складки у колена.
       const g7 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W7 = 16, H7 = 28;
+      // Базовый цвет денима
       g7.fillStyle(0x2e4f8f, 1);
       g7.fillRoundedRect(1, 0, 14, 28, 5);
-      // боковая тень и блик
-      g7.fillStyle(0x274579, 1);
-      g7.fillRoundedRect(1, 0, 4, 28, 3);
-      g7.fillStyle(0x3f66a8, 0.6);
-      g7.fillRoundedRect(7, 2, 4, 22, 2);
-            // карман
-      g7.lineStyle(1.5, 0x1e3a6e, 1);
-      g7.strokeRect(8, 3, 6, 7);
-      // ДЕТАЛИ: двойная строчка по боковому шву и потёртость у кармана
-      g7.lineStyle(0.8, 0x8fa3c8, 1);
-      g7.lineBetween(6.5, 2, 6.5, 24); // левая строчка
-      g7.lineBetween(7.5, 2, 7.5, 24); // вторая
-      g7.lineStyle(0.8, 0x9db4d8, 1);
-      g7.lineBetween(9, 9, 13, 9); // светлая складка у кармана
-
-      // колено темнее
-      g7.fillStyle(0x274579, 1);
-      g7.fillRoundedRect(1, 22, 14, 6, 3);
-      g7.lineStyle(1, 0x1c2438, 1);
+      // Задняя глубокая тень бедра
+      g7.fillStyle(0x1d3461, 1);
+      g7.fillRoundedRect(1, 0, 4.5, 28, 3);
+      // Передний объём (квадрицепс) и светлый блик потертости
+      g7.fillStyle(0x436ab0, 0.85);
+      g7.fillRoundedRect(6, 1.5, 7.5, 20, 3);
+      g7.fillStyle(0x6389c9, 0.45);
+      g7.fillRoundedRect(8.5, 3, 3.5, 15, 1.5);
+      // Верхний косой врезной карман с медной заклёпкой
+      g7.lineStyle(1, 0x16284c, 1);
+      g7.lineBetween(7, 1.5, 13.5, 5);
+      g7.fillStyle(0xd8a24a, 1);
+      g7.fillCircle(7.5, 2, 0.7);
+      // Боковой объёмный карго-карман с клапаном и кнопкой
+      g7.fillStyle(0x26437a, 1);
+      g7.fillRoundedRect(7.5, 7, 6.5, 9, 1.5);
+      g7.fillStyle(0x385b9e, 1);
+      g7.fillRoundedRect(7.5, 7, 6.5, 3, 1); // клапан
+      g7.lineStyle(1, 0x16284c, 1);
+      g7.strokeRoundedRect(7.5, 7, 6.5, 9, 1.5);
+      g7.lineBetween(7.5, 10, 14, 10);
+      g7.fillStyle(0xc8963e, 1);
+      g7.fillCircle(10.8, 8.6, 0.75);
+      // Двойная рыжая джинсовая отстрочка по боковому шву
+      g7.lineStyle(0.8, 0xc8963e, 0.85);
+      g7.lineBetween(5.5, 1.5, 5.5, 25);
+      g7.lineBetween(6.5, 1.5, 6.5, 25);
+      // Складки натяжения ткани и коленная чашечка снизу
+      g7.fillStyle(0x213b6e, 1);
+      g7.fillRoundedRect(1, 21.5, 14, 6.5, 3);
+      g7.lineStyle(0.9, 0x16284c, 0.9);
+      g7.lineBetween(3, 20, 12, 21);
+      g7.lineBetween(4, 22.5, 13, 22.5);
+      g7.lineStyle(1.2, 0x141c2e, 1);
       g7.strokeRoundedRect(1, 0, 14, 28, 5);
       g7.generateTexture('__geo_thigh', W7, H7);
       g7.destroy();
     }
     if (!tm.exists('__geo_shin')) {
-      // Икра-штанина. Верх = колено, низ = манжета над кедом.
+      // Икра-штанина (14x26): анатомический изгиб икроножной мышцы,
+      // усиленный наколенник со складками сверху, двойной шов и манжета с отворотом.
       const g8 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W8 = 14, H8 = 26;
+      // База голени
       g8.fillStyle(0x2b4c86, 1);
       g8.fillRoundedRect(1, 0, 12, 26, 5);
-      g8.fillStyle(0x3f66a8, 0.5);
-      g8.fillRoundedRect(5, 2, 4, 16, 2);
-      // манжета (подворот) светлее
-      g8.fillStyle(0x4f70a8, 1);
-      g8.fillRoundedRect(1, 20, 12, 6, 2);
-      g8.lineStyle(1, 0xd5dbe7, 1);
-      g8.lineBetween(2, 22.5, 12, 22.5);
-      // ДЕТАЛИ: двойная строчка по шву и пятна потёртости на колене
-      g8.lineStyle(0.8, 0x8fa3c8, 1);
-      g8.lineBetween(2.5, 1, 2.5, 20); // боковой шов
-      g8.fillStyle(0x1c2438, 0.35);
-      g8.fillCircle(6, 4, 0.9); // потёртость на колене
-      g8.fillCircle(9, 5.5, 0.7); // вторая
-      g8.lineStyle(1, 0x1c2438, 1);
+      // Тень икроножной мышцы сзади
+      g8.fillStyle(0x1b325c, 1);
+      g8.fillRoundedRect(1, 0, 4, 24, 3);
+      // Передний свет по голени
+      g8.fillStyle(0x436ab0, 0.75);
+      g8.fillRoundedRect(5.5, 2, 6, 17, 2.5);
+      // Усиленная коленная секция сверху с горизонтальными рёбрами сгиба
+      g8.fillStyle(0x223d70, 1);
+      g8.fillRoundedRect(2.5, 1, 9.5, 7.5, 2.5);
+      g8.fillStyle(0x385b9e, 1);
+      g8.fillRoundedRect(3.5, 2, 7.5, 5.5, 2);
+      g8.lineStyle(0.8, 0x16284c, 0.9);
+      g8.lineBetween(3.5, 4.5, 11, 4.5);
+      // Двойная джинсовая строчка по шву
+      g8.lineStyle(0.8, 0xc8963e, 0.8);
+      g8.lineBetween(4.2, 1.5, 4.2, 20);
+      // Складки напуска и подвёрнутая манжета над ботинком
+      g8.lineStyle(0.9, 0x16284c, 0.85);
+      g8.lineBetween(2.5, 18.5, 11.5, 19.2);
+      g8.fillStyle(0x4b6fb0, 1);
+      g8.fillRoundedRect(1, 20, 12, 5.5, 2);
+      g8.fillStyle(0x688bc9, 0.7);
+      g8.fillRect(2, 20.5, 10, 1.8);
+      g8.lineStyle(1, 0xd5dbe7, 0.85);
+      g8.lineBetween(2, 22.8, 12, 22.8);
+      g8.lineStyle(1.2, 0x141c2e, 1);
       g8.strokeRoundedRect(1, 0, 12, 26, 5);
       g8.generateTexture('__geo_shin', W8, H8);
       g8.destroy();
@@ -296,28 +503,91 @@ export function bakeGear(player, tm, make) {
   // Флаг — только после успеха: при сбое следующий персонаж допечёт.
   // (Повтор безопасен: каждый ключ печётся remove+create заново.)
   if (GEO_GEAR_BAKED) return;
-  const G = (key, w, h, draw) => bakeOneGear(player, tm, make, key, w, h, draw);
+  const G = (key, w, h, draw) => bakeOneGear(player, tm, make, key, w, h, (g, gw, gh) => {
+    draw(g, gw, gh);
+    // Автоматический реалистичный объём, складки, фурнитура и контур для всех
+    // торсов (24x36) и обуви (22x13) гардероба без изменения их размеров.
+    if (gw === 24 && gh === 36) {
+      // Глубокая тень спины и объём грудной мышцы
+      g.fillStyle(0x000000, 0.18);
+      g.fillRoundedRect(2, 4, 4.5, 25, 3);
+      g.fillStyle(0xffffff, 0.14);
+      g.fillRoundedRect(13.5, 6.5, 6.5, 10, 3);
+      g.fillEllipse(15.5, 8.5, 4.5, 5);
+      // Тень горловины воротника и складки на талии
+      g.fillStyle(0x000000, 0.25);
+      g.fillEllipse(12, 3.6, 7.5, 2.4);
+      g.lineStyle(0.9, 0x000000, 0.20);
+      g.lineBetween(9, 22.5, 19, 23);
+      g.lineBetween(9, 25.5, 19, 26);
+      // Детали ремня: шлёвки, блик пряжки и контур
+      g.fillStyle(0x000000, 0.42);
+      g.fillRect(8.2, 31, 1.3, 4);
+      g.fillRect(15.2, 31, 1.3, 4);
+      g.fillStyle(0xffffff, 0.35);
+      g.fillRect(10.3, 31.2, 3.4, 0.9);
+      g.lineStyle(1, 0x101520, 0.78);
+      g.strokeRoundedRect(12, 5, 9, 10, 4);
+      g.lineStyle(1.2, 0x101520, 0.88);
+      g.strokeRoundedRect(2, 3.5, 19, 26.5, 5);
+    } else if (gw === 22 && gh === 13) {
+      // Мягкий валик лодыжки, тень пятки, блик мыска, люверсы и зубчатый протектор
+      g.fillStyle(0x000000, 0.24);
+      g.fillRoundedRect(1.5, 0.6, 9, 2.8, 1.4);
+      g.fillRoundedRect(1, 2.5, 5, 6.5, 2);
+      g.fillStyle(0xffffff, 0.20);
+      g.fillRoundedRect(15, 3.8, 4.5, 2, 1);
+      g.fillStyle(0xd8e0ee, 0.85);
+      g.fillCircle(10, 2.5, 0.65);
+      g.fillCircle(12.5, 2.7, 0.65);
+      g.fillStyle(0x0a0d14, 0.75);
+      [2, 5, 8, 12, 15, 18].forEach(tx => g.fillRect(tx, 11.4, 1.6, 1.6));
+    }
+  });
   // --- форменные уборы (только сетовые; вне-сетевые удалены из игры)
   G('военный_шлем', 32, 16, (g) => {
+    // Кевларовый тактический шлем PASGT в профиль: наушный свес, кант, ремешок
+    g.fillStyle(0x4b532a, 1);
+    g.fillEllipse(16, 7.2, 27, 13.5);
     g.fillStyle(0x5a6234, 1);
-    g.fillEllipse(16, 7, 26, 13); // купол
-    g.fillRoundedRect(1, 9, 30, 4, 2); // поля
-    g.fillStyle(0x707a40, 1);
-    g.fillEllipse(13, 5, 12, 7);
-    g.lineStyle(1.5, 0x2e3319, 1);
-    g.strokeEllipse(16, 7, 26, 13);
+    g.fillEllipse(16.5, 6.8, 25, 12);
+    g.fillStyle(0x3d4422, 1);
+    g.fillRoundedRect(1, 9, 30, 4, 2); // поля и свес над ухом
+    g.fillRoundedRect(6, 10, 10, 4.5, 2); // защита виска/уха
+    g.fillStyle(0x788246, 0.85);
+    g.fillEllipse(13, 4.5, 12, 5.5); // блик купола
+    // Крепление ПНВ спереди и резиновая лента
+    g.fillStyle(0x282c18, 1);
+    g.fillRect(2, 7.5, 28, 1.6);
+    g.fillRoundedRect(26, 5.5, 4, 4, 1);
+    // Болты подвесной системы
+    g.fillStyle(0x9aa382, 1);
+    g.fillCircle(9, 11, 0.8);
+    g.fillCircle(19, 10.5, 0.8);
+    g.lineStyle(1.4, 0x222612, 1);
+    g.strokeEllipse(16, 7.2, 27, 13.5);
   });
   G('камуфляжный_шлем', 32, 16, (g) => {
+    g.fillStyle(0x4b532a, 1);
+    g.fillEllipse(16, 7.2, 27, 13.5);
     g.fillStyle(0x5a6234, 1);
-    g.fillEllipse(16, 7, 26, 13);
+    g.fillEllipse(16.5, 6.8, 25, 12);
     g.fillRoundedRect(1, 9, 30, 4, 2);
-    g.fillStyle(0x6b4a2a, 1); // пятна
-    g.fillCircle(10, 6, 3);
-    g.fillCircle(22, 8, 2.5);
-    g.fillStyle(0x8a7a4d, 1);
-    g.fillCircle(16, 4, 2.5);
-    g.lineStyle(1.5, 0x2e3319, 1);
-    g.strokeEllipse(16, 7, 26, 13);
+    g.fillRoundedRect(6, 10, 10, 4.5, 2);
+    // Органические пятна камуфляжа на чехле шлема
+    g.fillStyle(0x6b4a2a, 1);
+    g.fillEllipse(9.5, 6, 7, 5);
+    g.fillEllipse(22, 8, 6, 4.5);
+    g.fillStyle(0x8f7e4f, 1);
+    g.fillEllipse(16, 4, 6.5, 4);
+    g.fillEllipse(14, 10, 5.5, 3);
+    g.fillStyle(0xffffff, 0.14);
+    g.fillEllipse(13, 4.2, 11, 4.5);
+    // Стропа для очков/маскировки
+    g.fillStyle(0x2e3319, 0.85);
+    g.fillRect(2, 7.8, 28, 1.5);
+    g.lineStyle(1.4, 0x222612, 1);
+    g.strokeEllipse(16, 7.2, 27, 13.5);
   });
   // --- обувь 22x13, как кед (замена дроп-ин)
   G('полуберцы', 22, 13, (g) => {
@@ -435,8 +705,32 @@ export function bakeGear(player, tm, make) {
   });
   // --- штаны: бедро 16x28 + икра 14x26, как geo (замена дроп-ин)
   const _pantsPair = (id, thighFn, shinFn, icon) => {
-    G(id + '_up', 16, 28, thighFn);
-    G(id + '_low', 14, 26, shinFn);
+    G(id + '_up', 16, 28, (g, gw, gh) => {
+      thighFn(g, gw, gh);
+      // Реалистичный объём бедра: тень сзади, свет квадрицепса, косой карман,
+      // боковой шов с двойной строчкой и складки сгиба у колена.
+      g.fillStyle(0x000000, 0.20);
+      g.fillRoundedRect(1, 1, 4, 26, 2.5);
+      g.fillStyle(0xffffff, 0.12);
+      g.fillRoundedRect(7, 2.5, 4.5, 16, 2);
+      g.lineStyle(0.9, 0x000000, 0.32);
+      g.lineBetween(7, 1.5, 13.5, 5);
+      g.lineBetween(3, 20.5, 12.5, 21.2);
+      g.lineStyle(0.8, 0x000000, 0.22);
+      g.lineBetween(5.5, 1.5, 5.5, 24);
+    });
+    G(id + '_low', 14, 26, (g, gw, gh) => {
+      shinFn(g, gw, gh);
+      // Реалистичный объём голени: тень икры, накладка колена, шов и складка у ботинка.
+      g.fillStyle(0x000000, 0.20);
+      g.fillRoundedRect(1, 1, 3.5, 24, 2.5);
+      g.fillStyle(0xffffff, 0.12);
+      g.fillRoundedRect(5.5, 2.5, 4, 15, 2);
+      g.lineStyle(0.8, 0x000000, 0.28);
+      g.lineBetween(3.5, 5, 10.5, 5);
+      g.lineBetween(2.5, 19, 11.5, 19.5);
+      g.lineBetween(4.2, 1.5, 4.2, 20);
+    });
     // Иконка для инвентаря/кейсов/магазина 30x30: пояс + две штанины,
     // чтобы читалось как штаны, а не один овал бедра.
     const ic = icon || { base: 0x8a8f9a, dark: 0x5a5f6a, line: 0x22242c };
@@ -445,10 +739,18 @@ export function bakeGear(player, tm, make) {
       g.fillRoundedRect(5, 2, 20, 7, 3); // пояс
       g.fillRoundedRect(6, 9, 8, 19, 3); // левая штанина
       g.fillRoundedRect(16, 9, 8, 19, 3); // правая штанина
+      g.fillStyle(0x000000, 0.18);
+      g.fillRoundedRect(6, 9, 3, 19, 2);
+      g.fillRoundedRect(16, 9, 3, 19, 2);
+      g.fillStyle(0xffffff, 0.14);
+      g.fillRoundedRect(9.5, 10, 3, 15, 1.5);
+      g.fillRoundedRect(19.5, 10, 3, 15, 1.5);
       g.fillStyle(ic.dark, 1);
-      g.fillRect(5, 6, 20, 2); // ремень
+      g.fillRect(5, 5.5, 20, 2.5); // ремень
       g.fillRect(8, 11, 2, 15);
       g.fillRect(20, 11, 2, 15);
+      g.fillStyle(0xd0d8e4, 1);
+      g.fillRect(13.5, 5.3, 3, 2.8); // пряжка на поясе
       g.lineStyle(1.5, ic.line, 1);
       g.strokeRoundedRect(5, 2, 20, 7, 3);
       g.strokeRoundedRect(6, 9, 8, 19, 3);

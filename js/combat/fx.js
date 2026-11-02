@@ -173,50 +173,76 @@ function groundBelow(scene, x, y, maxFall) {
   return best;
 }
 
-// Пятно крови на земле: остаётся как след боя, медленно сохнет.
-// ТОЛЬКО на горизонтальной поверхности под точкой (земля/ярус) —
-// в воздухе и на стенах луж нет. Кап 24 — старое убираем.
+// Пятно крови на земле: остаётся как след боя, медленно сохнет и плавно исчезает через 20 секунд.
 export function spawnStain(scene, x, y, s) {
   try {
     if (!scene || !scene.add) return;
-    // Сажаем на землю под точкой; не нашли — пятна нет.
     const gy = groundBelow(scene, x, y, 600);
     if (gy == null) return;
     x = Math.round(x); y = Math.round(gy + 3);
     scene._bloodStains = scene._bloodStains || [];
-    // Одно пятно = 5 отдельных Ellipse/Circle раньше. На кап 24 это 96
-    // мелких объектов и столько же draw call'ов — за 10 минут боя именно
-    // они превращали 75 FPS в 40. Теперь все пятна рисуются в один
-    // Graphics (1 draw call), данные храним отдельно.
-    const entry = {
-      x, y, s: s || 1,
-      w: (16 + Math.random() * 12) * (s || 1),
-      h: 7 + Math.random() * 4,
-      dots: []
-    };
-    for (let i = 0; i < 1; i++) {
-      entry.dots.push({
-        x: x + (Math.random() - 0.5) * 34,
-        y: y + (Math.random() - 0.5) * 10,
-        r: 1 + Math.random() * 2
+    
+    // Генерируем уникальную форму каждого пятна (случайный размер, брызги, асимметрия)
+    const seed = Math.random();
+    const dotsCount = 2 + Math.floor(Math.random() * 4);
+    const dots = [];
+    for (let i = 0; i < dotsCount; i++) {
+      dots.push({
+        offsetX: (Math.random() - 0.5) * 44,
+        offsetY: (Math.random() - 0.5) * 12,
+        r: 1.2 + Math.random() * 2.8
       });
     }
-    // 8 пятен × 2 фигуры = 16 — визуально достаточно, а не 120 фигур,
-    // которые за 10 минут боя стоили несколько миллисекунд кадра.
-    while (scene._bloodStains.length >= 8) scene._bloodStains.shift();
-    scene._bloodStains.push(entry);
-    const g = scene._bloodGfx || (scene._bloodGfx = scene.add.graphics().setDepth(1));
-    g.clear();
-    for (let i = 0; i < scene._bloodStains.length; i++) {
-      const st = scene._bloodStains[i];
-      g.fillStyle(0x7a1414, 0.55);
-      g.fillEllipse(st.x, st.y, st.w, st.h);
-      g.fillStyle(0x7a1414, 0.5);
-      for (let d = 0; d < st.dots.length; d++) {
-        const dot = st.dots[d];
-        g.fillCircle(dot.x, dot.y, dot.r);
+
+    const stainObj = {
+      x, y,
+      w: (18 + Math.random() * 18) * (s || 1),
+      h: 6 + Math.random() * 7,
+      rot: (Math.random() - 0.5) * 0.5,
+      alpha: 0.65,
+      dots,
+      createdAt: scene.time ? scene.time.now : Date.now()
+    };
+
+    scene._bloodStains.push(stainObj);
+    if (scene._bloodStains.length > 25) scene._bloodStains.shift();
+
+    // Создаем выделенный графический объект для этого пятна со своей твинью затухания
+    const g = scene.add.graphics().setDepth(1);
+    stainObj.gfx = g;
+
+    const drawStain = () => {
+      try {
+        g.clear();
+        g.fillStyle(0x7a1414, stainObj.alpha);
+        g.fillEllipse(stainObj.x, stainObj.y, stainObj.w, stainObj.h);
+        g.fillStyle(0x610f0f, stainObj.alpha);
+        for (let d = 0; d < stainObj.dots.length; d++) {
+          const dot = stainObj.dots[d];
+          g.fillCircle(stainObj.x + dot.offsetX, stainObj.y + dot.offsetY, dot.r);
+        }
+      } catch (e) {}
+    };
+
+    drawStain();
+
+    // 20 секунд плавного затухания и удаления
+    scene.tweens.add({
+      targets: stainObj,
+      alpha: 0,
+      duration: 5000,
+      delay: 15000, // первые 15 секунд держится, последние 5 секунд плавно исчезает
+      onUpdate: () => drawStain(),
+      onComplete: () => {
+        try {
+          g.destroy();
+          if (scene._bloodStains) {
+            const idx = scene._bloodStains.indexOf(stainObj);
+            if (idx >= 0) scene._bloodStains.splice(idx, 1);
+          }
+        } catch (e) {}
       }
-    }
+    });
   } catch (e) {}
 }
 

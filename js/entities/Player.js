@@ -6,10 +6,10 @@ import * as Damage from './player/damage.js?v=318';
 import * as Shoot from './player/shoot.js?v=175';
 import * as Move from './player/move.js?v=169';
 import * as Abilities from './player/abilities.js?v=169';
-import * as Hud from './player/hud.js?v=382';
+import * as Hud from './player/hud.js?v=394';
 import * as Guns from './player/guns.js?v=175';
 import * as Aim from './player/aim.js?v=169';
-import * as Rig from './player/rig.js?v=381';
+import * as Rig from './player/rig.js?v=394';
 
 // ГЕОМЕТРИЧЕСКИЙ персонаж: вместо собранных PNG-скелетов тело рисуется
 // кодом (круг-голова с глазами, торс-эллипс, руки/ноги-палки, кисти и
@@ -227,8 +227,18 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const _geoHeadR = (typeof GEO_HUMAN !== 'undefined' && GEO_HUMAN)
       ? Math.max(6, (this._partCfg('head').s || 16) * 0.5)
       : 11;
+    const _shadeSkin = (k) => {
+      try {
+        const h = (Number(charColors.head) >>> 0) || 0xe6b98c;
+        const r = Math.min(255, Math.round(((h >> 16) & 255) * k));
+        const g = Math.min(255, Math.round(((h >> 8) & 255) * k));
+        const b = Math.min(255, Math.round((h & 255) * k));
+        return (r << 16) | (g << 8) | b;
+      } catch (e) { return 0x8a6042; }
+    };
+    const _skinStroke = _shadeSkin(0.52);
     this.head = scene.add.circle(this.x, this.y - 44, _geoHeadR, charColors.head, 1);
-    this.head.setStrokeStyle(2, 0x334455).setDepth(5);
+    this.head.setStrokeStyle(1.5, _skinStroke).setDepth(5);
     scene.physics.add.existing(this.head);
     this.head.body.setAllowGravity(false);
     this.head.body.setImmovable(true);
@@ -247,21 +257,37 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this._geoFace = [];
     if (typeof GEO_HUMAN !== 'undefined' && GEO_HUMAN) {
       this._ensureGeoTextures(scene);
-      const _mkEye = (r, color) => {
-        const e = scene.add.circle(this.x, this.y - 44, r, color, 1);
-        e.setDepth(5.2);
+      const _earC = _shadeSkin(0.8);
+      // Анатомическая шея (соединяет голову с воротником торса без зазора).
+      this._neckVis = scene.add.ellipse(
+        this.x, this.y - 38,
+        Math.max(5.5, _geoHeadR * 0.72),
+        Math.max(4.5, _geoHeadR * 0.58),
+        _earC, 1
+      );
+      this._neckVis.setStrokeStyle(1, _skinStroke, 0.85).setDepth(4.85);
+      this._geoFace.push(this._neckVis);
+      this._allParts.push(this._neckVis);
+      // Миндалевидный разрез глаз (вместо выпученных кружков) с верхним веком и радужкой.
+      const _mkSclera = (w, h) => {
+        const e = scene.add.ellipse(this.x, this.y - 44, w, h, 0xf2f4f7, 1);
+        e.setStrokeStyle(0.7, 0x261810, 0.8).setDepth(5.2);
         this._geoFace.push(e);
         this._allParts.push(e);
         return e;
       };
-      // Глаза: белки чуть меньше (не «выпученные»), зрачки крупнее;
-      // посадку в глазницы и остальную мимику даёт overlay __geo_face_ov
-      // (bake в rig/gear.js, позиционируется в hud/update).
-      this._eyeWB = _mkEye(Math.max(1.8, _geoHeadR * 0.22), 0xffffff);
-      this._eyeWF = _mkEye(Math.max(2, _geoHeadR * 0.26), 0xffffff);
-      this._eyePB = _mkEye(Math.max(1.1, _geoHeadR * 0.13), 0x1a1a1a);
-      this._eyePF = _mkEye(Math.max(1.4, _geoHeadR * 0.16), 0x1a1a1a);
-      // Детали лица (глазницы/веки/скула/тени) поверх головы.
+      const _mkPupil = (r, color) => {
+        const e = scene.add.circle(this.x, this.y - 44, r, color, 1);
+        e.setDepth(5.22);
+        this._geoFace.push(e);
+        this._allParts.push(e);
+        return e;
+      };
+      this._eyeWB = _mkSclera(Math.max(3.6, _geoHeadR * 0.42), Math.max(2.1, _geoHeadR * 0.24));
+      this._eyeWF = _mkSclera(Math.max(4.4, _geoHeadR * 0.51), Math.max(2.5, _geoHeadR * 0.27));
+      this._eyePB = _mkPupil(Math.max(1.25, _geoHeadR * 0.145), 0x182028);
+      this._eyePF = _mkPupil(Math.max(1.55, _geoHeadR * 0.175), 0x182028);
+      // Детали лица (глазницы/веки/скула/тени/стрижка) поверх головы.
       try {
         if (scene.textures.exists('__geo_face_ov')) {
           const ovTex = scene.textures.get('__geo_face_ov').getSourceImage();
@@ -272,7 +298,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
           this._allParts.push(this._faceOv);
         }
       } catch (e) {}
-      // Брови, ухо (сзади), нос (спереди) и улыбка — едут за головой.
+      // Брови, ухо (овальная раковина сзади), спинка носа (спереди) и сжатые губы.
       const _mkFace = (mk, color) => {
         const o = mk();
         o.setFillStyle(color, 1);
@@ -281,25 +307,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this._allParts.push(o);
         return o;
       };
-      // Брови/ухо/нос видны всегда (масок на всё лицо больше нет).
-      // Ухо — в цвет головы, но темнее (×0.8), чтобы не сливалось.
-      const _earC = (() => {
-        try {
-          const h = (Number(charColors.head) >>> 0) || 0xe6b98c;
-          const k = 0.8;
-          const r = Math.min(255, Math.round(((h >> 16) & 255) * k));
-          const g = Math.min(255, Math.round(((h >> 8) & 255) * k));
-          const b = Math.min(255, Math.round((h & 255) * k));
-          return (r << 16) | (g << 8) | b;
-        } catch (e) { return 0xe6b98c; }
-      })();
       {
-        this._browF = _mkFace(() => scene.add.rectangle(this.x, this.y - 44, Math.max(3, _geoHeadR * 0.5), Math.max(1.2, _geoHeadR * 0.12)), 0x4a3526);
-        this._browB = _mkFace(() => scene.add.rectangle(this.x, this.y - 44, Math.max(2.4, _geoHeadR * 0.4), Math.max(1, _geoHeadR * 0.1)), 0x4a3526);
-        this._ear = _mkFace(() => scene.add.circle(this.x, this.y - 44, Math.max(1.6, _geoHeadR * 0.22), _earC), _earC);
-        this._nose = _mkFace(() => scene.add.circle(this.x, this.y - 44, Math.max(1.1, _geoHeadR * 0.13), 0xc98f66), 0xc98f66);
+        this._browF = _mkFace(() => scene.add.rectangle(this.x, this.y - 44, Math.max(3.2, _geoHeadR * 0.48), Math.max(1.1, _geoHeadR * 0.11)), 0x332218);
+        this._browB = _mkFace(() => scene.add.rectangle(this.x, this.y - 44, Math.max(2.4, _geoHeadR * 0.36), Math.max(0.95, _geoHeadR * 0.095)), 0x332218);
+        this._ear = _mkFace(() => scene.add.ellipse(this.x, this.y - 44, Math.max(2.2, _geoHeadR * 0.25), Math.max(3.4, _geoHeadR * 0.38)), _earC);
+        try { this._ear.setStrokeStyle(0.9, _skinStroke, 0.85); } catch (e) {}
+        this._nose = _mkFace(() => scene.add.ellipse(this.x, this.y - 44, Math.max(1.8, _geoHeadR * 0.20), Math.max(2.6, _geoHeadR * 0.28)), _earC);
       }
-      this._mouth = _mkFace(() => scene.add.ellipse(this.x, this.y - 44, Math.max(2.6, _geoHeadR * 0.42), Math.max(1.4, _geoHeadR * 0.2), 0x8a4444), 0x8a4444);
+      this._mouth = _mkFace(() => scene.add.ellipse(this.x, this.y - 44, Math.max(3.6, _geoHeadR * 0.46), Math.max(1.3, _geoHeadR * 0.14), 0x5a2822), 0x5a2822);
+      try { this._mouth.setStrokeStyle(0.8, 0x2a100c, 0.9); } catch (e) {}
       // Убор сидит низом на макушке (магазинные — origin 0.5/1,
       // классовые — 0.5/0.85).
       const _cls = (this.constructor && this.constructor.name) || 'Player';
@@ -1047,7 +1063,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       try { this._geoFace.forEach(e => { if (e) e.destroy(); }); } catch (e) {}
       this._geoFace = null;
     }
-    this._faceOv = null; this._eyeWF = null; this._eyePF = null; this._eyeWB = null; this._eyePB = null;
+    this._faceOv = null; this._neckVis = null; this._eyeWF = null; this._eyePF = null; this._eyeWB = null; this._eyePB = null;
     this._browF = null; this._browB = null; this._ear = null; this._nose = null; this._mouth = null;
     if (this.shoeL) this.shoeL.destroy();
     if (this.shoeR) this.shoeR.destroy();

@@ -163,17 +163,17 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
   body.setVisible(false);
   if (alpha < 1) body.setAlpha(alpha);
   scene.covers.add(body);
+
   const paintArt = (key) => {
-    const src = scene.textures.get(key).getSourceImage();
-    const sw = (src && src.width) || 1, sh = (src && src.height) || 1;
+    const src = scene.textures.exists(key) ? scene.textures.get(key).getSourceImage() : null;
+    const sw = (src && src.width) || 64, sh = (src && src.height) || 64;
     const bw = (typeof opts !== 'undefined' && opts.dw) || width, bh = (typeof opts !== 'undefined' && opts.dh) || height;
     const s = Math.max(bw / sw, bh / sh);
     const baseOy = ((typeof opts !== 'undefined' && opts.anchorBottom) ? (height - sh * s) / 2 : 0);
     const rows = Math.max(1, (typeof opts !== 'undefined' && (opts.rows | 0)) || 1);
-    const P = (typeof Phaser !== 'undefined') ? Phaser : null;
     for (let i = 0; i < rows; i++) {
       const oy = (rows === 1 ? 0 : (i / (rows - 1) - 0.5) * height * 0.5) + baseOy;
-      const img = scene.add.image(x, y + oy, key).setDepth(2);
+      const img = scene.add.image(x, y + oy, key).setDepth(300);
       img.setScale(s);
       if (rows === 1) {
         const cw = Math.min(sw, bw / s), ch = Math.min(sh, bh / s);
@@ -182,79 +182,20 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
       if (alpha < 1) img.setAlpha(alpha);
     }
   };
-  if (texKey) {
-    paintArt(texKey);
-    scene.add.ellipse(x, y + height / 2 + 2, width * 0.9, 8, 0x000000, 0.35).setDepth(1.5);
-    if (texKey !== 'map_bags') {
-      const rim = scene.add.rectangle(x, y, width, height, 0x000000, 0).setStrokeStyle(2, 0x0a0806, 0.9).setDepth(2.5);
-      if (alpha < 1) rim.setAlpha(alpha);
-    }
-  } else {
-    const g = scene.add.graphics();
-    g.save();
-    g.translateCanvas(width / 2, height / 2);
-    const hw = width / 2, hh = height / 2;
-    // Вариативность ящиков: детерминированный seed из координат/размера —
-    // один и тот же ящик каждый матч выглядит одинаково (важно для нетматчей),
-    // но соседние различаются фасоном. Размеры не трогаем.
-    let cseed = ((Math.round(x) * 73856093) ^ (Math.round(y) * 19349663) ^ (width * 83492791) ^ (height * 2971215073)) >>> 0;
-    const crnd = () => { cseed = (cseed * 1664525 + 1013904223) >>> 0; return cseed / 4294967296; };
-    const wood = [
-      [0x8b6b43, 0x6e542f, 0x77592f, 0x4e3a22, 0xa8834f, 0x3e2d1a],
-      [0x7a6a4a, 0x5d5236, 0x655837, 0x42392a, 0x96814f, 0x332b1c],
-      [0x6f6450, 0x554c3a, 0x635740, 0x3c352a, 0x8a7d64, 0x2f2a20]
-    ][Math.floor(crnd() * 3)];
-    const vert = crnd() < 0.4;
-    g.fillStyle(wood[0], 1);
-    g.fillRoundedRect(-hw, -hh, width, height, 4);
-    g.fillStyle(wood[1], 1);
-    const planks = Math.max(2, Math.round((vert ? width : height) / 26));
-    if (vert) {
-      for (let i = 1; i < planks; i++) {
-        g.fillRect(-hw + (width / planks) * i - 1, -hh + 4, 2, height - 8);
-      }
-    } else {
-      for (let i = 1; i < planks; i++) {
-        g.fillRect(-hw + 4, -hh + (height / planks) * i - 1, width - 8, 2);
-      }
-    }
-    g.lineStyle(Math.max(4, Math.min(width, height) * 0.09), wood[2], 1);
-    g.lineBetween(-hw + 7, hh - 7, hw - 7, -hh + 7);
-    if (crnd() < 0.35) g.lineBetween(-hw + 7, -hh + 7, hw - 7, hh - 7);
-    g.lineStyle(Math.max(3, width * 0.035), wood[3], 1);
-    g.strokeRoundedRect(-hw, -hh, width, height, 4);
-    g.lineStyle(2, wood[3], 0.8);
-    g.strokeRect(-hw + 6, -hh + 6, width - 12, height - 12);
-    g.fillStyle(wood[4], 1);
-    g.fillRect(-hw + 3, -hh + 1, width - 6, 3);
-    g.fillStyle(wood[5], 1);
-    g.fillRect(-hw + 3, hh - 4, width - 6, 3);
-    g.fillStyle(0x2e2114, 1);
-    const nx = Math.max(8, hw - 9), ny = Math.max(8, hh - 9);
-    g.fillCircle(-nx, -ny, 2.2); g.fillCircle(nx, -ny, 2.2);
-    g.fillCircle(-nx, ny, 2.2); g.fillCircle(nx, ny, 2.2);
-    if (width >= 70 && height >= 50) {
-      const Pt = (typeof Phaser !== 'undefined' && Phaser.Geom) ? Phaser.Geom.Point : function (x, y) { this.x = x; this.y = y; };
-      g.lineStyle(3, 0xd8cfae, 0.35);
-      try {
-        g.strokePoints([new Pt(0, -12), new Pt(10, 0), new Pt(0, 12), new Pt(-10, 0)], true);
-      } catch (e) {}
-      // трафаретная маркировка на части ящиков
-      if (crnd() < 0.4) {
-        g.lineStyle(2, 0xd8cfae, 0.22);
-        const my = (crnd() < 0.5 ? -6 : 8);
-        g.lineBetween(-hw + 14, my, hw - 14, my);
-        g.lineBetween(-hw + 14, my + 6, hw - 14, my + 6);
-      }
-    }
-    const _texKey = 'cover_' + Math.round(x) + '_' + Math.round(y) + '_' + Math.round(width) + '_' + Math.round(height);
-    if (!scene.textures.exists(_texKey)) {
-      try { g.restore(); g.generateTexture(_texKey, width, height); } catch (e) {}
-    }
-    try { g.destroy(); } catch (e) {}
-    const _img = scene.add.image(x, y, _texKey).setDepth(2);
-    if (alpha < 1) _img.setAlpha(alpha);
+
+  if (!texKey) {
+    texKey = 'map_barrel';
+    let bseed = ((Math.round(x) * 73856093) ^ (Math.round(y) * 19349663) ^ (width * 83492791)) >>> 0;
+    bseed = ((bseed ^ (bseed >>> 13)) * 2654435761) >>> 0;
+    const bi = bseed % 10;
+    texKey = bi === 0 ? 'map_barrel' : 'map_barrel' + bi;
   }
+
+  paintArt(texKey);
+  scene.add.ellipse(x, y + height / 2 + 2, width * 0.9, 8, 0x000000, 0.35).setDepth(299);
+  const rim = scene.add.rectangle(x, y, width, height, 0x000000, 0).setStrokeStyle(2, 0x0a0806, 0.9).setDepth(301);
+  if (alpha < 1) rim.setAlpha(alpha);
+
   // Инвалидация LOS-кэша: геометрия изменилась.
   try { if (scene) scene._losRects = []; } catch (e) {}
   return body;
