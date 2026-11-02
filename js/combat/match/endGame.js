@@ -1,4 +1,4 @@
-import { gameState, addCoins, addExperience, advanceCampaignLevel, saveGameState, getPass } from '../../data/gameState.js?v=171';
+import { gameState, addCoins, addExperience, advanceCampaignLevel, saveGameState, getPass } from '../../data/gameState.js?v=172';
 import { campaignLevels } from '../../data/levels.js?v=171';
 
 import { checkBattleMedals, awardMedals } from '../../data/medals.js?v=176';
@@ -38,7 +38,7 @@ export function endGame(scene, message, playerWon = false) {
       const c = f.carrier;
       if (c) {
         try { c.isCarrier = false; } catch (e) {}
-        try { c.moveSpeedPct = (c.moveSpeedPct || 0) - (f === scene.blueFlag || f === scene.redFlag || f === scene.ctfSuddenFlag ? 10 : 0); } catch (e) {}
+        try { c.moveSpeedPct = (c.moveSpeedPct || 0); } catch (e) {}
         try { c._plant = {}; } catch (e) {}
       }
       f.carrier = null;

@@ -2,6 +2,13 @@
 // Все функции принимают сцену первым аргументом.
 // Группы scene.platforms / scene.covers должны существовать.
 
+// Арты карт рисуются кодом. Импортируем напрямую, чтобы укрытие могло
+// сгенерировать недостающую текстуру даже в GameScene (у BootScene-хелперов
+// там нет). Версии (?v=) обязательны: иначе браузер/WebView кеширует старый
+// модуль без новых вариантов ящиков/бочек.
+import * as ArtEnv from '../scenes/boot/artEnv.js?v=404';
+import * as ArtBuildings from '../scenes/boot/artBuildings.js?v=410';
+
 // Старые PNG-здания assets/buildings (bld_*) больше не грузим:
 // подменяем рисованными map_* (те же ключи, что палитра редактора).
 // Старые сейвы/карты с bld_* продолжают показываться.
@@ -164,28 +171,38 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
   if (alpha < 1) body.setAlpha(alpha);
   scene.covers.add(body);
 
-  // На всякий случай гарантируем, что текстура сгенерирована в текущей сцене
-  if (scene.sys && scene.sys.game && scene.sys.game.textures) {
-    try {
-      if (!scene.textures.exists(texKey) && typeof scene.generateMapArt === 'function') {
-        scene.generateMapArt(texKey);
-      }
-    } catch (e) {}
-  }
+  // Гарантируем, что текстура существует: если BootScene её не создал
+  // (старый кеш, смена списка артов), рисуем прямо здесь.
+  try {
+    if (!scene.textures.exists(texKey)) {
+      if (/^map_(crate|barrel)/.test(texKey)) ArtEnv.generateMapArt.call(scene, texKey);
+      else if (/^map_(bags|wreck)/.test(texKey)) ArtBuildings.generateMapBuilding.call(scene, texKey);
+    }
+  } catch (e) {}
 
   // Всегда рисуем надежную текстурную подложку нужного оттенка под спрайтом
   const bgCol = (texKey && texKey.indexOf('barrel') >= 0) ? 0x5a6068 : 0x8b6b43;
-  const img = scene.add.rectangle(x, y, width, height, bgCol).setStrokeStyle(2, 0x3e2d1a).setDepth(300);
+  const img = scene.add.rectangle(x, y, width, height, bgCol).setStrokeStyle(2, 0x3e2d1a).setDepth(85);
   if (alpha < 1) img.setAlpha(alpha);
 
   if (scene.textures.exists(texKey)) {
     try { img.destroy(); } catch (e) {}
-    const spr = scene.add.image(x, y, texKey).setDepth(300);
-    spr.setDisplaySize(width, height);
+    const spr = scene.add.image(x, y, texKey).setDepth(85);
+    if (texKey === 'map_wreck') {
+      // Остов машины рисуем в 1.5 раза крупнее укрытия. Низ оставляем на
+      // месте (сдвигаем центр вверх), чтобы колёса не уходили под землю.
+      // Физику/хитбокс не трогаем — это только внешний вид.
+      const dh = height * 1.5;
+      spr.setDisplaySize(width * 1.5, dh);
+      spr.y = y - (dh - height) / 2;
+    } else {
+      spr.setDisplaySize(width, height);
+    }
     if (alpha < 1) spr.setAlpha(alpha);
   }
 
-  scene.add.ellipse(x, y + height / 2 + 2, width * 0.9, 8, 0x000000, 0.35).setDepth(299);
+  const shW = texKey === 'map_wreck' ? width * 1.35 : width * 0.9;
+  scene.add.ellipse(x, y + height / 2 + 2, shW, 8, 0x000000, 0.35).setDepth(84);
 
   try { if (scene) scene._losRects = []; } catch (e) {}
   return body;

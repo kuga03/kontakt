@@ -30,9 +30,16 @@ export function pickDecor(scene, keys, exclude) {
 export function mapDecor(scene, x, yBottom, texKey, dispH, alpha = 1, depth) {
   try {
     if (!texKey || !scene.textures.exists(texKey)) return;
+    // Мешки с песком — только реальное укрытие (createCover), никогда фон.
+    // Даже если ключ случайно попал в пул декора — здесь он отсекается.
+    if (texKey === 'map_bags') return;
+    // Остов машины — только как укрытие (createCover), никогда фон.
+    if (texKey === 'map_wreck') return;
     // Мелкий холст (баррикада 200x140) при апскейле до рядов 300/200 мылится
     // и выглядит раздутой — компактнее отдельные ключи показывает сам mapDecor.
     if (texKey === 'map_scrap') dispH = Math.round((dispH || 0) * 0.75);
+    // Остов машины — в 1.5 раза крупнее прочих задников (просьба автора).
+    if (texKey === 'map_wreck') dispH = Math.round((dispH || 0) * 1.5);
     const src = scene.textures.get(texKey).getSourceImage();
     const sw = (src && src.width) || 1, sh = (src && src.height) || 1;
     // Высокие притапливаем на 26: низы холстов неидеальны, а парящий
@@ -100,9 +107,9 @@ export function addModeDecor(scene) {
     ? ['map_scrap', 'map_garage', 'map_wall_metal']
     : ['map_bigdom', 'map_zdanie', 'map_kino', 'map_pochta', 'map_stol'];
   const nearPool = waste
-    ? ['map_scrap', 'map_wreck', 'map_ruin4', 'map_ruin5', 'map_ruin6', 'map_ruin7', 'map_tank', 'map_bags', 'map_ruin', 'map_ruin2', 'map_ruin3']
+    ? ['map_scrap', 'map_ruin4', 'map_ruin5', 'map_ruin6', 'map_ruin7', 'map_tank', 'map_ruin', 'map_ruin2', 'map_ruin3']
     : factory
-    ? ['map_scrap', 'map_garage', 'map_sarai', 'map_derevdom', 'map_tank', 'map_bags']
+    ? ['map_scrap', 'map_garage', 'map_sarai', 'map_derevdom', 'map_tank']
     : desert
     ? ['map_scrap', 'map_ruin5', 'map_ruin7', 'map_domik', 'map_derevdom', 'map_sarai', 'map_mini_dom']
     : cave

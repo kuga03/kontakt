@@ -95,14 +95,24 @@ export default class EnemyAI {
       this._navigate(target, time, dx);
     }
 
-    // Цель стрельбы: ближайший враг (независимо от цели движения).
+    // Если бот не на ребре пути с флагом low (присед) и не в воздухе в фазе прыжка —
+    // встаем из приседа, чтобы не залипать на укрытиях в сидячем положении.
+    if (p.crouching && !midAir) {
+      const curEdge = this._nav && this._nav.path && this._nav.path[this._nav.i];
+      if (!curEdge || !curEdge.low) {
+        try { if (typeof p.setCrouch === 'function') p.setCrouch(false); } catch (e) {}
+      }
+    }
+
+    // Цель стрельбы: ТОЛЬКО реальный живой враг (не флаг, не союзник, не точка).
     let shootTarget = this._nearestEnemy();
-    if (!shootTarget) shootTarget = target;
-    // Не стреляем в флаг — это не враг
-    if (shootTarget && (shootTarget === (this.scene.blueFlag || (this.scene.blueFlag || {})) ||
-                        shootTarget === (this.scene.redFlag || (this.scene.redFlag || {})) ||
-                        (shootTarget.team === 'gold' || shootTarget === (this.scene.ctfSuddenFlag || null)))) {
+    if (shootTarget && (shootTarget.team === p.team || shootTarget.dead || !shootTarget.active)) {
       shootTarget = null;
+    }
+
+    if (!shootTarget) {
+      // Нет врагов в пределах досягаемости — прекращаем стрельбу
+      return;
     }
 
     // Прицел.
@@ -177,7 +187,7 @@ export default class EnemyAI {
     const scene = this.scene;
     const body = p.body;
     if (!body) { this._fallbackMove(dx > 0 ? 1 : -1); return; }
-    const tall = body.height > 75 || !!p.crouching;
+    const tall = body.height > 75;
     const graph = navGraph(scene, tall);
     const grounded = !!(body.blocked.down || body.touching.down);
     const cx = body.x + body.width / 2;
@@ -203,11 +213,11 @@ export default class EnemyAI {
       nav = this._nav = { goal: goal.id, tall, path, i: 0, phase: 0, et: time, done: path.length === 0 };
     }
 
-    if (nav.done) { try { p.stop(); } catch (e) {} return; }
+    if (nav.done) { try { p.stop(); if (typeof p.setCrouch === 'function') p.setCrouch(false); } catch (e) {} return; }
     const r = followPath(p, nav, time);
     if (r === 'done') {
       nav.done = true;
-      try { p.stop(); } catch (e) {}
+      try { p.stop(); if (typeof p.setCrouch === 'function') p.setCrouch(false); } catch (e) {}
     } else if (r === 'fail') {
       this._navFails = (this._navFails || 0) + 1;
       this._navReason = nav.reason;
@@ -215,6 +225,7 @@ export default class EnemyAI {
       if (bad) this._ban.set(edgeKey(bad), time + 8000);
       this._nav = null;
       this._navCd = time + 400;
+      try { if (typeof p.setCrouch === 'function') p.setCrouch(false); } catch (e) {}
       this._fallbackMove(dx > 0 ? 1 : -1, dx);
     }
   }
@@ -278,19 +289,91 @@ export default class EnemyAI {
     const scene = this.scene;
     const mode = scene.mode;
 
-    // CTF: цель — вражеский флаг (или его носитель-ВРАГ).
+    // CTF: приоритеты:
+    // 1. Сам несёт флаг (вражеский или золотой) — бежим на свою базу!
+    // 2. Свой флаг украден врагом — бежим перехватывать носителя.
+    // 3. Свой флаг уронен в поле (не на базе и без носителя) — бежим вернуть его!
+    // 4. Золотой флаг (внезапная смерть) — если свободен или у врага.
+    // 5. Вражеский флаг — если свободен или если его несёт враг.
+    // 6. Если союзник уже несёт вражеский флаг — бежим эскортировать/прикрывать его.
     if (mode === 'CTF') {
       const enemyFlag = p.team === 'blue' ? scene.redFlag : scene.blueFlag;
       const ownFlag = p.team === 'blue' ? scene.blueFlag : scene.redFlag;
-      if (enemyFlag) {
-        // Сам несёт вражеский флаг — бежим на свою базу.
-        if (enemyFlag.carrier === p && ownFlag &&
-            Number.isFinite(ownFlag.baseX) && Number.isFinite(ownFlag.baseY)) {
+      const goldFlag = scene.ctfSuddenFlag;
+
+      // 1. Сам несу флаг (вражеский или золотой) — бежим сдавать на базу
+      if ((enemyFlag && enemyFlag.carrier === p) || (goldFlag && goldFlag.carrier === p)) {
+        if (ownFlag && Number.isFinite(ownFlag.baseX) && Number.isFinite(ownFlag.baseY)) {
           return { x: ownFlag.baseX, y: ownFlag.baseY };
         }
-        // Носителя атакуем только если он из вражеской команды.
-        if (enemyFlag.carrier && enemyFlag.carrier !== p &&
-            enemyFlag.carrier.team !== p.team) return enemyFlag.carrier;
+        const bx = p.team === 'blue' ? 220 : (scene.mapWidth - 220);
+        return { x: bx, y: scene.mapHeight - 80 };
+      }
+
+      // 2. Свой флаг украден врагом — срочно перехватываем вора!
+      if (ownFlag && ownFlag.carrier && ownFlag.carrier !== p && ownFlag.carrier.team !== p.team) {
+        return ownFlag.carrier;
+      }
+
+      // 3. Свой флаг лежит брошенный в поле — поднимаем/возвращаем на базу!
+      if (ownFlag && !ownFlag.carrier && Number.isFinite(ownFlag.baseX) && Number.isFinite(ownFlag.baseY)) {
+        const distFromBase = Math.hypot(ownFlag.x - ownFlag.baseX, ownFlag.y - ownFlag.baseY);
+        if (distFromBase > 60) {
+          return ownFlag;
+        }
+      }
+
+      // 4. Внезапная смерть — золотой флаг
+      if (goldFlag) {
+        if (goldFlag.carrier && goldFlag.carrier.team !== p.team) return goldFlag.carrier;
+        if (goldFlag.carrier && goldFlag.carrier.team === p.team && goldFlag.carrier !== p) {
+          const carrier = goldFlag.carrier;
+          const myEnemies = this._nearestEnemy();
+          if (myEnemies && Math.hypot(myEnemies.x - carrier.x, myEnemies.y - carrier.y) < 550) {
+            return myEnemies;
+          }
+          const homeBaseX = p.team === 'blue' ? 220 : scene.mapWidth - 220;
+          const toHomeDir = homeBaseX > carrier.x ? 1 : -1;
+          let botHash = 0;
+          for (const ch of String(p.playerName || '')) botHash += ch.charCodeAt(0);
+          const slot = (botHash % 3);
+          let escortX = carrier.x;
+          if (slot === 0) escortX += toHomeDir * 140;
+          else if (slot === 1) escortX -= toHomeDir * 120;
+          else escortX += (botHash % 2 === 0 ? 80 : -80);
+          return { x: escortX, y: carrier.y };
+        }
+        if (!goldFlag.carrier) return goldFlag;
+      }
+
+      // 5. Вражеский флаг: если у врага (застрял/украден) или свободен — идём за ним
+      if (enemyFlag) {
+        if (enemyFlag.carrier && enemyFlag.carrier !== p) {
+          if (enemyFlag.carrier.team !== p.team) {
+            return enemyFlag.carrier;
+          } else {
+            // Союзник (или игрок) несёт флаг — не толпимся в одной точке!
+            // Часть команды идёт наперехват врагов между носителем и базой,
+            // а эскорт держит тактическую дистанцию (спереди/сзади/сбоку).
+            const carrier = enemyFlag.carrier;
+            const myEnemies = this._nearestEnemy();
+            if (myEnemies && Math.hypot(myEnemies.x - carrier.x, myEnemies.y - carrier.y) < 550) {
+              return myEnemies; // Перехватываем угрозу рядом с носителем
+            }
+            // Вычисляем направление движения к своей базе
+            const homeBaseX = ownFlag ? ownFlag.baseX : (p.team === 'blue' ? 220 : scene.mapWidth - 220);
+            const toHomeDir = homeBaseX > carrier.x ? 1 : -1;
+            // У каждого бота индивидуальный оффсет строя по хэшу имени
+            let botHash = 0;
+            for (const ch of String(p.playerName || '')) botHash += ch.charCodeAt(0);
+            const slot = (botHash % 3); // 0: авангард (впереди), 1: арьергард (позади), 2: фланг
+            let escortX = carrier.x;
+            if (slot === 0) escortX += toHomeDir * 140; // бежит впереди, расчищая путь
+            else if (slot === 1) escortX -= toHomeDir * 120; // прикрывает тыл
+            else escortX += (botHash % 2 === 0 ? 80 : -80);
+            return { x: escortX, y: carrier.y };
+          }
+        }
         return enemyFlag;
       }
     }

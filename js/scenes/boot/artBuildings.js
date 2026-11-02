@@ -1,5 +1,5 @@
 ﻿
-import { drawSandbags } from './artSandbags.js';
+import { drawSandbags } from './artSandbags.js?v=410';
 
 export function generateMapBuilding(key) {
     const SIZES = {
@@ -36,7 +36,9 @@ export function generateMapBuilding(key) {
     const edge = 'rgba(8,8,12,0.7)';
     if (key === 'map_bags') {
       drawSandbags(ctx, W, H, rnd);
-      return true;
+      // refresh() обязателен: без него WebGL может загрузить пустой канвас.
+      try { ct.refresh(); } catch (e) {}
+      return this.textures.exists(key);
     }
 
     // Вывеска с текстом.

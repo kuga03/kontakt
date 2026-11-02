@@ -551,10 +551,9 @@ export function drawPlayerPanel() {
     abilBtn.on('pointerout', () => abilBtn.setStyle({ color: '#ffffff' }));
 
     // Живое превью из редактора персонажа: настоящий риг выбранного класса
-    // с его снаряжением из инвентаря. Стоит по центру свободной полки
-    // между званием сверху и заголовком снаряжения (×1.5 — больше в щель
-    // 195px не влезает: фигура 203px при ×1.6).
-    this._preview = this._spawnPreview(this.selectedClass, panel.x + panel.w / 2, panel.y + 149, true, 1.5);
+    // с его снаряжением из инвентаря. Приподнято выше к центру свободной полки,
+    // чтобы ноги и оружие не залезали на заголовок «СНАРЯЖЕНИЕ» и слоты экипировки.
+    this._preview = this._spawnPreview(this.selectedClass, panel.x + panel.w / 2, panel.y + 128, true, 1.5);
 
     this.drawEquipSlots(panel, c);
 

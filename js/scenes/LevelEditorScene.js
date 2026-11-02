@@ -1,5 +1,5 @@
 import { loadCustomLevels, saveCustomLevel } from '../data/customLevels.js?v=169';
-import { resolveBuildingTex } from '../world/mapPrimitives.js?v=364';
+import { resolveBuildingTex } from '../world/mapPrimitives.js?v=411';
 import { bakePanorama } from '../data/bgPanorama.js?v=268';
 import { gameW, UX } from '../ui/layout.js?v=3';
 

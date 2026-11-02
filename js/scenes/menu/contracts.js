@@ -260,11 +260,12 @@ export function _closeContracts() {
     // Лента: оба ряда в одном контейнере, общий скролл, маска-окно.
     const viewL = PX - PW / 2 + 54, viewR = PX + PW / 2 - 54;
     const viewW = viewR - viewL;
-    const CW = 150, CH = 120, STEP = CW + 12;
+    const CW = 150, CH = 82, midH = 104, STEP = CW + 12;
+    const midY = 345;
     const maxScroll = Math.max(0, PASS_TIERS * STEP - viewW);
     const maskGfx = this.add.graphics();
     maskGfx.fillStyle(0xffffff);
-    maskGfx.fillRect(viewL, 196, viewW, 320);
+    maskGfx.fillRect(viewL, 175, viewW, 360);
     const mask = new Phaser.Display.Masks.GeometryMask(this, maskGfx);
     maskGfx.setVisible(false);
     put(maskGfx);
@@ -296,18 +297,16 @@ export function _closeContracts() {
     this.input.on('wheel', this._contractsWheel);
 
     const rowDefs = [
-      { track: 'n', label: 'ОБЫЧНЫЕ НАГРАДЫ', color: '#7db8ff', line: 0x4488cc, rowY: 266 },
-      { track: 'p', label: '★ ПРЕМИУМ', color: '#ffd24a', line: 0xd8a920, rowY: 434 }
+      { track: 'n', label: 'ОБЫЧНЫЕ НАГРАДЫ', color: '#7db8ff', line: 0x4488cc, rowY: 238, labelY: 184 },
+      { track: 'p', label: '★ ПРЕМИУМ НАГРАДЫ', color: '#ffd24a', line: 0xd8a920, rowY: 452, labelY: 504 }
     ];
     rowDefs.forEach(rd => {
-      put(this.add.text(viewL + 4, rd.rowY - 80, rd.label, {
-        fontSize: '13px', color: rd.color, fontStyle: 'bold'
+      put(this.add.text(viewL + 4, rd.labelY, rd.label, {
+        fontSize: '12px', color: rd.color, fontStyle: 'bold'
       }).setOrigin(0, 0.5).setDepth(D));
       const ul = this.add.graphics().setDepth(D);
-      ul.lineStyle(3, rd.line, 0.9);
-      ul.lineBetween(viewL + 4, rd.rowY - 70, viewL + 174, rd.rowY - 70);
-      ul.lineStyle(1, rd.line, 0.5);
-      ul.lineBetween(viewL + 4, rd.rowY - 64, viewL + 120, rd.rowY - 64);
+      ul.lineStyle(2, rd.line, 0.85);
+      ul.lineBetween(viewL + 4, rd.labelY + 8, viewL + 160, rd.labelY + 8);
       put(ul);
       // Дальний забранный ярус ряда — для рельсы (считается раз за открытие).
       let furthest = 0;
@@ -319,8 +318,8 @@ export function _closeContracts() {
       } catch (e) {}
       rd._furthest = furthest;
     });
-    // Виртуализация + запекание: статика ВСЕХ ярусов (рамки, медали, бары,
-    // рельсы, пластины, замки) печётся в одну текстуру 1 раз за открытие
+    // Виртуализация + запекание: статика ВСЕХ ярусов (рамки, карточки заданий,
+    // бары прогресса, замки) печётся в одну текстуру 1 раз за открытие
     // (вектор каждый кадр ронял FPS до ~5), живьём — только тексты/кнопки
     // видимого окна. На выходе ~70 дешёвых объектов вместо 800.
     this._stripRange = [-1, -1];
@@ -339,47 +338,20 @@ export function _closeContracts() {
       if (!bakedOk) {
         const gt = this.add.graphics();
         try {
+          // Статика ячеек наград (верхний и нижний ряды)
           rowDefs.forEach(rd => {
-            const sy = rd.rowY + CH / 2 + 12;
-            const totalW = PASS_TIERS * STEP;
-            gt.fillStyle(0x14142a, 1);
-            gt.fillRoundedRect(-4, sy - 5, totalW + 8, 10, 5);
-            gt.fillStyle(0x2e2e4e, 1);
-            for (let s = 0; s < PASS_TIERS; s++) {
-              gt.fillRect(s * STEP + 6, sy - 5, 10, 10);
-            }
-            if (rd._furthest > 0) {
-              gt.fillStyle(rd.line, 1);
-              gt.fillRoundedRect(-4, sy - 2, Math.max(8, rd._furthest * STEP), 4, 2);
-              gt.fillStyle(0xffffff, 0.35);
-              gt.fillRect(-4, sy - 2, Math.max(8, rd._furthest * STEP), 1.5);
-              gt.fillStyle(rd.line, 1);
-              gt.fillCircle(Math.max(8, rd._furthest * STEP), sy, 7);
-              gt.lineStyle(2, 0xffffff, 0.6);
-              gt.strokeCircle(Math.max(8, rd._furthest * STEP), sy, 7);
-            }
             for (let i = 1; i <= PASS_TIERS; i++) {
               this._passCellArt(gt, ps, rd.track, i, (i - 1) * STEP + CW / 2, rd.rowY, CW, CH);
             }
           });
-          // Общие номера ярусов: один кружок на рельсе между рядами
-          // (ячейки 206..326 и 374..494, рельса верхнего ряда на 338 —
-          // кружок на 356: рельсу почти не задевает, ячейки свободны).
+          // Статика карточек заданий между рядами ячеек
           for (let i = 1; i <= PASS_TIERS; i++) {
-            const bcx = (i - 1) * STEP + CW / 2, bcy = 356;
-            gt.fillStyle(0x101020, 1);
-            gt.fillCircle(bcx, bcy, 13);
-            gt.fillStyle(0x1c1c34, 1);
-            gt.fillCircle(bcx, bcy, 11);
-            gt.lineStyle(2, 0x9a9ab0, 1);
-            gt.strokeCircle(bcx, bcy, 12);
-            gt.fillStyle(0xffffff, 0.25);
-            gt.fillCircle(bcx - 3, bcy - 4, 3);
+            this._passMissionArt(gt, ps, i, (i - 1) * STEP + CW / 2, midY, CW, midH);
           }
         } catch (e) {}
         const key = 'cstrip_' + this._cstripSeq + '_' + Date.now() % 100000;
         try {
-          gt.generateTexture(key, PASS_TIERS * STEP, 520);
+          gt.generateTexture(key, PASS_TIERS * STEP, 540);
         } catch (e) {}
         try { gt.destroy(); } catch (e) {}
         if (this.textures.exists(key)) {
@@ -391,17 +363,15 @@ export function _closeContracts() {
       } else if (this._cstripKey && this.textures.exists(this._cstripKey)) {
         strip.add(this.add.image(0, 0, this._cstripKey).setOrigin(0, 0));
       }
+      // Живые элементы ячеек наград
       rowDefs.forEach(rd => {
         for (let i = i0; i <= i1; i++) {
           this._passCellLive(strip, ps, rd.track, i, (i - 1) * STEP + CW / 2, rd.rowY, CW, CH, viewL, viewR);
         }
       });
-      // Живые цифры общих номеров (видимое окно; чистятся removeAll выше).
+      // Живые элементы карточек заданий между рядами (текст задания, ярус, прогресс)
       for (let i = i0; i <= i1; i++) {
-        const nt = this.add.text((i - 1) * STEP + CW / 2, 356, '' + i, {
-          fontSize: '13px', color: '#ffffff', fontStyle: 'bold'
-        }).setOrigin(0.5);
-        strip.add(nt);
+        this._passMissionLive(strip, ps, i, (i - 1) * STEP + CW / 2, midY, CW, midH);
       }
     };
     this._renderContractsStrip = renderStrip;
@@ -477,7 +447,8 @@ export function _closeContracts() {
   // Ячейка яруса: медаль, задание, прогресс с бликом, награда/кнопка/замок.
   // gr — общая графика ряда для статики (рамки, медали, бары): ячейки
   // пересоздаются при скролле, а статичная графика едет одним объектом.
-  // Статика ячейки в общую графику ряда (для запекания в текстуру).
+  // Статика ячейки награды в общую графику (запекание в текстуру).
+  // В самой ячейке отображается ТОЛЬКО награда, статус и рамка (без текста задания).
 export function _passCellArt(gr, ps, track, i, cx, rowY, CW, CH) {
     const q = PASS_QUESTS[i - 1];
     if (!q) return;
@@ -489,80 +460,88 @@ export function _passCellArt(gr, ps, track, i, cx, rowY, CW, CH) {
     const canClaim = unlocked && done && !claimed && (!isP || ps.premium);
     const preview = isP && !ps.premium;
     const visU = unlocked || preview;
-    const frameCol = claimed ? 0x3a6a4a : (canClaim ? 0xffd24a : (unlocked ? (isP ? 0x8a6a20 : 0x3a6a8a) : 0x2a2a3a));
+    const frameCol = claimed ? 0x3a7a4a : (canClaim ? 0xffd24a : (unlocked ? (isP ? 0x8a6a20 : 0x3a6a8a) : 0x242436));
+
     if (canClaim) {
       gr.lineStyle(6, 0xffd24a, 0.28);
-      gr.strokeRoundedRect(cx - CW / 2 - 4, rowY - CH / 2 - 4, CW + 8, CH + 8, 13);
+      gr.strokeRoundedRect(cx - CW / 2 - 3, rowY - CH / 2 - 3, CW + 6, CH + 6, 12);
     }
-    gr.fillStyle(visU ? (isP ? 0x1e1c34 : 0x121226) : 0x0a0a16, visU ? 0.97 : 0.8);
+    gr.fillStyle(visU ? (isP ? 0x1c1a2e : 0x101324) : 0x090a14, visU ? 0.97 : 0.82);
     gr.fillRoundedRect(cx - CW / 2, rowY - CH / 2, CW, CH, 10);
-    gr.fillStyle(0xffffff, visU ? 0.06 : 0.03);
-    gr.fillRoundedRect(cx - CW / 2 + 3, rowY - CH / 2 + 3, CW - 6, 4, 2);
+    gr.fillStyle(0xffffff, visU ? 0.05 : 0.02);
+    gr.fillRoundedRect(cx - CW / 2 + 3, rowY - CH / 2 + 2, CW - 6, 3, 2);
     gr.lineStyle(canClaim ? 3 : 2, frameCol, 1);
     gr.strokeRoundedRect(cx - CW / 2, rowY - CH / 2, CW, CH, 10);
-    gr.lineStyle(1, frameCol, 0.45);
-    gr.strokeRoundedRect(cx - CW / 2 + 4, rowY - CH / 2 + 4, CW - 8, CH - 8, 7);
-    gr.fillStyle(frameCol, 0.9);
+    gr.lineStyle(1, frameCol, 0.35);
+    gr.strokeRoundedRect(cx - CW / 2 + 3, rowY - CH / 2 + 3, CW - 6, CH - 6, 8);
+
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy2]) => {
-      gr.fillCircle(cx + sx * (CW / 2 - 9), rowY + sy2 * (CH / 2 - 9), 2.6);
+      gr.fillStyle(frameCol, 0.8);
+      gr.fillCircle(cx + sx * (CW / 2 - 8), rowY + sy2 * (CH / 2 - 8), 2.2);
     });
+
     if (claimed) {
-      gr.fillStyle(0x2a6a3a, 0.25);
-      gr.fillRoundedRect(cx - CW / 2 + 2, rowY - CH / 2 + 2, CW - 4, CH - 4, 9);
+      gr.fillStyle(0x2a6a3a, 0.22);
+      gr.fillRoundedRect(cx - CW / 2 + 2, rowY - CH / 2 + 2, CW - 4, CH - 4, 8);
     }
-    // Номер яруса больше не в ячейке (дублировался в обоих рядах) —
-    // один общий на рельсе между рядами (см. bake ниже + live-текст).
-    const bw = CW - 20, bx0 = cx - bw / 2, by0 = rowY - 2;
-    gr.fillStyle(0x14142a, 1);
-    gr.fillRoundedRect(bx0, by0, bw, 12, 6);
-    gr.lineStyle(1, 0x000000, 0.5);
-    gr.strokeRoundedRect(bx0, by0, bw, 12, 6);
-    if (visU && cur > 0) {
-      const fw = Math.max(12, bw * Math.min(1, cur / q.need));
-      gr.fillStyle(done ? 0x33cc55 : (isP ? 0xd8a920 : 0x4488cc), 1);
-      gr.fillRoundedRect(bx0, by0, fw, 12, 6);
-      gr.fillStyle(0xffffff, 0.22);
-      gr.fillRoundedRect(bx0 + 2, by0 + 2, Math.max(0, fw - 4), 3, 2);
-      if (done) {
-        gr.fillStyle(0x33cc55, 1);
-        gr.fillCircle(bx0 + bw - 3, by0 + 6, 4);
-        gr.lineStyle(1.5, 0xffffff, 0.7);
-        gr.strokeCircle(bx0 + bw - 3, by0 + 6, 4);
-      }
-    }
-    gr.fillStyle(0x0a0a16, 0.55);
-    for (let sgm = 1; sgm < 4; sgm++) gr.fillRect(bx0 + (bw / 4) * sgm - 1, by0 + 1, 2, 10);
-    // Замки — фиксированные позиции.
-    if (!unlocked) {
-      if (isP && !ps.premium) {
-        gr.fillStyle(0x2e2e42, 1);
-        gr.fillRoundedRect(cx + 48, rowY + 39, 16, 12, 2);
-        gr.lineStyle(1, 0x8a8aa0, 0.6);
-        gr.strokeRoundedRect(cx + 48, rowY + 39, 16, 12, 2);
-        gr.lineStyle(3, 0x8a8aa0, 1);
-        gr.beginPath();
-        gr.arc(cx + 56, rowY + 40, 6, Math.PI, 0, false);
-        gr.strokePath();
-        gr.fillStyle(0x11111c, 1);
-        gr.fillCircle(cx + 56, rowY + 45, 2);
-      } else {
-        gr.fillStyle(0x2e2e42, 1);
-        gr.fillRoundedRect(cx + 46, rowY + 43, 20, 15, 3);
-        gr.lineStyle(1, 0x8a8aa0, 0.5);
-        gr.strokeRoundedRect(cx + 46, rowY + 43, 20, 15, 3);
-        gr.lineStyle(4, 0x55556a, 1);
-        gr.beginPath();
-        gr.arc(cx + 56, rowY + 45, 8, Math.PI, 0, false);
-        gr.strokePath();
-        gr.fillStyle(0x11111c, 1);
-        gr.fillCircle(cx + 56, rowY + 50, 2.5);
-      }
+
+    // Замок для недоступных или премиум-наград без купленного премиума
+    if (!unlocked || (isP && !ps.premium)) {
+      const lx = cx + CW / 2 - 16, ly = rowY - CH / 2 + 13;
+      gr.fillStyle(0x28283a, 1);
+      gr.fillRoundedRect(lx - 6, ly, 12, 9, 2);
+      gr.lineStyle(2, (isP && !ps.premium) ? 0xd8a920 : 0x777788, 1);
+      gr.beginPath();
+      gr.arc(lx, ly, 4, Math.PI, 0, false);
+      gr.strokePath();
+      gr.fillStyle(0x11111c, 1);
+      gr.fillCircle(lx, ly + 4, 1.5);
     }
   }
 
-  // Живьё ячейки: тексты, иконки, кнопки (пересоздаётся в видимом окне).
-  // Раскладка фиксированная: иконка cx-52, текст cx+8, замок cx+56.
-  // Номер яруса — общий между рядами (рисуется в renderStrip, не здесь).
+  // Статика карточки задания между ячейками наград (запекание в текстуру).
+  // Текст задания и прогресс располагаются строго между рядами наград.
+export function _passMissionArt(gr, ps, i, cx, midY, CW, midH) {
+    const q = PASS_QUESTS[i - 1];
+    if (!q) return;
+    const unlocked = passTierUnlocked(ps, 'n', i);
+    const cur = passQuestProgress(ps, q);
+    const done = cur >= q.need;
+
+    // Фон карточки задания
+    gr.fillStyle(unlocked ? (done ? 0x131f18 : 0x131626) : 0x0c0d16, 0.96);
+    gr.fillRoundedRect(cx - CW / 2, midY - midH / 2, CW, midH, 10);
+    gr.fillStyle(0xffffff, 0.04);
+    gr.fillRoundedRect(cx - CW / 2 + 2, midY - midH / 2 + 2, CW - 4, 3, 2);
+
+    const mBorder = done ? 0x3a7a4a : (unlocked ? 0x3a4f72 : 0x222232);
+    gr.lineStyle(2, mBorder, 1);
+    gr.strokeRoundedRect(cx - CW / 2, midY - midH / 2, CW, midH, 10);
+
+    // Плашка заголовка «ЯРУС i»
+    const pillW = 76, pillH = 17, pillY = midY - midH / 2 + 5;
+    gr.fillStyle(done ? 0x1f4428 : (unlocked ? 0x1f2e48 : 0x161822), 1);
+    gr.fillRoundedRect(cx - pillW / 2, pillY, pillW, pillH, 5);
+    gr.lineStyle(1, done ? 0x3a8a4a : (unlocked ? 0x3a6a9a : 0x2a2a3c), 0.9);
+    gr.strokeRoundedRect(cx - pillW / 2, pillY, pillW, pillH, 5);
+
+    // Шкала прогресса задания
+    const bw = CW - 24, bx0 = cx - bw / 2, by0 = midY + 16, bh = 10;
+    gr.fillStyle(0x0c0c18, 1);
+    gr.fillRoundedRect(bx0, by0, bw, bh, 5);
+    gr.lineStyle(1, 0x222238, 0.8);
+    gr.strokeRoundedRect(bx0, by0, bw, bh, 5);
+
+    if (unlocked && cur > 0) {
+      const fw = Math.max(8, bw * Math.min(1, cur / q.need));
+      gr.fillStyle(done ? 0x33cc55 : 0x3a78cc, 1);
+      gr.fillRoundedRect(bx0, by0, fw, bh, 5);
+      gr.fillStyle(0xffffff, 0.22);
+      gr.fillRect(bx0 + 2, by0 + 1, Math.max(0, fw - 4), 2);
+    }
+  }
+
+  // Живые элементы ячейки награды: иконка монеты, сумма награды и статусное состояние.
 export function _passCellLive(strip, ps, track, i, cx, rowY, CW, CH, viewL, viewR) {
     const q = PASS_QUESTS[i - 1];
     if (!q) return;
@@ -572,59 +551,94 @@ export function _passCellLive(strip, ps, track, i, cx, rowY, CW, CH, viewL, view
     const claimed = !!((ps.claimed[track] || {})[i]);
     const isP = track === 'p';
     const canClaim = unlocked && done && !claimed && (!isP || ps.premium);
-    const preview = isP && !ps.premium;
-    const visU = unlocked || preview;
-    const nameT = this.add.text(cx, rowY - 28, visU ? q.name : '???', {
-      fontSize: '12px', color: !visU ? '#4a4a5a' : (done ? '#7dffa0' : '#ffffff'), fontStyle: 'bold'
-    }).setOrigin(0.5);
-    strip.add(nameT);
-    const prog = this.add.text(cx, rowY + 24, visU ? cur + '/' + q.need : '???', {
-      fontSize: '11px', color: '#ffffff'
-    }).setOrigin(0.5);
-    strip.add(prog);
+
     const rw = isP ? q.rewardP : q.reward;
     const rwTxt = '+' + rw.toLocaleString('ru-RU');
+
     const coinAt = (x, y, alpha, sc) => {
       try {
         if (!this.textures.exists('icon_coins')) return;
         const ic = this.add.image(x, y, 'icon_coins');
-        ic.setScale(sc || 0.8);
-        ic.setAlpha(alpha == null ? 0.9 : alpha);
+        ic.setScale(sc || 0.85);
+        ic.setAlpha(alpha == null ? 0.95 : alpha);
         strip.add(ic);
       } catch (e) {}
     };
+
+    const coinX = cx - 36, coinY = rowY - 11;
+    const txtX = cx + 12, txtY = rowY - 11;
+    const statusY = rowY + 18;
+
+    let rwColor = '#ffffff';
+    if (claimed) rwColor = '#55cc66';
+    else if (canClaim || isP) rwColor = '#ffd24a';
+    else if (!unlocked) rwColor = '#55556a';
+
+    const tRw = this.add.text(txtX, txtY, rwTxt, {
+      fontSize: '15px', color: rwColor, fontStyle: 'bold'
+    }).setOrigin(0.5);
+    strip.add(tRw);
+
+    coinAt(coinX, coinY, !unlocked ? 0.4 : 1, 0.85);
+
+    // Статусная плашка внутри ячейки награды
     if (claimed) {
-      const t = this.add.text(cx + 8, rowY + 45, '✓ ' + rwTxt, {
+      const st = this.add.text(cx, statusY, '✓ Получено', {
         fontSize: '12px', color: '#55cc66', fontStyle: 'bold'
       }).setOrigin(0.5);
-      strip.add(t);
-      coinAt(cx - 52, rowY + 45, 0.9, 0.9);
+      strip.add(st);
     } else if (canClaim) {
-      // Забор — кнопкой «ЗАБРАТЬ ВСЁ» внизу окна (индивидуальных кнопок нет).
-      const t = this.add.text(cx + 8, rowY + 45, rwTxt, {
+      const st = this.add.text(cx, statusY, 'ГОТОВО', {
         fontSize: '12px', color: '#ffd24a', fontStyle: 'bold'
       }).setOrigin(0.5);
-      strip.add(t);
-      coinAt(cx - 52, rowY + 45, 1, 0.9);
+      strip.add(st);
     } else if (isP && !ps.premium) {
-      const t = this.add.text(cx + 8, rowY + 45, '★ ' + rwTxt, {
-        fontSize: '11px', color: '#c8a83a', fontStyle: 'bold'
+      const st = this.add.text(cx, statusY, '★ ПРЕМИУМ', {
+        fontSize: '11px', color: '#d8a920', fontStyle: 'bold'
       }).setOrigin(0.5);
-      strip.add(t);
-      coinAt(cx - 52, rowY + 45, 0.85, 0.8);
+      strip.add(st);
     } else if (!unlocked) {
-      const t2 = this.add.text(cx + 8, rowY + 45, rwTxt, {
-        fontSize: '11px', color: '#4a4a5c', fontStyle: 'bold'
+      const st = this.add.text(cx, statusY, 'Недоступно', {
+        fontSize: '11px', color: '#4a4a5c'
       }).setOrigin(0.5);
-      strip.add(t2);
-      coinAt(cx - 52, rowY + 45, 0.35, 0.8);
+      strip.add(st);
     } else {
-      const t = this.add.text(cx + 8, rowY + 45, rwTxt, {
-        fontSize: '12px', color: isP ? '#ffd24a' : '#c8c8d8', fontStyle: 'bold'
+      const st = this.add.text(cx, statusY, isP ? 'Премиум' : 'Обычная', {
+        fontSize: '11px', color: isP ? '#b89430' : '#7788aa'
       }).setOrigin(0.5);
-      strip.add(t);
-      coinAt(cx - 52, rowY + 45, isP ? 1 : 0.85, 0.9);
+      strip.add(st);
     }
+  }
+
+  // Живые элементы карточки задания между ячейками: номер яруса, текст миссии, прогресс.
+export function _passMissionLive(strip, ps, i, cx, midY, CW, midH) {
+    const q = PASS_QUESTS[i - 1];
+    if (!q) return;
+    const unlocked = passTierUnlocked(ps, 'n', i);
+    const cur = passQuestProgress(ps, q);
+    const done = cur >= q.need;
+
+    // Номер яруса
+    const pillY = midY - midH / 2 + 13;
+    const tierT = this.add.text(cx, pillY, 'ЯРУС ' + i, {
+      fontSize: '11px', color: done ? '#7dffa0' : (unlocked ? '#9ac8ff' : '#666677'), fontStyle: 'bold'
+    }).setOrigin(0.5);
+    strip.add(tierT);
+
+    // Название задания между ячейками
+    const nameT = this.add.text(cx, midY - 9, unlocked ? q.name : '???', {
+      fontSize: '12px', color: !unlocked ? '#4a4a5a' : (done ? '#7dffa0' : '#ffffff'),
+      fontStyle: 'bold', align: 'center', wordWrap: { width: CW - 16 }
+    }).setOrigin(0.5);
+    strip.add(nameT);
+
+    // Текст прогресса под шкалой
+    const progTxt = done ? '✓ Выполнено' : (unlocked ? `${cur} / ${q.need}` : 'Заблокировано');
+    const progT = this.add.text(cx, midY + 34, progTxt, {
+      fontSize: '11px', color: done ? '#7dffa0' : (unlocked ? '#ffffff' : '#555566'),
+      fontStyle: done ? 'bold' : 'normal'
+    }).setOrigin(0.5);
+    strip.add(progT);
   }
   // Тост о незабранных наградах (без выдачи — она по кнопке в сцене).
   // Справа в свободной зоне (не поверх заголовка/панелей) и ниже модалки.

@@ -40,7 +40,11 @@ export function drawSandbags(ctx, W, H, rnd) {
     ctx.restore();
   };
   const bw = 46, bh = 28;
-  for (let i = 0; i < 5; i++) bag(30 + i * 46, H - 14 - bh / 2, bw, bh);
-  for (let i = 0; i < 4; i++) bag(53 + i * 46, H - 14 - bh - bh / 2 + 6, bw, bh);
-  for (let i = 0; i < 3; i++) bag(76 + i * 46, H - 14 - 2 * bh - bh / 2 + 12, bw, bh);
+  // Низ пирамиды прижат к нижней кромке холста (зазор 2px): спрайт
+  // масштабируется по высоте укрытия, и прежние 12px прозрачности внизу
+  // поднимали мешки над землёй — выглядели парящими.
+  const baseY = H - 4 - bh / 2;
+  for (let i = 0; i < 5; i++) bag(30 + i * 46, baseY, bw, bh);
+  for (let i = 0; i < 4; i++) bag(53 + i * 46, baseY - bh + 6, bw, bh);
+  for (let i = 0; i < 3; i++) bag(76 + i * 46, baseY - 2 * bh + 12, bw, bh);
 }

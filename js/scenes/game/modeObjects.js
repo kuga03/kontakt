@@ -9,7 +9,7 @@ import Bomb from '../../entities/Bomb.js?v=169';
 
 import { MAP_VER } from '../../data/modeMaps.js?v=171';
 
-import * as MapPrims from '../../world/mapPrimitives.js?v=304';
+import * as MapPrims from '../../world/mapPrimitives.js?v=411';
 
 import * as Koth from '../../modes/koth.js?v=169';
 

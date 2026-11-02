@@ -1,9 +1,9 @@
 // ctf.js — режим «Захват флага» + общие баннеры/звуки объективов
 // (было в GameScene). _rewardObjective и _playFlagSfx общие с BOMB —
 // bomb.js зовёт их через сцену.
-import Flag from '../entities/Flag.js?v=170';
-import { gameState, addCoins, addExperience } from '../data/gameState.js?v=171';
-import { bumpObj } from '../combat/match.js?v=349';
+import Flag from '../entities/Flag.js?v=171';
+import { gameState, addCoins, addExperience } from '../data/gameState.js?v=172';
+import { bumpObj } from '../combat/match.js?v=350';
 
 // Внезапная смерть CTF: оба флага исчезают, в центре — один золотой.
 // Доставка его на свою базу решает матч (см. updateFlags).
@@ -14,7 +14,13 @@ export function startCtfSuddenDeath(scene) {
     if (!f) return;
     try {
       // Снимаем ускорение носильщика, иначе бонус залипнет навсегда.
-      if (f.carrier) f.carrier.moveSpeedPct = (f.carrier.moveSpeedPct || 0) - 10;
+      // Только носитель бомбы теряет бонус +10 к скорости (флаг несет без штрафа).
+      if (f.carrier) {
+        const isBombCarrier = f.carrier.isCarrier && !f.carrier.isFlagCarrier;
+        if (isBombCarrier) {
+          f.carrier.moveSpeedPct = (f.carrier.moveSpeedPct || 0) - 10;
+        }
+      }
     } catch (e) {}
     try { f.destroy(); } catch (e) {}
   });
@@ -41,12 +47,18 @@ export function startCtfSuddenDeath(scene) {
       });
       if (best != null) gy = best - 38;
     } catch (e) {}
-    const gf = new Flag(scene, scene.mapWidth / 2, gy, 'gold');
+    const gf = new Flag(scene, scene.mapWidth / 2, gy - 20, 'gold');
     try { gf.clearTint(); gf.setTint(0xffd24a); } catch (e) {}
     scene.ctfSuddenFlag = gf;
     try {
       scene.physics.add.collider(gf, scene.platforms);
       scene.physics.add.collider(gf, scene.covers);
+      // Принудительно выталкиваем из текстур на старте
+      if (typeof scene._escapeSolid === 'function') {
+        const p = scene._escapeSolid(gf.x, gf.y, 30);
+        gf.setPosition(p.x, p.y);
+        gf.body.reset(p.x, p.y);
+      }
     } catch (e) {}
   } catch (e) { scene.ctfSuddenFlag = null; }
   ctfBanner(scene, 'ВНЕЗАПНАЯ СМЕРТЬ — ФЛАГ В ЦЕНТРЕ!', '#ffd24a');

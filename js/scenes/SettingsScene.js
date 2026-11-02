@@ -305,25 +305,24 @@ export default class SettingsScene extends Phaser.Scene {
     // Схема управления и сброс клавиш переехали в футёр «УПРАВЛЕНИЕ».
 
     // --- Футёр «ИГРА» (слева): чит-код и сбросы. ---
-    // было по центру всего экрана: узко и кнопки не читались рядком.
-    this.add.text(UX(this, 150), 545, 'Чит-код', {
-      fontSize: '20px', color: '#aabbff'
+    this.add.text(UX(this, 130), 548, 'Чит-код', {
+      fontSize: '18px', color: '#aabbff'
     }).setOrigin(0.5);
 
-    this.cheatMsg = this.add.text(UX(this, 260), 608, '', {
-      fontSize: '14px', color: '#ffee88', wordWrap: { width: 400 }
+    this.cheatMsg = this.add.text(UX(this, 260), 592, '', {
+      fontSize: '13px', color: '#ffee88', wordWrap: { width: 380 }, align: 'center'
     }).setOrigin(0.5);
 
     this.cheatArming = false;
     this.cheatBuffer = '';
-    this.createButton(UX(this, 355), 545, 'Ввести чит-код', () => {
+    this.createButton(UX(this, 330), 548, 'Ввести чит-код', () => {
       this.cheatArming = true;
       this.cheatBuffer = '';
       this.cheatMsg.setColor('#ffee88');
       this.cheatMsg.setText('Вводи код с клавиатуры, Enter — готово');
-    }, 17);
+    }, 16, { left: 16, right: 16, top: 8, bottom: 8 });
 
-    this.createButton(UX(this, 200), 620, 'Сбросить кампанию', () => {
+    this.createButton(UX(this, 155), 650, 'Сбросить кампанию', () => {
       if (!this.campResetPending) {
         this.campResetPending = true;
         this.campResetBtn.setText('Точно? Жми ещё раз');
@@ -332,9 +331,9 @@ export default class SettingsScene extends Phaser.Scene {
       }
       resetCampaign();
       this.scene.start('MenuScene');
-    }, 16);
+    }, 14, { left: 12, right: 12, top: 8, bottom: 8 });
 
-    this.createButton(UX(this, 420), 620, 'Сбросить прогресс', () => {
+    this.createButton(UX(this, 365), 650, 'Сбросить прогресс', () => {
       if (!this.resetPending) {
         this.resetPending = true;
         this.resetBtn.setText('Точно? Жми ещё раз');
@@ -343,20 +342,25 @@ export default class SettingsScene extends Phaser.Scene {
       }
       resetProgress();
       this.scene.start('MenuScene');
-    }, 16);
+    }, 14, { left: 12, right: 12, top: 8, bottom: 8 });
 
-    // --- Футёр «УПРАВЛЕНИЕ» (справа): раскладка/сброс клавиш/схема. ---
-    this.createButton(UX(this, 870), 590, 'РАСКЛАДКА КЛАВИШ', () => this._openKeyModal(), 18);
-    this.createButton(UX(this, 1120), 590, 'Сброс клавиш', () => {
+    // --- Футёр «УПРАВЛЕНИЕ» (справа): схема управления, раскладка и сброс клавиш в один ряд. ---
+    const schemeActive = getControlScheme();
+    this._selectButton(UX(this, 650), 600, 'Схема управления', CONTROL_SCHEMES, schemeActive, (id) => {
+      if (id === schemeActive) return;
+      setControlScheme(id);
+    });
+
+    this.createButton(UX(this, 885), 600, 'РАСКЛАДКА КЛАВИШ', () => this._openKeyModal(), 17, {
+      left: 16, right: 16, top: 9, bottom: 9
+    });
+
+    this.createButton(UX(this, 1115), 600, 'Сброс клавиш', () => {
       resetKeys();
       this._toast('Клавиши сброшены');
       if (this._keyModal) this._keyModal.repaint();
-    }, 18);
-    // Схема мобильного управления (стик / динамический / кнопки).
-    const schemeActive = getControlScheme();
-    this._selectButton(UX(this, 660), 645, 'Управление', CONTROL_SCHEMES, schemeActive, (id) => {
-      if (id === schemeActive) return;
-      setControlScheme(id);
+    }, 17, {
+      left: 16, right: 16, top: 9, bottom: 9
     });
 
     this._cheatKeyHandler = (event) => {
@@ -807,17 +811,18 @@ export default class SettingsScene extends Phaser.Scene {
     draw(false);
   }
 
-  createButton(x, y, label, callback, fontSize) {
+  createButton(x, y, label, callback, fontSize, padding) {
+    const pad = padding || {
+      left: 20,
+      right: 20,
+      top: 10,
+      bottom: 10
+    };
     const button = this.add.text(x, y, label, {
       fontSize: (fontSize || 22) + 'px',
       color: '#ffffff',
       backgroundColor: '#252560',
-      padding: {
-        left: 20,
-        right: 20,
-        top: 10,
-        bottom: 10
-      }
+      padding: pad
     }).setOrigin(0.5);
 
     button.setInteractive({ useHandCursor: true });

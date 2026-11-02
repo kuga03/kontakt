@@ -7,7 +7,7 @@
 
 const GRAV = 900, JUMP1 = -470, JUMP2 = -420, RUN = 250;
 const HALF_W = 15, STEP = 30, DT = 1 / 120, MAX_T = 2.2;
-const H_SMALL = 62, H_TALL = 92;
+const H_SMALL = 62, H_TALL = 92, H_CROUCH = 44;
 
 function collect(scene) {
   const out = [];
@@ -41,10 +41,11 @@ export const steer = (x, bx) => Math.max(-RUN, Math.min(RUN, (bx - x) * 3));
 
 // Полёт из (x,y). vert=false — постоянная скорость vx; vert=true — см. steer.
 // Возвращает true, если тело садится на (bx,by).
-export function sim(loc, x, y, vx, vy, H, bx, by, dbl, vert) {
+export function sim(loc, x, y, vx, vy, H, bx, by, dbl, vert, hopSkip = false) {
   let used = false;
   let air = vy < 0;
   const n = Math.round(MAX_T / DT);
+  let hopSkipFrames = hopSkip ? Math.round(0.4 / DT) : 0;
   for (let i = 0; i < n; i++) {
     let supported = false;
     if (vy >= 0 && hits(loc, x, y + 2, H)) {
@@ -59,17 +60,29 @@ export function sim(loc, x, y, vx, vy, H, bx, by, dbl, vert) {
     if (!supported) vy += GRAV * DT;
     const vxNow = !vert ? vx : ((vy < 0 || (dbl && !used)) ? 0 : steer(x, bx));
     const nx = x + vxNow * DT, ny = y + vy * DT;
-    if (hits(loc, nx, ny, H)) {
+    
+    // Если включен hopSkip (cover-jump), игнорируем препятствия по горизонтали
+    // в течение первых 400мс прыжка, как это делает физика (navGraph.clampFighterMotion).
+    let isHit = hits(loc, nx, ny, H);
+    if (isHit && hopSkipFrames > 0) {
+       // Проверяем, было бы столкновение, если бы мы двигались только по вертикали.
+       if (!hits(loc, x, ny, H)) {
+         isHit = false; // Игнорируем горизонтальное столкновение
+       }
+    }
+    
+    if (isHit) {
       if (vy > 0 && hits(loc, x, ny, H)) return landed(x, y, bx, by);
       return false;
     }
     x = nx; y = ny;
+    if (hopSkipFrames > 0) hopSkipFrames--;
   }
   return false;
 }
 
 function build(scene, H) {
-  const HL = H > H_SMALL ? H_SMALL : H;
+  const HL = H_CROUCH;
   const rects = collect(scene);
   const mapW = scene.mapWidth || 3000;
   const nodes = [];
@@ -82,6 +95,18 @@ function build(scene, H) {
       const k = Math.round(x) + ':' + Math.round(y);
       if (byKey.has(k)) continue;
       const n = { id: nodes.length, x, y, edges: [] };
+      byKey.set(k, n);
+      nodes.push(n);
+    }
+    // Гарантированно добавляем узлы на обоих краях поверхности (r.x0 + HALF_W и r.x1 - HALF_W),
+    // чтобы для широких препятствий вроде машин/ящиков бот мог запрыгнуть на край и спрыгнуть с края.
+    for (const edgeX of [Math.round(r.x0 + HALF_W), Math.round(r.x1 - HALF_W)]) {
+      if (edgeX < HALF_W || edgeX > mapW - HALF_W) continue;
+      const y = r.y0;
+      if (hits(rects, edgeX, y, H) && hits(rects, edgeX, y, HL)) continue;
+      const k = edgeX + ':' + Math.round(y);
+      if (byKey.has(k)) continue;
+      const n = { id: nodes.length, x: edgeX, y, edges: [] };
       byKey.set(k, n);
       nodes.push(n);
     }
@@ -110,7 +135,7 @@ function build(scene, H) {
     for (const b of nodes) {
       if (b === a) continue;
       const dx = b.x - a.x, dy = b.y - a.y;
-      if (Math.abs(dx) > 240 || dy < -230 || dy > 420) continue;
+      if (Math.abs(dx) > 280 || dy < -230 || dy > 420) continue;
       if (dy === 0) {
         if (Math.abs(dx) > STEP + 12) continue;
         let ok = true, low = false;
@@ -131,24 +156,24 @@ function build(scene, H) {
         for (let T = 0.3; T <= 2.2 && !single; T += 0.05) {
           const vx = dx / T;
           if (Math.abs(vx) > RUN) continue;
-          if (sim(loc, a.x, a.y, vx, JUMP1, H, b.x, b.y, false)) {
+          if (sim(loc, a.x, a.y, vx, JUMP1, H, b.x, b.y, false, false, true)) {
             a.edges.push({ from: a, to: b, type: 'jump', vx, dbl: false, cost: 2 + T });
             single = true;
           }
         }
         if (single) continue;
-        if (sim(loc, a.x, a.y, 0, JUMP1, H, b.x, b.y, false, true)) {
+        if (sim(loc, a.x, a.y, 0, JUMP1, H, b.x, b.y, false, true, true)) {
           a.edges.push({ from: a, to: b, type: 'jump', vx: 0, dbl: false, vert: true, cost: 2.5 });
           continue;
         }
-        if (sim(loc, a.x, a.y, 0, JUMP1, H, b.x, b.y, true, true)) {
+        if (sim(loc, a.x, a.y, 0, JUMP1, H, b.x, b.y, true, true, true)) {
           a.edges.push({ from: a, to: b, type: 'jump', vx: 0, dbl: true, vert: true, cost: 3.5 });
           continue;
         }
         for (let T = 0.4; T <= 2.2; T += 0.05) {
           const vx = dx / T;
           if (Math.abs(vx) > RUN) continue;
-          if (sim(loc, a.x, a.y, vx, JUMP1, H, b.x, b.y, true)) {
+          if (sim(loc, a.x, a.y, vx, JUMP1, H, b.x, b.y, true, false, true)) {
             a.edges.push({ from: a, to: b, type: 'jump', vx, dbl: true, cost: 3 + T });
             break;
           }
@@ -157,7 +182,8 @@ function build(scene, H) {
           for (let T = 0.3; T <= 2.2; T += 0.05) {
             const vx = dx / T;
             if (Math.abs(vx) > RUN) continue;
-            if (sim(loc, a.x, a.y, vx, JUMP1, HL, b.x, b.y, false)) {
+            // Передаем hopSkip = true (11-й аргумент: loc, x, y, vx, vy, H, bx, by, dbl, vert, hopSkip)
+            if (sim(loc, a.x, a.y, vx, JUMP1, HL, b.x, b.y, false, false, true)) {
               a.edges.push({ from: a, to: b, type: 'jump', vx, dbl: false, low: true, cost: 3 + T });
               break;
             }
@@ -263,6 +289,7 @@ export function followPath(p, nav, time) {
     if (grounded && Math.abs(dx) <= 4 && Math.abs(feet - e.to.y) <= 6) {
       p.stop();
       nav.i++; nav.phase = 0; nav.et = time;
+      try { if (p.crouching && !nav.path[nav.i]?.low) p.setCrouch(false); } catch (err) {}
       return nav.i >= nav.path.length ? 'done' : 'next';
     }
     if (Math.abs(dx) > 4) p.move(dx > 0 ? 1 : -1); else p.stop();
@@ -297,6 +324,7 @@ export function followPath(p, nav, time) {
   if (grounded && time - nav.launch > 120) {
     if (Math.abs(cx - e.to.x) <= HALF_W && Math.abs(feet - e.to.y) <= 8) {
       nav.i++; nav.phase = 0; nav.et = time;
+      try { if (p.crouching && !nav.path[nav.i]?.low) p.setCrouch(false); } catch (err) {}
       return nav.i >= nav.path.length ? 'done' : 'next';
     }
     if (time - nav.launch > 2500) {

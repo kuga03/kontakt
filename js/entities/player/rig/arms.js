@@ -1,6 +1,7 @@
 ﻿import { weaponImage } from '../../../data/weapons.js?v=170';
 
 import { RIG_DEFAULTS } from '../../../data/rigConfig.js?v=169';
+import { getCharacterColors } from '../../../data/gameState.js?v=171';
 
 import { ensureGeoTextures } from './gear.js';
 import { artTex, cropH, cropInfo, cropW, elbowCache, GEO_HUMAN, jointsCache, partCfg } from './config.js';
@@ -9,16 +10,28 @@ export function buildArmsSkeleton(player) {
   player._gunArt = true;
   const ac = partCfg(player, 'arms');
 
+  // Цвет рукавов = цвет тела гардероба чуть светлее (под торсом).
+  let sleeveC = 0x4488aa;
+  try {
+    const base = (typeof getCharacterColors === 'function' && getCharacterColors() && getCharacterColors().body) ? getCharacterColors().body : 0x4488aa;
+    const r = (base >> 16) & 0xFF, g = (base >> 8) & 0xFF, b = base & 0xFF;
+    sleeveC = ((Math.min(255, Math.round(r * 1.15)) << 16) | (Math.min(255, Math.round(g * 1.15)) << 8) | Math.min(255, Math.round(b * 1.15)));
+  } catch (e) {}
+
   // задняя (гриф/рукоятка) — ПРАВАЯ рука. Контейнер НАД автоматом (4.6>4.2):
   // рукав поверх футболки, перчатка поверх рукоятки — пальцы обхватывают,
   // а не приклеены под стволом.
   player.armGun = scene.add.container(player.x, player.y).setDepth(4.6);
+  const cc = sleeveC;
+  const handC = (typeof getCharacterColors === 'function' && getCharacterColors() && getCharacterColors().body) ? getCharacterColors().body : sleeveC;
   if (!buildArmSide(player, 'r', player.armGun, ac)) {
-    player._armUpRear = armPart(player, 'chr_arm_up', 0x4488aa);
-    player._armForeRear = armSlots(player, 'chr_arm_fore', 0x4477aa, '_r');
-    player._handRear = armSlots(player, 'chr_hand', 0xffcc99, '_r');
+    player._armUpRear = armPart(player, 'chr_arm_up', cc);
+    player._armForeRear = armSlots(player, 'chr_arm_fore', cc, '_r');
+    player._handRear = armSlots(player, 'chr_hand', handC, '_r');
     player.armGun.add([player._armUpRear, player._armForeRear, player._handRear]);
   }
+  // Рукава должны перекрашиваться вместе с торсом (tint гардероба).
+  try { [player._armUpRear, player._armForeRear, player._handRear].forEach(p => { if (p) player._tintParts = player._tintParts || []; if (p && !player._tintParts.includes(p)) player._tintParts.push(p); }); } catch(e){}
   player._allParts.push(player.armGun);
 
   // передняя (цевьё) — ЛЕВАЯ рука. Контейнер ЗА торсом (3.6<4): дальняя рука
@@ -26,11 +39,12 @@ export function buildArmsSkeleton(player) {
   // на другом слое с правой (4.6), не на одном.
   player.armFront = scene.add.container(player.x, player.y).setDepth(3.6);
   if (!buildArmSide(player, 'l', player.armFront, ac)) {
-    player._armUpFront = armPart(player, 'chr_arm_up', 0x4488aa);
-    player._armForeFront = armSlots(player, 'chr_arm_fore', 0x4477aa, '_l');
-    player._handFront = armSlots(player, 'chr_hand', 0xffcc99, '_l');
+    player._armUpFront = armPart(player, 'chr_arm_up', cc);
+    player._armForeFront = armSlots(player, 'chr_arm_fore', cc, '_l');
+    player._handFront = armSlots(player, 'chr_hand', handC, '_l');
     player.armFront.add([player._armUpFront, player._armForeFront, player._handFront]);
   }
+  try { [player._armUpFront, player._armForeFront, player._handFront].forEach(p => { if (p) { player._tintParts = player._tintParts || []; if (!player._tintParts.includes(p)) player._tintParts.push(p); } }); } catch(e){}
   player._allParts.push(player.armFront);
 
   const realT = k => !!(k && scene.textures.exists(k));
@@ -63,8 +77,10 @@ function buildArmSide(player, sac, container, ac) {
   const hand = hiddenHand(player, 0xffcc99);
   if (sac === 'r') {
     player._armUpRear = up; player._armForeRear = fore; player._handRear = hand;
+    try { [up, fore, hand].forEach(p => { if (p) { player._tintParts = player._tintParts || []; if (!player._tintParts.includes(p)) player._tintParts.push(p); } }); } catch(e){}
   } else {
     player._armUpFront = up; player._armForeFront = fore; player._handFront = hand;
+    try { [up, fore, hand].forEach(p => { if (p) { player._tintParts = player._tintParts || []; if (!player._tintParts.includes(p)) player._tintParts.push(p); } }); } catch(e){}
   }
   container.add([up, fore, hand]);
   player._armsSliced = player._armsSliced || [];

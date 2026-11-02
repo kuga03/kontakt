@@ -8,9 +8,9 @@ import { GENERATED, texUrl, FUNNY_LOADS } from './boot/config.js';
 import * as Legs from './boot/legs.js';
 import * as Character from './boot/character.js';
 import * as GunScan from './boot/gunScan.js';
-import * as ArtEnv from './boot/artEnv.js?v=364';
+import * as ArtEnv from './boot/artEnv.js?v=404';
 import * as ArtSmall from './boot/artSmall.js?v=368';
-import * as ArtBuildings from './boot/artBuildings.js?v=362';
+import * as ArtBuildings from './boot/artBuildings.js?v=410';
 import * as Fallback from './boot/fallback.js';
 export default class BootScene extends Phaser.Scene {
   constructor() {
@@ -53,18 +53,44 @@ export default class BootScene extends Phaser.Scene {
     const W = gameW(this);
     const H = this.scale.height;
 
-    this.add.rectangle(W / 2, H / 2, W, H, 0x0a0a2a);
-    const barW = Math.min(400, W * 0.5);
+    // Градиентный фон (тёмный → чуть светлее внизу).
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(0x080820, 0x0f0f35, 0x2a1a4a, 1);
+    bg.fillRect(0, 0, W, H);
+    // Декор фона: процедурные ящики и бочки в углах.
+    const decKeys = ['map_crate1', 'map_crate3', 'map_barrel2', 'map_crate7', 'map_barrel5'];
+    decKeys.forEach((k, i) => {
+      const cx = (i % 2) ? W * 0.85 : W * 0.15;
+      const cy = (i < 3) ? H * 0.2 : H * 0.78;
+      try {
+        const img = this.add.image(cx, cy, k);
+        img.setDepth(-20);
+        img.setAlpha(0.35);
+        img.setDisplaySize(60 + (i * 12), 60 + (i * 8));
+      } catch (e) {}
+    });
+    // Мягкие светящиеся круги для красоты (боке).
+    [[W*0.3, H*0.3, 180, 0x5566aa, 0.08], [W*0.7, H*0.7, 220, 0x8844aa, 0.08], [W*0.5, H*0.15, 140, 0x44aaff, 0.06]].forEach(p => {
+      try { this.add.ellipse(p[0], p[1], p[2], p[2], p[3], p[4]).setDepth(-25); } catch(e){}
+    });
+    const barW = Math.min(640, W * 0.65);
     const barH = 18;
     const barX = (W - barW) / 2;
     const barY = H / 2;
     this._barBg = this.add.rectangle(W / 2, barY, barW, barH, 0x333355).setStrokeStyle(1, 0x556688);
-    this._barFill = this.add.rectangle(barX + 1, barY, 0, barH - 2, 0x44aaff).setOrigin(0, 0.5);
+    // Светящийся прогресс-бар: тень + яркий градиент.
+    this._barGlow = this.add.rectangle(W / 2, barY, barW + 10, barH + 6, 0x44aaff, 0.35).setDepth(-1);
+    // Прогресс-бар с градиентом (не фоновые цвета): бирюзовый → золотистый.
+    this._barFill = this.add.graphics().setDepth(1);
+    this._barFillFill = (w, h) => { this._barFill.clear(); this._barFill.fillGradientStyle(0x00d4aa, 0x66ccff, 0xffd166, 1); this._barFill.fillRect(barX + 1, barY - h/2 + 1, Math.max(0, w), h-2); };
     this._jokeIdx = Math.floor(Math.random() * FUNNY_LOADS.length);
     this._barPct = 0;
     this._barText = this.add.text(W / 2, barY + 24, FUNNY_LOADS[this._jokeIdx] + ' 0%', {
       fontSize: '13px', color: '#8899bb'
     }).setOrigin(0.5);
+    this._barPctLabel = this.add.text(barX + barW + 14, barY, '0%', {
+      fontSize: '14px', color: '#66ccff', fontFamily: 'monospace'
+    }).setOrigin(0, 0.5);
     // Шутки листаются сами, проценты — по факту загрузки.
     this.time.addEvent({
       delay: 2000, loop: true,
@@ -75,6 +101,7 @@ export default class BootScene extends Phaser.Scene {
       }
     });
     this._barW = barW - 2;
+    this._barH = barH;
     this._loadPhase = 'files';
     this._loadedPngKeys = new Set();
     const keys = Object.keys(GENERATED);
@@ -463,7 +490,9 @@ export default class BootScene extends Phaser.Scene {
   _updateBar(label, progress) {
     if (!this._barFill || !this._barText) return;
     const p = Phaser.Math.Clamp(progress, 0, 1);
-    this._barFill.width = Math.max(0, this._barW * p);
+    const w = Math.max(0, this._barW * p);
+    if (typeof this._barFillFill === 'function') this._barFillFill(w, this._barH || 18);
+    else this._barFill.width = w;
     this._barPct = p;
     this._refreshBarText();
   }
@@ -471,7 +500,9 @@ export default class BootScene extends Phaser.Scene {
   _refreshBarText() {
     if (!this._barText) return;
     const p = this._barPct || 0;
-    this._barText.setText(FUNNY_LOADS[this._jokeIdx % FUNNY_LOADS.length] + ' ' + Math.round(p * 100) + '%');
+    const pct = Math.round(p * 100) + '%';
+    this._barText.setText(FUNNY_LOADS[this._jokeIdx % FUNNY_LOADS.length] + ' ' + pct);
+    if (this._barPctLabel) this._barPctLabel.setText(pct);
   }
 
   _preloadFontAndStart() {

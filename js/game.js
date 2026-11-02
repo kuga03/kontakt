@@ -1,14 +1,14 @@
-import BootScene from './scenes/BootScene.js?v=381';
+import BootScene from './scenes/BootScene.js?v=411';
 import MenuScene from './scenes/MenuScene2.js?v=378';
 import LobbyScene from './scenes/LobbyScene.js?v=205';
-import GameScene from './scenes/GameScene.js?v=388';
+import GameScene from './scenes/GameScene.js?v=412';
 import ShopScene from './scenes/ShopScene.js?v=180';
 import DonateScene from './scenes/DonateScene.js?v=3';
 import LootBoxScene from './scenes/LootBoxScene.js?v=175';
 import InventoryScene from './scenes/InventoryScene.js?v=191';
 import SettingsScene, { getScreenRes, getFpsCap, getVsync } from './scenes/SettingsScene.js?v=181';
 import { getQuality, getCamShake } from './data/gameSettings.js';
-import LevelEditorScene from './scenes/LevelEditorScene.js?v=364';
+import LevelEditorScene from './scenes/LevelEditorScene.js?v=411';
 import MyLevelsScene from './scenes/MyLevelsScene.js?v=172';
 import RigEditorScene from './scenes/RigEditorScene.js?v=380';
 import SkillsScene from './scenes/SkillsScene.js?v=171';

@@ -357,6 +357,8 @@ export default class MenuScene extends Phaser.Scene {
   _openContracts() { return Contracts._openContracts.call(this); }
   _passCellArt(gr, ps, track, i, cx, rowY, CW, CH) { return Contracts._passCellArt.call(this, gr, ps, track, i, cx, rowY, CW, CH); }
   _passCellLive(strip, ps, track, i, cx, rowY, CW, CH, viewL, viewR) { return Contracts._passCellLive.call(this, strip, ps, track, i, cx, rowY, CW, CH, viewL, viewR); }
+  _passMissionArt(gr, ps, i, cx, midY, CW, midH) { return Contracts._passMissionArt.call(this, gr, ps, i, cx, midY, CW, midH); }
+  _passMissionLive(strip, ps, i, cx, midY, CW, midH) { return Contracts._passMissionLive.call(this, strip, ps, i, cx, midY, CW, midH); }
   _toastAchReady(n) { return Widgets._toastAchReady.call(this, n); }
   _openStatsModal() { return Widgets._openStatsModal.call(this); }
   _closeStatsModal() { return Widgets._closeStatsModal.call(this); }

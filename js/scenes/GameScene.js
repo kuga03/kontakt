@@ -12,7 +12,7 @@ import * as CameraRig from '../world/cameraRig.js?v=170';
 import * as SoundSys from '../combat/soundSys.js?v=174';
 import * as Fx from '../combat/fx.js?v=322';
 
-import * as Arenas from '../world/arenas.js?v=364';
+import * as Arenas from '../world/arenas.js?v=412';
 import * as Pickups from '../combat/pickups.js?v=169';
 import * as Dump from '../debug/dump.js?v=220';
 import { installPenWatch } from '../debug/penWatch.js?v=1';
@@ -53,8 +53,8 @@ const MAP_THEMES = {
 };
 
 import * as Lifecycle from './game/lifecycle.js';
-import * as MapBuilder from './game/mapBuilder.js?v=307';
-import * as ModeObjects from './game/modeObjects.js';
+import * as MapBuilder from './game/mapBuilder.js?v=411';
+import * as ModeObjects from './game/modeObjects.js?v=411';
 import * as MatchTick from './game/matchTick.js?v=4';
 import * as Spawns from './game/spawns.js';
 

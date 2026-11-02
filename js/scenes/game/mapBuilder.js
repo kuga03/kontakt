@@ -6,7 +6,7 @@ import Sniper from '../../entities/Sniper.js?v=320';
 import { bakeHouseLayers } from '../../data/bgHouses.js?v=169';
 import { bakePanorama, bakeCrispBands } from '../../data/bgPanorama.js?v=268';
 
-import * as MapPrims from '../../world/mapPrimitives.js?v=304';
+import * as MapPrims from '../../world/mapPrimitives.js?v=412';
 
 import * as Koth from '../../modes/koth.js?v=169';
 

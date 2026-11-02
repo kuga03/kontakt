@@ -72,11 +72,17 @@ function _pickPlayerRespawn(scene, victim, deathX, deathY) {
   }
   if (!valid.length) {
     const bx = _teamBaseX(scene);
-    return { x: bx, y: scene._groundSpawnY ? scene._groundSpawnY(bx) : deathY };
+    const by = scene._groundSpawnY ? scene._groundSpawnY(bx) : (scene.mapHeight ? scene.mapHeight - 120 : 750);
+    return { x: bx, y: by };
   }
   const minDist = scene.mode === 'FFA' ? 400 : 180;
   let pool = valid.filter(p => Math.hypot(p.x - deathX, p.y - deathY) >= minDist);
-  if (!pool.length) pool = valid;
+  if (!pool.length) {
+    // Если все спавны оказались ближе minDist к месту смерти (умерли прямо на базе),
+    // отфильтровываем хотя бы точную точку смерти, но не падаем на смерть!
+    pool = valid.filter(p => Math.hypot(p.x - deathX, p.y - deathY) > 20);
+    if (!pool.length) pool = valid;
+  }
   const enemies = (scene.players || []).filter(p =>
     p && p !== victim && !p.dead && p.active && p.team && p.team !== victim.team
   );
@@ -84,8 +90,8 @@ function _pickPlayerRespawn(scene, victim, deathX, deathY) {
   // к своей базе (но не место смерти). В FFA базы нет — уходим от смерти.
   const anchorX = _teamBaseX(scene);
   if (scene.mode !== 'FFA') {
-    // Небольшой разброс у базы, чтобы не вставать в одну и ту же точку
-    // каждый респаун. Точки у места смерти уже отфильтрованы выше.
+    // В командных режимах база — главный приоритет.
+    // Сначала ищем точки кандидатов у базы (|x - anchorX| <= 100).
     const home = pool.filter(c => Math.abs(c.x - anchorX) <= 100);
     if (home.length) {
       const i = (typeof Phaser !== 'undefined' && Phaser.Math)
@@ -93,6 +99,10 @@ function _pickPlayerRespawn(scene, victim, deathX, deathY) {
         : (Math.random() * home.length) | 0;
       return home[i];
     }
+    // Если точек в радиусе 100 нет (например, все точки у базы отсеклись как deathX),
+    // берем ближайшую к базе точку из пула, а не точку смерти
+    pool.sort((a, b) => Math.abs(a.x - anchorX) - Math.abs(b.x - anchorX));
+    return pool[0];
   }
   let best = pool[0], bestScore = -Infinity;
   for (const c of pool) {

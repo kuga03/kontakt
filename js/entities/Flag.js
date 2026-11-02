@@ -25,6 +25,18 @@ export default class Flag extends Phaser.GameObjects.Sprite {
     }
     scene.add.existing(this);
     scene.physics.add.existing(this);
+
+    // Если флаг застрял внутри солида (часто на платформах при сбросе/спавне) —
+    // сдвигаем его чуть выше, чтобы не проваливался в текстуру.
+    try {
+      if (this.scene && typeof this.scene._inSolid === 'function' && this.scene._inSolid(this.x, this.y, 6)) {
+        const spot = this._escapeBody(this.x, this.y, true);
+        if (spot) {
+          this.setPosition(spot.x, spot.y);
+          if (this.body) this.body.reset(spot.x, spot.y);
+        }
+      }
+    } catch (e) {}
     this.body.setAllowGravity(false);
     // Маленькое тело у основания древка, а НЕ весь кадр (265x566):
     // большое тело цепляло платформы/землю в радиусе 100+px, физика
@@ -52,6 +64,8 @@ export default class Flag extends Phaser.GameObjects.Sprite {
       this.carrier = player;
       // Синхронный флаг для ИИ в ТЕКУЩЕМ кадре (AI запускается ДО _updateFlags).
       try { player.isCarrier = true; } catch (e) {}
+      // Флаг носителя флага — отдельный маркер от бомбы.
+      try { player.isFlagCarrier = true; } catch (e) {}
       // В руках не падает.
       try { this.body.setAllowGravity(false); } catch (e) {}
       try { this.body.setVelocity(0, 0); } catch (e) {}
@@ -91,7 +105,7 @@ drop() {
         }
       }
     } catch (e) {}
-    try { this.carrier.isCarrier = false; } catch (e) {}
+    try { this.carrier.isCarrier = false; this.carrier.isFlagCarrier = false; } catch (e) {}
     this.carrier = null;
     // Потерянный флаг падает на землю, а не висит в воздухе.
     // Тело включаем обратно (на носке было выключено от выталкиваний).
@@ -134,6 +148,7 @@ drop() {
     try {
       if (this.carrier) {
         this.carrier.isCarrier = false;
+        this.carrier.isFlagCarrier = false;
       }
     } catch (e) {}
     this.carrier = null;
