@@ -1,7 +1,7 @@
 ﻿import { weaponImage } from '../../../data/weapons.js?v=170';
 
 import { RIG_DEFAULTS } from '../../../data/rigConfig.js?v=169';
-import { getCharacterColors } from '../../../data/gameState.js?v=171';
+import { getCharacterColors } from '../../../data/gameState.js?v=175';
 
 import { ensureGeoTextures } from './gear.js';
 import { artTex, cropH, cropInfo, cropW, elbowCache, GEO_HUMAN, jointsCache, partCfg } from './config.js';

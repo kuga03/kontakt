@@ -1,5 +1,5 @@
 export const classDefinitions = [
-  { id: 'Assault', label: 'Штурмовик', color: 0x44ccff, defaultPrimary: 'bad_ak47', defaultSecondary: 'Makarov' },
+  { id: 'Assault', label: 'Штурмовик', color: 0x44ccff, defaultPrimary: 'bad_ak47', defaultSecondary: 'LAR' },
   { id: 'Tank', label: 'Танк', color: 0xffaa44, defaultPrimary: 'M249', defaultSecondary: 'Glock' },
   { id: 'Medic', label: 'Медик', color: 0x55ff55, defaultPrimary: 'UZI', defaultSecondary: 'Makarov' },
   // Снайпер штатно держит Winchester (открывается вместе с классом на ур.4),

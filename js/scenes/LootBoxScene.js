@@ -6,7 +6,7 @@ import {
   addCoins,
   saveGameState,
   getPass
-} from '../data/gameState.js?v=171';
+} from '../data/gameState.js?v=175';
 
 import { weaponsList, getWeaponLabel, weaponImage } from '../data/weapons.js?v=170';
 import { weaponSkins } from '../data/skins.js?v=169';
@@ -24,7 +24,7 @@ const CASES = [
   {
     id: 'wardrobe', name: 'Гардеробный', price: 1500, kind: 'gear',
     gearRate: 0.15,
-    coinMin: 0.3, coinMax: 1.5, jackpotChance: 0.10,
+    coinMin: 0.1, coinMax: 0.3, jackpotChance: 0.10,
     color: 0x2a5a4a, line: 0x66d9e8,
     desc: 'Шапки, броня, штаны и обувь, пыль тоже'
   },
@@ -32,7 +32,7 @@ const CASES = [
     id: 'weapons', name: 'Оружейный', price: 3000, kind: 'weapons',
     legRate: 0.015, epicW: 0.03, rareW: 0.07, commW: 0.13, grayW: 0.18,
     meleeShare: 1.0, skinProb: 0,
-    coinMin: 0.3, coinMax: 2.5, jackpotChance: 0.12,
+    coinMin: 0.1, coinMax: 0.5, jackpotChance: 0.12,
     minPrice: 300, maxPrice: 1e9, includeMelee: true,
     color: 0x2a4a6a, line: 0xb44dff,
     desc: 'Любое оружие, включая ножи, плюс деньги. Скинов нет'
@@ -44,7 +44,7 @@ const CASES = [
     legRate: 0.01, epicW: 0.05, rareW: 0.10, commW: 0.12, grayW: 0.18,
     skinProb: 1.0,
     allowLegendarySkins: true,
-    coinMin: 0.6, smallMax: 1.0, bigMin: 1.0, coinMax: 1.7, pBig: 0.45,
+    coinMin: 0.2, smallMax: 0.3, bigMin: 0.3, coinMax: 0.5, pBig: 0.45,
     jackpotChance: 0.15,
     minPrice: 300, maxPrice: 1e9, includeMelee: false,
     color: 0x4a2a6a, line: 0xffd24a,

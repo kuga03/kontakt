@@ -1,5 +1,5 @@
-import { gameState, addCoins, addExperience, advanceCampaignLevel, saveGameState, getPass } from '../../data/gameState.js?v=172';
-import { campaignLevels } from '../../data/levels.js?v=171';
+import { gameState, addCoins, addExperience, advanceCampaignLevel, saveGameState, getPass } from '../../data/gameState.js?v=175';
+import { campaignLevels } from '../../data/levels.js?v=172';
 
 import { checkBattleMedals, awardMedals } from '../../data/medals.js?v=176';
 import { drawMedalRow } from '../../ui/medalsView.js?v=9';
@@ -101,7 +101,7 @@ export function endGame(scene, message, playerWon = false) {
       addExperience((clm.reward && clm.reward.experience) || 0);
       const st = gameState.stats;
       if (st) st.campaignWins = (st.campaignWins | 0) + 1;
-      advanceCampaignLevel();
+      advanceCampaignLevel(scene.levelIndex);
     } catch (e) {}
   }
   flushPlayTime(scene);
@@ -281,11 +281,11 @@ export function endGame(scene, message, playerWon = false) {
     });
   }
 
-  const retryBtn = scene.add.text(640, btnTop, 'Начать заново', {
-    fontSize: '24px',
+  const retryBtn = scene.add.text(640, btnTop + 152, 'Начать заново', {
+    fontSize: '22px',
     color: '#ffffff',
     backgroundColor: '#287a45',
-    padding: 14
+    padding: { left: 18, right: 18, top: 12, bottom: 12 },
   }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(201);
 
   retryBtn.setInteractive({ useHandCursor: true });
@@ -304,20 +304,21 @@ export function endGame(scene, message, playerWon = false) {
       // Дальше — только встроенные миссии (свои уровни — отдельно).
       const isLast = scene.levelIndex >= campaignLevels.length - 1;
       if (!isLast) {
-        nextBtn = scene.add.text(640, btnTop + 152, 'Следующая миссия', {
-          fontSize: '24px',
+        nextBtn = scene.add.text(640, btnTop, 'Следующая миссия', {
+          fontSize: '22px',
           color: '#ffffff',
-          backgroundColor: '#287a45',
-          padding: 14
+          backgroundColor: '#2a3a8a',
+          padding: { left: 18, right: 18, top: 12, bottom: 12 },
         }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(201);
         nextBtn.setInteractive({ useHandCursor: true });
         nextBtn.on('pointerover', () => { nextBtn.setStyle({ color: '#ffff55' }); scene._hoverSfx(); });
         nextBtn.on('pointerout', () => nextBtn.setStyle({ color: '#ffffff' }));
         nextBtn.on('pointerdown', () => {
+          const nextIdx = Math.min((scene.levelIndex || 0) + 1, campaignLevels.length - 1);
           scene.scene.start('GameScene', {
             mode: 'CAMPAIGN',
             selectedClass: scene.selectedClass,
-            levelIndex: scene.levelIndex + 1,
+            levelIndex: nextIdx,
             playerName: scene.playerName
           });
         });

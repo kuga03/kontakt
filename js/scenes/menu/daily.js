@@ -1,4 +1,4 @@
-import { gameState, addCoins, saveGameState } from '../../data/gameState.js?v=171';
+import { gameState, addCoins, saveGameState } from '../../data/gameState.js?v=175';
 
 import Assault from '../../entities/Assault.js?v=319';
 import Tank from '../../entities/Tank.js?v=319';

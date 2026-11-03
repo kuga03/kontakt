@@ -4,7 +4,7 @@ import { drawAbilityCircle, drawCrosshair, drawReloadIcon } from './indicators.j
 import { weaponIcon, weaponImage, weaponHudScale, getWeaponLabel, weaponHasMag } from '../../data/weapons.js?v=170';
 
 import { getClassAbility, ultUnlocked } from '../../data/abilities.js?v=169';
-import { gameState, expRequired } from '../../data/gameState.js?v=171';
+import { gameState, expRequired } from '../../data/gameState.js?v=175';
 import { getRank } from '../../data/ranks.js?v=169';
 
 import { gameW, BASE_CX } from '../layout.js?v=3';

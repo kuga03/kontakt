@@ -64,10 +64,17 @@ export default class BenchmarkScene extends GameScene {
     // больше не трогает эти элементы, так что скрытость держится.
     this._hideHud();
 
-    this._t0 = performance.now();
+    this._preloadDone = false;
+    this._t0 = null;
     this._frames = 0;
     this._ft = [];
     this._done = false;
+    // Предзагрузка уровня: 1.5 сек на создание карты/ботов перед замером.
+    this.time.delayedCall(1500, () => {
+      this._preloadDone = true;
+      this._t0 = performance.now();
+      if (this._hint) this._hint.setText('Идёт замер… 8 с');
+    });
 
     // Текст бенчмарка держим постоянного размера на экране: компенсируем
     // зум камеры (на всей карте камера далеко — текст иначе мельчает).
@@ -75,15 +82,24 @@ export default class BenchmarkScene extends GameScene {
     this._fpsTxt = this.add.text(16, 12, '', {
       fontSize: '18px', color: '#9fff9f', backgroundColor: '#00000088', padding: 6
     }).setOrigin(0, 0).setScrollFactor(0).setDepth(5000).setScale(zs);
-    const qLabel = (QUALITY_OPTIONS.find(q => q.id === getQuality()) || {}).label || getQuality();
-    this._infoTxt = this.add.text(gameW(this) / 2, 12, `ТЕСТ FPS · 8v8 CTF · Форты · качество: ${qLabel}`, {
-      fontSize: '16px', color: '#ffffff', backgroundColor: '#00000088', padding: 6
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(5000).setScale(zs);
-    this._hint = this.add.text(gameW(this) / 2, 700, 'Идёт замер…', {
+    // Квадрат настроек в правом верхнем углу (текущие графические параметры).
+    try {
+      const qLabel = (QUALITY_OPTIONS.find(q => q.id === getQuality()) || {}).label || getQuality();
+      const w = gameW(this);
+      this._settingsBox = this.add.graphics();
+      this._settingsBox.fillStyle(0x222250, 0.95);
+      this._settingsBox.fillRoundedRect(w - 130, 12, 110, 42, 6);
+      this._settingsBox.lineStyle(1, 0x7777aa, 0.7);
+      this._settingsBox.strokeRoundedRect(w - 130, 12, 110, 42, 6);
+      this.add.text(w - 75, 20, `FPS · ${qLabel}`, {
+        fontSize: '10px', color: '#ccddee', align: 'center'
+      }).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(5001).setScale(zs);
+    } catch (e) {}
+    this._hint = this.add.text(gameW(this) / 2, 700, 'Предзагрузка уровня…', {
       fontSize: '16px', color: '#99aacc'
     }).setOrigin(0.5).setScrollFactor(0).setDepth(5000).setScale(zs);
 
-    this._back = this.add.text(gameW(this) - 30, 700, 'ВЫЙТИ', {
+    this._back = this.add.text(gameW(this) / 2, 730, 'ВЫЙТИ', {
       fontSize: '15px', color: '#ffffff', backgroundColor: '#553333', padding: 8
     }).setOrigin(0.5).setScrollFactor(0).setDepth(5000).setScale(zs).setInteractive({ useHandCursor: true });
     this._back.on('pointerdown', () => this.scene.start('SettingsScene'));
@@ -108,6 +124,10 @@ export default class BenchmarkScene extends GameScene {
     MatchTick.updateTick.call(this, time, delta);
     // Прячем HUD и свежесозданные элементы (киллфид, баннеры, попапы).
     this._hideHud();
+    if (!this._preloadDone) {
+      this._hint.setText('Предзагрузка уровня…');
+      return;
+    }
     if (this._done) return;
 
     // FPS считаем по РЕАЛЬНОМУ времени (performance.now), а не по Phaser delta:

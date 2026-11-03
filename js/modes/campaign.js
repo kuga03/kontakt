@@ -2,6 +2,7 @@
 // ╨д╤Г╨╜╨║╤Ж╨╕╨╕ ╨┐╤А╨╕╨╜╨╕╨╝╨░╤О╤В ╤Б╤Ж╨╡╨╜╤Г; ╨▒╨░╨╜╨╜╨╡╤А╤Л/╨┐╨╛╨┤╨▒╨╛╤А╤Л/╨╖╨▓╤Г╨║╨╕ тАФ ╤З╨╡╤А╨╡╨╖ ╨╛╨▒╤С╤А╤В╨║╨╕ ╤Б╤Ж╨╡╨╜╤Л
 // (trackModalElems/hoverSfx/spawnPickup/groundHeightAt), ╤Б╨▓╨╛╨╕╤Е ╨╕╨╝╨┐╨╛╤А╤В╨╛╨▓ ╨╜╨╡╤В.
 import { gameW } from '../ui/layout.js?v=3';
+import Assault from '../entities/Assault.js?v=319';
 
 
 export function showStory(scene, text, onComplete, btnLabel) {
@@ -295,7 +296,7 @@ export function setupTutorial(scene) {
     'weapon',
     scene.tutorialSpawns.weapon.x,
     scene.tutorialSpawns.weapon.y,
-    'Makarov'
+    'LAR'
   );
   // ╨г╤З╨╡╨▒╨╜╤Л╨╡ ╨┐╨╛╨┤╨▒╨╛╤А╤Л ╨╜╨╡ ╨┐╤А╨╛╤В╤Г╤Е╨░╤О╤В: ╨╕╨╜╨░╤З╨╡ ╨╝╨╡╨┤╨╗╨╡╨╜╨╜╤Л╨╣ ╨╕╨│╤А╨╛╨║ ╤В╨╡╤А╤П╨╡╤В ╨║╨╕╤В
   // (╤Г ╨│╤А╨░╨╜╨░╤В ╨▓╤Б╨╡╨│╨╛ 15╤Б) ╨╕ ╤И╨░╨│ ┬л╨┐╨╛╨┤╨▒╨╡╤А╨╕┬╗ ╨▓╨╕╤Б╨╕╤В ╨▓╨╡╤З╨╜╨╛.
@@ -320,10 +321,10 @@ export function updateTutorial(scene, time) {
   if (!tut.started || tut.started <= 0) return;
   if (time - tut.started < 800) return;
 
-  // ╨Я╨╛╨║╨░ ╨╕╨│╤А╨╛╨║ ╨╜╨╡ ╨┐╨╛╨┤╨╛╨▒╤А╨░╨╗ ╨┐╨╕╤Б╤В╨╛╨╗╨╡╤В (╤И╨░╨│╨╕ 0тАУ1) тАФ ╨▓╤А╨░╨│╨╕ ╤Б╨┐╤П╤В:
-  // ╨╕╨╜╨░╤З╨╡ ╨╛╨▒╤Б╤В╤А╨╡╨╗ ╨▒╨╡╨╖╨╛╤А╤Г╨╢╨╜╨╛╨│╨╛. ╨е╨▓╨╛╤Б╤В 1.5╤Б ╨┐╨╛╤Б╨╗╨╡ ╨┐╨╛╨┤╨▒╨╛╤А╨░ ╨┤╨╗╤П ╨┐╨╗╨░╨▓╨╜╨╛╤Б╤В╨╕.
-  if (tut.step < 2 && scene.time) {
-    scene.enemiesActiveAt = Math.max(scene.enemiesActiveAt || 0, time + 1500);
+  // Пока игрок осваивает управление, подборы и гранату по манекену (шаги 0–3) —
+  // враги стоят на страже и не нападают на обучающегося. С шага 4 (уничтожение манекена/зачистка) — вступают в бой.
+  if (tut.step < 4 && scene.time) {
+    scene.enemiesActiveAt = Math.max(scene.enemiesActiveAt || 0, time + 1200);
   }
 
   const T = scene.tutorialSpawns;

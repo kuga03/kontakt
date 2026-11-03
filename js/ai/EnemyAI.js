@@ -435,6 +435,9 @@ export default class EnemyAI {
 
   onShot(attacker, time) {
     try { this.p.jump(); } catch (e) {}
+    if (this.scene && this.scene.enemiesActiveAt) {
+      this.scene.enemiesActiveAt = 0;
+    }
   }
 
   forceJump() {

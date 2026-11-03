@@ -2,7 +2,7 @@
 // Условия откалиброваны по [CALIB]-логам: боевые планки стоят выше потолка
 // ботов (~12 фрагов / ~2200 урона), событийные редки по природе.
 // Пороги — константы ниже, правятся одной строкой по новой статистике.
-import { gameState, saveGameState } from './gameState.js?v=171';
+import { gameState, saveGameState } from './gameState.js?v=175';
 
 export const MEDALS = [
   { id: 'firstblood', icon: '🩸', name: 'Первая кровь', desc: 'Первый фраг матча — твой' },

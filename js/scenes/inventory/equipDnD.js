@@ -1,5 +1,5 @@
 import { gameW, UX } from '../../ui/layout.js?v=3';
-import { getEquipment, setEquippedWeapon } from '../../data/gameState.js?v=171';
+import { getEquipment, setEquippedWeapon } from '../../data/gameState.js?v=175';
 import { secondaryWeapons, getWeaponLabel } from '../../data/weapons.js?v=170';
 
 import { getWeaponLevel, isUpgradeable } from '../../data/upgrades.js?v=2';

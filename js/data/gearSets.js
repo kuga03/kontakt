@@ -1,4 +1,4 @@
-import { getEquippedHead, getEquippedTorso, getEquippedPants, getEquippedShoes } from './gameState.js?v=171';
+import { getEquippedHead, getEquippedTorso, getEquippedPants, getEquippedShoes } from './gameState.js?v=175';
 import { RARITY } from './skins.js?v=169';
 
 // Сеты одежды: голова + торс + штаны + ботинки одного стиля дают бонус.

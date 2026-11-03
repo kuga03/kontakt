@@ -1,6 +1,6 @@
-import { gameState, saveGameState } from '../data/gameState.js?v=171';
+import { gameState, saveGameState, syncGameState } from '../data/gameState.js?v=175';
 
-import { campaignLevels } from '../data/levels.js?v=171';
+import { campaignLevels } from '../data/levels.js?v=172';
 import { skillPoints } from '../data/skills.js?v=169';
 import { genePoints } from '../data/genes.js?v=169';
 
@@ -61,6 +61,7 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   create() {
+    syncGameState();
     const _cx = gameW(this) / 2;
     this.cameras.main.setBackgroundColor('#0a0a2a');
     // Флаг модалки сбрасываем: рестарт переиспользует инстанс сцены,

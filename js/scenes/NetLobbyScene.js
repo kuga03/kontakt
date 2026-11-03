@@ -1,4 +1,4 @@
-import { gameState, getEquippedHead, getEquippedShoes, getEquippedTorso, getEquippedPants, getCharacterColors } from '../data/gameState.js?v=171';
+import { gameState, getEquippedHead, getEquippedShoes, getEquippedTorso, getEquippedPants, getCharacterColors } from '../data/gameState.js?v=175';
 import NetClient, { fetchRooms, OFFICIAL_NET_HOST, NET_SERVERS } from '../net/client.js?v=170';
 import { NET_BUILD } from '../net/arena.js?v=169';
 import { gameW, UX } from '../ui/layout.js?v=3';

@@ -1,4 +1,4 @@
-import { hasHead, unlockHead, equipHead, hasShoes, unlockShoes, equipShoes, hasTorso, unlockTorso, equipTorso, hasPants, unlockPants, equipPants } from './gameState.js?v=171';
+import { hasHead, unlockHead, equipHead, hasShoes, unlockShoes, equipShoes, hasTorso, unlockTorso, equipTorso, hasPants, unlockPants, equipPants } from './gameState.js?v=175';
 // Редкости — те же 5 тиров, что у скинов (skins.js), чтобы рамки/подписи
 // буты и одежды читались одинаково. rarity проставлен у каждой вещи,
 // rarityName/rarityColor вычисляются ниже из общего каталога RARITY.

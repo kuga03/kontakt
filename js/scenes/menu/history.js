@@ -1,4 +1,4 @@
-import { gameState } from '../../data/gameState.js?v=171';
+import { gameState } from '../../data/gameState.js?v=175';
 
 import { ensureClassBadgeTextures, classBadgeKey } from '../../data/weapons.js?v=170';
 import { completedAchievements } from '../../data/achievements.js?v=170';

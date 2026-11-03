@@ -1,5 +1,5 @@
 import { UX } from '../../ui/layout.js?v=3';
-import { gameState, getEquipment } from '../../data/gameState.js?v=171';
+import { gameState, getEquipment } from '../../data/gameState.js?v=175';
 import { weaponsList, classDefinitions, weaponByClass, secondaryWeapons, getWeaponLabel, weaponImage, isClassUnlocked, classOpenLevel } from '../../data/weapons.js?v=170';
 
 import { getWeaponLevel, isUpgradeable } from '../../data/upgrades.js?v=2';

@@ -41,26 +41,64 @@ export function generateMapBuilding(key) {
       return this.textures.exists(key);
     }
 
-    // Вывеска с текстом.
-    const sign = (x, y, w, h, text, bgc, txc, fs) => {
-      ctx.fillStyle = bgc;
+    // Архитектурная фасадная панель / фриз (вместо текстовых вывесок).
+    const fascia = (x, y, w, h, bgCol, accentCol) => {
+      ctx.fillStyle = bgCol || '#2a2f38';
       ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(x, y, w, h, 5);
+      if (ctx.roundRect) ctx.roundRect(x, y, w, h, 3);
       else ctx.rect(x, y, w, h);
       ctx.fill();
       ctx.strokeStyle = edge;
       ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.font = `bold ${fs || 24}px Verdana, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-      ctx.strokeText(text, x + w / 2, y + h / 2 + 1);
-      ctx.fillStyle = txc;
-      ctx.fillText(text, x + w / 2, y + h / 2 + 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(x + 2, y + 2, w - 4, 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(x + 2, y + h - 4, w - 4, 2);
+      if (accentCol) {
+        ctx.fillStyle = accentCol;
+        ctx.fillRect(x + 8, y + Math.floor(h / 2) - 1, w - 16, 3);
+      }
     };
-    // Ряд окон.
+    // Козырёк над дверью / входом.
+    const canopy = (x, y, w) => {
+      ctx.fillStyle = '#2c3036';
+      ctx.fillRect(x - 5, y - 5, w + 10, 6);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(x - 5, y - 5, w + 10, 1.5);
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x - 5, y - 5, w + 10, 6);
+      ctx.strokeStyle = '#181a1e';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 2, y - 1);
+      ctx.lineTo(x + 4, y + 8);
+      ctx.moveTo(x + w + 2, y - 1);
+      ctx.lineTo(x + w - 4, y + 8);
+      ctx.stroke();
+    };
+    // Блок кондиционера на фасаде.
+    const acUnit = (x, y) => {
+      ctx.fillStyle = '#cfd3d8';
+      ctx.fillRect(x, y, 22, 15);
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x, y, 22, 15);
+      ctx.fillStyle = '#22262c';
+      ctx.beginPath();
+      ctx.arc(x + 7, y + 7.5, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#858d96';
+      ctx.fillRect(x + 15, y + 4, 4, 7);
+      ctx.strokeStyle = '#4a5058';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + 18, y + 15);
+      ctx.lineTo(x + 20, y + 23);
+      ctx.stroke();
+    };
+    // Ряд окон с переплётом, подоконным отливом и сандриком.
     const winRow = (x, y, n, cw, ch, gap, litCol) => {
       for (let i = 0; i < n; i++) {
         const wx = x + i * (cw + gap);
@@ -69,12 +107,22 @@ export function generateMapBuilding(key) {
         if (rnd() < 0.5) {
           ctx.fillStyle = litCol || '#ffd97a';
           ctx.fillRect(wx, y, cw, ch);
-          ctx.fillStyle = 'rgba(0,0,0,0.4)';
+          ctx.fillStyle = 'rgba(0,0,0,0.45)';
           ctx.fillRect(wx + cw / 2 - 1, y, 2, ch);
+          ctx.fillRect(wx, y + Math.floor(ch * 0.38), cw, 2);
         } else {
           ctx.fillStyle = 'rgba(12,16,26,0.92)';
           ctx.fillRect(wx, y, cw, ch);
+          ctx.fillStyle = 'rgba(255,255,255,0.08)';
+          ctx.fillRect(wx + cw / 2 - 1, y, 1, ch);
+          ctx.fillRect(wx, y + Math.floor(ch * 0.38), cw, 1);
         }
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(wx - 3, y + ch + 1, cw + 6, 3);
+        ctx.fillStyle = 'rgba(255,240,210,0.15)';
+        ctx.fillRect(wx - 3, y + ch, cw + 6, 1);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillRect(wx - 2, y - 3, cw + 4, 1);
       }
     };
     // Дверь с филёнками, ручкой и порожком.
@@ -238,132 +286,221 @@ export function generateMapBuilding(key) {
       body(pad, topY, bw, bh, '#5a6068', true);
       brickLines(pad + 6, topY + 40, bw - 12, bh - 52, 14);
       stains(4, pad + 8, topY + 40, pad + bw - 8, topY + bh - 14);
-      // вместо вывески — вентрешётка, фонарь и труба (как в жизни)
+      // Вентрешётка с ламелями
       ctx.fillStyle = '#2c3036';
-      ctx.fillRect(pad + 30, topY + 12, 64, 24);
-      ctx.fillStyle = 'rgba(200,210,220,0.5)';
-      for (let vI = 0; vI < 4; vI++) ctx.fillRect(pad + 36 + vI * 14, topY + 15, 7, 18);
+      ctx.fillRect(pad + 24, topY + 12, 54, 20);
       ctx.strokeStyle = edge;
-      ctx.strokeRect(pad + 30, topY + 12, 64, 24);
-      wallLamp(pad + bw - 40, topY + 44);
-      pipeV(pad + bw - 18, topY + 8, topY + bh - 12, 7);
-      // ворота-роллета во всю нижнюю часть (окон тут нет — только ворота)
-      // роллета
-      const dx = pad + 30, dw = bw - 60, dy = topY + 56, dh = bh - 66;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(pad + 24, topY + 12, 54, 20);
+      ctx.fillStyle = 'rgba(200,210,220,0.4)';
+      for (let vI = 0; vI < 5; vI++) ctx.fillRect(pad + 28 + vI * 10, topY + 15, 6, 14);
+      // Электрощиток с кабель-каналом
+      ctx.fillStyle = '#7a8088';
+      ctx.fillRect(pad + bw - 42, topY + 14, 18, 22);
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(pad + bw - 42, topY + 14, 18, 22);
+      ctx.fillStyle = '#ffd24a';
+      ctx.beginPath();
+      ctx.moveTo(pad + bw - 34, topY + 18);
+      ctx.lineTo(pad + bw - 30, topY + 24);
+      ctx.lineTo(pad + bw - 33, topY + 24);
+      ctx.lineTo(pad + bw - 31, topY + 31);
+      ctx.stroke();
+      pipeV(pad + bw - 18, topY + 8, topY + bh - 12, 6);
+      // Ворота-роллета
+      const dx = pad + 24, dw = bw - 58, dy = topY + 48, dh = bh - 58;
+      // Защитный короб рулонных ворот
+      ctx.fillStyle = '#26292e';
+      ctx.fillRect(dx - 4, dy - 8, dw + 8, 9);
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(dx - 4, dy - 8, dw + 8, 9);
+      // Полотно роллеты
       ctx.fillStyle = '#3a4046';
       ctx.fillRect(dx, dy, dw, dh);
-      for (let l = dy + 8; l < dy + dh; l += 10) {
+      for (let l = dy + 6; l < dy + dh - 2; l += 8) {
         ctx.fillStyle = 'rgba(0,0,0,0.4)';
         ctx.fillRect(dx + 2, l, dw - 4, 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
         ctx.fillRect(dx + 2, l, dw - 4, 1);
       }
       ctx.strokeStyle = edge;
+      ctx.lineWidth = 2;
       ctx.strokeRect(dx, dy, dw, dh);
+      // Замок внизу
+      ctx.fillStyle = '#202226';
+      ctx.fillRect(dx + dw / 2 - 8, dy + dh - 8, 16, 6);
+      // Прожектор освещения ворот строго над защитным коробом
+      wallLamp(dx + dw / 2, dy - 18);
     } else if (key === 'map_apteka') {
-      body(pad, topY, bw, bh, '#9aa894', true);
-      stains(3, pad + 8, topY + 90, pad + bw - 8, topY + bh - 14);
-      sign(pad + 30, topY + 8, bw - 60, 30, 'АПТЕКА', '#1d5a34', '#e8ffe8', 22);
-      shopWin(pad + 24, topY + 52, 90, bh - 66, '#bfe8c8');
-      curtains(pad + 24, topY + 52, 90, bh - 66);
-      // зелёный крест — левее двери, с зазором
-      ctx.fillStyle = '#22cc55';
-      ctx.fillRect(pad + 110, topY + 58, 24, 9);
-      ctx.fillRect(pad + 118, topY + 50, 9, 25);
-      ctx.strokeStyle = edge;
-      ctx.strokeRect(pad + 110, topY + 58, 24, 9);
-      wallLamp(pad + 184, topY + 54);
-      door(pad + bw - 64, topY + bh - 78, 44, 68);
-    } else if (key === 'map_shop') {
-      body(pad, topY, bw, bh, '#6e4a3c', true);
-      brickLines(pad + 6, topY + 78, bw - 12, bh - 90, 13);
+      body(pad, topY, bw, bh, '#8e9e8a', true);
+      brickLines(pad + 6, topY + 44, bw - 12, bh - 56, 13);
       stains(3, pad + 8, topY + 80, pad + bw - 8, topY + bh - 14);
-      awning(pad + 10, topY + 46, bw - 20, '#7a2e2e', '#d8cfc0');
-      sign(pad + 30, topY + 8, bw - 60, 28, 'МАГАЗИН', '#3a2c22', '#ffd24a', 20);
-      shopWin(pad + 20, topY + 68, 80, bh - 82);
-      curtains(pad + 20, topY + 68, 80, bh - 82);
-      wallLamp(pad + bw - 41, topY + 48);
-      door(pad + bw - 62, topY + bh - 74, 42, 64);
-      winRow(pad + 102, topY + 68, 1, 22, 30, 0);
+      // Архитектурный фриз вместо вывески с текстом
+      fascia(pad + 20, topY + 10, bw - 40, 26, '#1d4a2d', '#38cc66');
+      // Символ: аккуратный светящийся медицинский крест в рамке на фризе
+      const crx = pad + 38, cry = topY + 16;
+      ctx.fillStyle = '#22cc55';
+      ctx.fillRect(crx - 2, cry + 4, 16, 6);
+      ctx.fillRect(crx + 3, cry - 1, 6, 16);
+      ctx.fillStyle = '#e8ffe8';
+      ctx.fillRect(crx, cry + 5, 12, 4);
+      ctx.fillRect(crx + 4, cry + 1, 4, 12);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      for (let li = 0; li < 6; li++) ctx.fillRect(pad + 70 + li * 16, topY + 18, 10, 10);
+      // Витрина
+      const wx = pad + 16, ww = 98, wy = topY + 48, wh = bh - 60;
+      shopWin(wx, wy, ww, wh, '#bfe8c8');
+      curtains(wx, wy, ww, wh);
+      // Входная дверь
+      const dx = pad + bw - 60, dw = 46, dy = topY + 48, dh = bh - 56;
+      canopy(dx, dy, dw);
+      door(dx, dy, dw, dh);
+      // Фонарь в простенке между витриной и дверью
+      wallLamp(pad + 128, topY + 42);
+      // Кондиционер на фасаде над простенком
+      acUnit(pad + 117, topY + 68);
+    } else if (key === 'map_shop') {
+      body(pad, topY, bw, bh, '#724c3c', true);
+      brickLines(pad + 6, topY + 44, bw - 12, bh - 56, 13);
+      stains(3, pad + 8, topY + 70, pad + bw - 8, topY + bh - 14);
+      // Архитектурный карниз с дентикулами вместо вывески с текстом
+      fascia(pad + 16, topY + 8, bw - 32, 24, '#2e2620', '#d88e40');
+      ctx.fillStyle = 'rgba(255,240,210,0.15)';
+      for (let bi = 0; bi < 10; bi++) ctx.fillRect(pad + 24 + bi * 16, topY + 14, 8, 12);
+      // Полосатая маркиза над витриной
+      const wx = pad + 16, ww = 102, wy = topY + 54, wh = bh - 66;
+      awning(wx - 2, wy - 10, ww + 4, '#8a3434', '#dfd7c8');
+      shopWin(wx, wy, ww, wh, '#ffdca0');
+      curtains(wx, wy, ww, wh);
+      // Дверь
+      const dx = pad + bw - 58, dw = 44, dy = topY + 54, dh = bh - 62;
+      canopy(dx, dy, dw);
+      door(dx, dy, dw, dh);
+      // Фонарь над входом (строго над козырьком двери, с зазором по высоте)
+      wallLamp(dx + dw / 2, dy - 18);
+      // Кондиционер на стене над витриной
+      acUnit(wx + 8, topY + 22);
     } else if (key === 'map_zdanie') {
       body(pad, topY, bw, bh, '#565660', true);
-      stains(3, pad + 8, topY + 100, pad + bw - 8, topY + bh - 14);
+      stains(4, pad + 8, topY + 60, pad + bw - 8, topY + bh - 14);
       pipeV(pad + 10, topY + 10, topY + bh - 12, 8);
-      winRow(pad + 28, topY + 18, 4, 30, 36, 14);
-      winRow(pad + 28, topY + 66, 1, 30, 36, 0);
-      winRow(pad + 154, topY + 66, 1, 30, 36, 0);
-      // вход с козырьком только над дверью
-      const edx = pad + bw / 2 - 27, edy = topY + bh - 76;
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.fillRect(edx - 12, edy - 12, 78, 9);
-      wallLamp(pad + bw / 2, edy - 22);
-      door(edx, edy, 54, 64);
-      winRow(pad + 28, topY + 108, 1, 30, 30, 0);
-      winRow(pad + bw - 58, topY + 108, 1, 30, 30, 0);
+      // 3-й этаж: 4 окна
+      winRow(pad + 26, topY + 14, 4, 30, 32, 14);
+      // 2-й этаж: 4 окна
+      winRow(pad + 26, topY + 54, 4, 30, 32, 14);
+      // Кондиционеры между окнами 2-го этажа
+      acUnit(pad + 68, topY + 60);
+      acUnit(pad + 156, topY + 60);
+      // 1-й этаж: Парадный вход по центру
+      const edx = pad + bw / 2 - 27, edy = topY + 96, edw = 54, edh = bh - 104;
+      canopy(edx, edy, edw);
+      door(edx, edy, edw, edh);
+      wallLamp(pad + bw / 2, edy - 18);
+      // Окна 1-го этажа — строго на уровне верха двери edy (topY + 96), не ниже дверей!
+      winRow(pad + 26, edy, 1, 30, 36, 0);
+      winRow(pad + bw - 56, edy, 1, 30, 36, 0);
     } else if (key === 'map_kino') {
-      body(pad, topY, bw, bh, '#6a4438', true);
-      brickLines(pad + 6, topY + 110, bw - 12, bh - 122, 13);
-      stains(3, pad + 8, topY + 100, pad + bw - 8, topY + bh - 14);
-      // вертикальная вывеска с лампочками
-      ctx.fillStyle = '#8a2020';
-      ctx.fillRect(pad + bw - 52, topY - 6, 34, 96);
+      body(pad, topY, bw, bh, '#684236', true);
+      brickLines(pad + 6, topY + 44, bw - 12, bh - 56, 13);
+      stains(3, pad + 8, topY + 70, pad + bw - 8, topY + bh - 14);
+      // Вертикальная неоновая стела ар-деко вместо букв "К И Н О"
+      const stX = pad + bw - 48, stY = topY - 6, stW = 34, stH = 96;
+      ctx.fillStyle = '#22262e';
+      ctx.fillRect(stX, stY, stW, stH);
       ctx.strokeStyle = edge;
-      ctx.strokeRect(pad + bw - 52, topY - 6, 34, 96);
-      ctx.fillStyle = '#ffe9a0';
-      ctx.font = 'bold 20px Verdana, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ['К', 'И', 'Н', 'О'].forEach((ch, i2) => ctx.fillText(ch, pad + bw - 35, topY + 14 + i2 * 22));
-      for (let i2 = 0; i2 < 8; i2++) {
-        ctx.fillStyle = i2 % 2 ? '#ffdd55' : '#885511';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(stX, stY, stW, stH);
+      // Неоновые геометрические шевроны и вертикальные полосы
+      ctx.fillStyle = '#ffb03a';
+      ctx.fillRect(stX + 8, stY + 8, 4, stH - 16);
+      ctx.fillRect(stX + stW - 12, stY + 8, 4, stH - 16);
+      ctx.fillStyle = '#ffd868';
+      for (let si = 0; si < 4; si++) {
         ctx.beginPath();
-        ctx.arc(pad + bw - 52 + (i2 % 2) * 34, topY + (i2 >> 1) * 30, 2.5, 0, Math.PI * 2);
+        ctx.moveTo(stX + 6, stY + 18 + si * 20);
+        ctx.lineTo(stX + stW / 2, stY + 28 + si * 20);
+        ctx.lineTo(stX + stW - 6, stY + 18 + si * 20);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#ffcc44';
+        ctx.stroke();
+      }
+      // Верхний карниз кинотеатра вместо "КИНО"
+      fascia(pad + 16, topY + 8, bw - 74, 26, '#1e222a', '#d43c3c');
+      for (let li = 0; li < 8; li++) {
+        ctx.fillStyle = li % 2 ? '#ffea70' : '#d45a20';
+        ctx.beginPath();
+        ctx.arc(pad + 24 + li * 15, topY + 21, 2.5, 0, Math.PI * 2);
         ctx.fill();
       }
-      sign(pad + 18, topY + 8, 120, 26, 'КИНО', '#20242e', '#ffd24a', 20);
-      // афиши
+      // Афишные стенды со стеклом
       for (let i2 = 0; i2 < 2; i2++) {
-        const ax = pad + 22 + i2 * 62;
-        ctx.fillStyle = i2 ? '#3a5a7a' : '#7a3a4a';
-        ctx.fillRect(ax, topY + 48, 52, 66);
+        const ax = pad + 18 + i2 * 56;
+        ctx.fillStyle = '#2a2420';
+        ctx.fillRect(ax - 2, topY + 44, 48, 64);
         ctx.strokeStyle = edge;
-        ctx.strokeRect(ax, topY + 48, 52, 66);
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(ax - 2, topY + 44, 48, 64);
+        ctx.fillStyle = i2 ? '#3a5a7a' : '#7a3a4a';
+        ctx.fillRect(ax, topY + 46, 44, 60);
         ctx.fillStyle = 'rgba(255,255,255,0.25)';
-        ctx.fillRect(ax + 6, topY + 54, 40, 20);
+        ctx.fillRect(ax + 4, topY + 50, 36, 18);
+        ctx.fillStyle = '#ffd24a';
+        ctx.fillRect(ax + 14, topY + 42, 16, 2);
       }
-      door(pad + bw - 70, topY + bh - 60, 42, 50);
-      wallLamp(pad + bw - 92, topY + bh - 68);
+      // Дверь входа:
+      const kdx = pad + bw - 104, kdw = 50, kdy = topY + 52, kdh = bh - 60;
+      canopy(kdx, kdy, kdw);
+      door(kdx, kdy, kdw, kdh);
+      // Фонарь НАД дверью (а не на афише!)
+      wallLamp(kdx + kdw / 2, kdy - 18);
     } else if (key === 'map_pochta') {
-      body(pad, topY, bw, bh, '#a89a80', true);
-      stains(3, pad + 8, topY + 90, pad + bw - 8, topY + bh - 14);
-      sign(pad + 30, topY + 8, bw - 60, 30, 'ПОЧТА', '#2c4a6a', '#e8f0ff', 22);
-      shopWin(pad + 20, topY + 52, 84, bh - 66, '#c8d8e8');
-      curtains(pad + 20, topY + 52, 84, bh - 66);
-      wallLamp(pad + bw - 42, topY + 56);
-      door(pad + bw - 66, topY + bh - 76, 44, 66);
-      // почтовый ящик — в простенке между витриной и дверью
-      ctx.fillStyle = '#2c5aa0';
-      ctx.fillRect(pad + 108, topY + bh - 52, 26, 34);
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.fillRect(pad + 108, topY + bh - 52, 26, 4);
+      body(pad, topY, bw, bh, '#9a9482', true);
+      brickLines(pad + 6, topY + 44, bw - 12, bh - 56, 13);
+      stains(3, pad + 8, topY + 70, pad + bw - 8, topY + bh - 14);
+      // Верхний карниз вместо "ПОЧТА"
+      fascia(pad + 20, topY + 8, bw - 40, 26, '#263e58', '#4ea2e8');
+      // Витрина
+      const wx = pad + 18, ww = 88, wy = topY + 48, wh = bh - 60;
+      shopWin(wx, wy, ww, wh, '#c8d8e8');
+      curtains(wx, wy, ww, wh);
+      // Дверь
+      const dx = pad + bw - 60, dw = 44, dy = topY + 48, dh = bh - 56;
+      canopy(dx, dy, dw);
+      door(dx, dy, dw, dh);
+      // Почтовый ящик в простенке
+      ctx.fillStyle = '#265492';
+      ctx.fillRect(pad + 112, topY + bh - 50, 24, 32);
       ctx.strokeStyle = edge;
-      ctx.strokeRect(pad + 108, topY + bh - 52, 26, 34);
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(pad + 112, topY + bh - 50, 24, 32);
+      ctx.fillStyle = '#ffd24a';
+      ctx.fillRect(pad + 115, topY + bh - 44, 18, 3);
+      // Фонарь в простенке над почтовым ящиком (без наложения на дверь!)
+      wallLamp(pad + 124, topY + 40);
     } else if (key === 'map_stol') {
-      body(pad, topY, bw, bh, '#7a6a52', true);
-      brickLines(pad + 6, topY + 84, bw - 12, bh - 96, 13);
-      stains(3, pad + 8, topY + 84, pad + bw - 8, topY + bh - 14);
-      sign(pad + 24, topY + 8, bw - 48, 30, 'СТОЛОВАЯ', '#5a3a1a', '#ffe2a0', 20);
-      shopWin(pad + 18, topY + 52, 100, bh - 66, '#ffe0a8');
-      curtains(pad + 24, topY + 58, 68, bh - 78);
-      wallLamp(pad + bw - 41, topY + 48);
-      door(pad + bw - 62, topY + bh - 74, 42, 64);
-      winRow(pad + 114, topY + 56, 1, 30, 34, 0);
+      body(pad, topY, bw, bh, '#7e6c56', true);
+      brickLines(pad + 6, topY + 44, bw - 12, bh - 56, 13);
+      stains(3, pad + 8, topY + 70, pad + bw - 8, topY + bh - 14);
+      // Верхний фриз вместо "СТОЛОВАЯ"
+      fascia(pad + 18, topY + 8, bw - 36, 26, '#462e1e', '#e09a48');
+      // Витрина слева
+      const wx = pad + 16, ww = 88, wy = topY + 50, wh = bh - 62;
+      shopWin(wx, wy, ww, wh, '#ffe0a8');
+      curtains(wx, wy, ww, wh);
+      // Отдельное окно по центру (с зазором от витрины, без наложений)
+      winRow(pad + 114, wy, 1, 30, 36, 0);
+      // Дверь справа
+      const dx = pad + bw - 56, dw = 42, dy = topY + 50, dh = bh - 58;
+      canopy(dx, dy, dw);
+      door(dx, dy, dw, dh);
+      // Фонарь НАД козырьком двери
+      wallLamp(dx + dw / 2, dy - 18);
     } else if (key === 'map_sarai' || key === 'map_derevdom') {
       const conc = key === 'map_sarai';
       body(pad, topY + 10, bw, bh - 10, conc ? '#8a8a8e' : '#6a7076', false);
       stains(3, pad + 8, topY + 30, pad + bw - 8, topY + bh - 14);
-      // фактура корпуса: профлист со швами (сараи) / доски (деревянный);
-      // до ворот-дверей-окон, чтобы они ложились поверх
       if (conc) {
         for (let px = pad + 17; px < pad + bw - 8; px += 34) {
           ctx.fillStyle = 'rgba(0,0,0,0.14)';
@@ -383,7 +520,6 @@ export function generateMapBuilding(key) {
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.fillRect(pad + 24 + Math.floor(rnd() * (bw - 60)), topY + 26 + Math.floor(rnd() * 20), 8, bh - 44);
       }
-      // налипшая земля у цоколя
       for (let i = 0; i < 7; i++) {
         ctx.fillStyle = 'rgba(40,36,28,0.35)';
         ctx.beginPath();
@@ -392,12 +528,12 @@ export function generateMapBuilding(key) {
       }
       ctx.fillStyle = conc ? '#6e6e72' : '#54585e';
       ctx.fillRect(pad - 5, topY - 2, bw + 10, 14);
-      // ворота
-      const dx = pad + 34, dw = 74, dy = topY + 52;
+      // Ворота:
+      const dx = pad + 30, dw = 76, dy = topY + 46;
       ctx.fillStyle = conc ? '#5d6066' : '#484c52';
-      ctx.fillRect(dx, dy, dw, bh - 62);
+      ctx.fillRect(dx, dy, dw, bh - 56);
       ctx.strokeStyle = edge;
-      ctx.strokeRect(dx, dy, dw, bh - 62);
+      ctx.strokeRect(dx, dy, dw, bh - 56);
       ctx.strokeStyle = 'rgba(0,0,0,0.4)';
       for (let l = 0; l < 4; l++) {
         ctx.beginPath();
@@ -405,15 +541,12 @@ export function generateMapBuilding(key) {
         ctx.lineTo(dx + dw - 6, dy + 10 + l * 18);
         ctx.stroke();
       }
-      // заклёпки по корпусу
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      for (let rx = pad + 10; rx < pad + bw; rx += 26) {
-        ctx.fillRect(rx, topY + 16, 3, 3);
-        ctx.fillRect(rx, topY + bh - 22, 3, 3);
-      }
-      winRow(pad + 16, topY + 22, 1, 30, 28, 0);
-      door(pad + bw - 56, topY + 50, 38, 58);
-      // труба
+      // Окно на высоте ворот dy
+      winRow(pad + 12, dy + 4, 1, 26, 26, 0);
+      // Дверь справа:
+      door(pad + bw - 52, dy, 38, bh - 56);
+      wallLamp(pad + bw - 33, dy - 16);
+      // Труба
       ctx.fillStyle = '#4a4e54';
       ctx.fillRect(pad + 30, topY - 26, 16, 28);
       ctx.strokeStyle = edge;
@@ -423,87 +556,86 @@ export function generateMapBuilding(key) {
       ctx.fillRect(pad + 28, topY - 28, 20, 4);
     } else if (key === 'map_bigdom') {
       body(pad, topY, bw, bh, '#7a4a3c', true);
-      brickLines(pad + 6, topY + 100, bw - 12, bh - 112, 13);
-      stains(4, pad + 8, topY + 100, pad + bw - 8, topY + bh - 14);
+      brickLines(pad + 6, topY + 40, bw - 12, bh - 52, 13);
+      stains(4, pad + 8, topY + 60, pad + bw - 8, topY + bh - 14);
       pipeV(pad + bw - 16, topY + 6, topY + bh - 12, 7);
-      // труба на крыше
+      // Труба на крыше
       ctx.fillStyle = '#5a3a2c';
       ctx.fillRect(pad + 30, topY - 26, 18, 28);
       ctx.fillStyle = 'rgba(0,0,0,0.35)';
       ctx.fillRect(pad + 27, topY - 30, 24, 6);
-      // два жилых ряда сверху, внизу — только подъезды и пустая табличка
+      // Два жилых ряда окон (3-й и 2-й этажи):
       for (let f = 0; f < 2; f++) {
         winRow(pad + 22, topY + 16 + f * 48, 4, 28, 32, 20);
       }
-      // шторы на паре окон
       curtains(pad + 70, topY + 16, 28, 32);
       curtains(pad + 166, topY + 64, 28, 32);
-      door(pad + 38, topY + bh - 70, 42, 60);
-      door(pad + bw - 80, topY + bh - 70, 42, 60);
-      // пустая табличка (без номера — не клонируем identity)
-      ctx.fillStyle = '#2c343c';
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(pad + bw / 2 - 30, topY + bh - 42, 60, 20, 4);
-      else ctx.rect(pad + bw / 2 - 30, topY + bh - 42, 60, 20);
-      ctx.fill();
-      ctx.strokeStyle = edge;
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      acUnit(pad + 116, topY + 24);
+      acUnit(pad + 212, topY + 72);
+      // 1-й этаж: подъезды с козырьками и фонарями
+      const p1x = pad + 34, p2x = pad + bw - 78, pdy = topY + bh - 68, pdw = 44, pdh = 58;
+      canopy(p1x, pdy, pdw);
+      door(p1x, pdy, pdw, pdh);
+      wallLamp(p1x + pdw / 2, pdy - 18);
+      canopy(p2x, pdy, pdw);
+      door(p2x, pdy, pdw, pdh);
+      wallLamp(p2x + pdw / 2, pdy - 18);
+      // Окна 1-го этажа между подъездами — на уровне дверей pdy!
+      winRow(pad + 104, pdy, 1, 28, 34, 0);
+      winRow(pad + 140, pdy, 1, 28, 34, 0);
     } else if (key === 'map_ruin' || key === 'map_scrap' || key === 'map_ruin2' || key === 'map_wreck' || key === 'map_ruin3' ||
                key === 'map_ruin4' || key === 'map_ruin5' || key === 'map_ruin6' || key === 'map_ruin7' ||
                key === 'map_tank' || key === 'map_tower' || key === 'map_bags') {
       if (key === 'map_wreck') {
-        // Остов ужатый 0.62 вокруг точки ПОД машиной (H+2): низ кузова
-        // садится к краю холста. Центр выше — и машина парила.
+        // Остов рисуем ВО ВЕСЬ холст 200×120 — спрайт в createCover
+        // растягивается ровно по хитбоксу укрытия, поэтому art должен
+        // заполнять свои размеры (иначе физика больше/меньше картинки).
         ctx.save();
-        ctx.translate(W / 2, H + 2);
-        ctx.scale(1.0, 1.0);
-        ctx.translate(-W / 2, -(H + 2));
         // кузов: капот ниже, кабина выше
         ctx.fillStyle = '#5d5240';
         ctx.beginPath();
-        ctx.moveTo(18, H - 34);
-        ctx.lineTo(30, H - 58);
-        ctx.lineTo(66, H - 66);
-        ctx.lineTo(118, H - 64);
-        ctx.lineTo(150, H - 52);
-        ctx.lineTo(182, H - 54);
-        ctx.lineTo(184, H - 34);
+        ctx.moveTo(10, H - 42);
+        ctx.lineTo(22, H - 74);
+        ctx.lineTo(58, H - 86);
+        ctx.lineTo(112, H - 84);
+        ctx.lineTo(150, H - 68);
+        ctx.lineTo(190, H - 70);
+        ctx.lineTo(192, H - 42);
         ctx.closePath();
         ctx.fill();
         // ржавые потёки и вмятины
         for (let i = 0; i < 10; i++) {
           ctx.fillStyle = rnd() < 0.5 ? 'rgba(138,90,48,0.5)' : 'rgba(0,0,0,0.3)';
-          ctx.fillRect(Math.round(22 + rnd() * 156), Math.round(H - 60 + rnd() * 22), 2 + Math.floor(rnd() * 6), 2 + Math.floor(rnd() * 4));
+          ctx.fillRect(Math.round(14 + rnd() * 172), Math.round(H - 80 + rnd() * 30), 2 + Math.floor(rnd() * 6), 2 + Math.floor(rnd() * 4));
         }
         ctx.fillStyle = 'rgba(255,240,210,0.1)';
-        ctx.fillRect(32, H - 56, 60, 3);
+        ctx.fillRect(24, H - 74, 66, 3);
         // выбитые окна — тёмные дыры с осколками
         const winHole = (wx, ww) => {
           ctx.fillStyle = 'rgba(8,8,10,0.92)';
-          ctx.fillRect(wx, H - 62, ww, 20);
+          ctx.fillRect(wx, H - 82, ww, 26);
           ctx.strokeStyle = edge;
           ctx.lineWidth = 2;
-          ctx.strokeRect(wx, H - 62, ww, 20);
+          ctx.strokeRect(wx, H - 82, ww, 26);
           ctx.fillStyle = 'rgba(150,170,190,0.5)';
           ctx.beginPath();
-          ctx.moveTo(wx + 3, H - 62);
-          ctx.lineTo(wx + 10, H - 62);
-          ctx.lineTo(wx + 4, H - 50);
+          ctx.moveTo(wx + 3, H - 82);
+          ctx.lineTo(wx + 10, H - 82);
+          ctx.lineTo(wx + 4, H - 66);
           ctx.closePath();
           ctx.fill();
         };
-        winHole(70, 26);
-        winHole(100, 22);
+        winHole(62, 30);
+        winHole(98, 26);
         // фара — разбита (тёмная), вторая вырвана
         ctx.fillStyle = 'rgba(8,8,10,0.9)';
-        ctx.fillRect(16, H - 46, 8, 8);
+        ctx.fillRect(8, H - 58, 10, 10);
         ctx.strokeStyle = edge;
         ctx.lineWidth = 2;
-        ctx.strokeRect(16, H - 46, 8, 8);
+        ctx.strokeRect(8, H - 58, 10, 10);
         // колёса: одно спущено
         const wheel = (wx, flat) => {
-          const wy = flat ? H - 26 : H - 30, wr = flat ? 15 : 17;
+          const wy = flat ? H - 32 : H - 38, wr = flat ? 20 : 23;
           ctx.fillStyle = '#1c1c20';
           ctx.beginPath();
           ctx.arc(wx, wy, wr, 0, Math.PI * 2);
@@ -513,32 +645,32 @@ export function generateMapBuilding(key) {
           ctx.stroke();
           ctx.fillStyle = '#4a4e54';
           ctx.beginPath();
-          ctx.arc(wx, wy, 7, 0, Math.PI * 2);
+          ctx.arc(wx, wy, 9, 0, Math.PI * 2);
           ctx.fill();
           ctx.fillStyle = '#1c1c20';
-          ctx.fillRect(wx - 1, wy - 6, 2, 12);
-          ctx.fillRect(wx - 6, wy - 1, 12, 2);
+          ctx.fillRect(wx - 1, wy - 8, 2, 16);
+          ctx.fillRect(wx - 8, wy - 1, 16, 2);
         };
-        wheel(52, false);
-        wheel(148, true);
+        wheel(46, false);
+        wheel(154, true);
         // бампер волочится
         ctx.strokeStyle = '#3a3e44';
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(14, H - 30);
-        ctx.lineTo(4, H - 18);
+        ctx.moveTo(8, H - 38);
+        ctx.lineTo(2, H - 22);
         ctx.stroke();
-        ctx.restore(); // конец ужатой отрисовки (0.62)
+        ctx.restore();
         // земля под колёсами: тень + щебень до края холста
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         ctx.beginPath();
-        ctx.ellipse(W / 2, H - 7, 62, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(W / 2, H - 8, 74, 7, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.fillRect(0, H - 8, W, 8);
         for (let i = 0; i < 10; i++) {
           ctx.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.45)' : 'rgba(140,140,130,0.4)';
-          ctx.fillRect(Math.round(rnd() * W), Math.round(H - 18 + rnd() * 14), 2 + Math.floor(rnd() * 4), 2 + Math.floor(rnd() * 3));
+          ctx.fillRect(Math.round(rnd() * W), Math.round(H - 20 + rnd() * 16), 2 + Math.floor(rnd() * 4), 2 + Math.floor(rnd() * 3));
         }
       } else if (key === 'map_ruin2') {
         // Сломанная башня: высокий корпус, правый угол обвален ниже,
@@ -1610,7 +1742,10 @@ export function generateMapBuilding(key) {
       } else if (key === 'map_bags') {
         // Баррикада из мешков (следы обороны по ТЗ): три ряда со сдвигом,
         // доска-балка поперёк, кирпичи и щебень. Низкая и широкая.
-        const gbaseB = H - 14;
+        // Мешки/балка/кирпичи рисуем ВО ВЕСЬ холст (pad=0): спрайт в
+        // createCover растягивается ровно по хитбоксу, поэтому art должен
+        // заполнять свои размеры (иначе физика больше картинки).
+        const gbaseB = H - 8;
         const bagColsB = ['#7a6e52', '#6f6448', '#847a5c', '#72684e'];
         const bag = (cx, cy, w, h) => {
           const col = bagColsB[Math.floor(rnd() * bagColsB.length)];
@@ -1667,31 +1802,31 @@ export function generateMapBuilding(key) {
         };
         // три ряда: 5 + 4 + 3 (верх короче — горка); перекрытие мешков —
         // без щелей, живой ряд через джиттер позиции/размера
-        for (let i = 0; i < 5; i++) bag(pad + 30 + i * 37 + (rnd() - 0.5) * 6, gbaseB - 14 + (rnd() - 0.5) * 6, 40 + Math.floor(rnd() * 4), 19 + Math.floor(rnd() * 4));
-        for (let i = 0; i < 4; i++) bag(pad + 49 + i * 36 + (rnd() - 0.5) * 6, gbaseB - 30 + (rnd() - 0.5) * 6, 39 + Math.floor(rnd() * 4), 19 + Math.floor(rnd() * 4));
-        for (let i = 0; i < 3; i++) bag(pad + 68 + i * 37 + (rnd() - 0.5) * 6, gbaseB - 46 + (rnd() - 0.5) * 4, 40 + Math.floor(rnd() * 4), 19 + Math.floor(rnd() * 3));
+        for (let i = 0; i < 5; i++) bag(30 + i * 45 + (rnd() - 0.5) * 6, gbaseB - 14 + (rnd() - 0.5) * 6, 44 + Math.floor(rnd() * 4), 22 + Math.floor(rnd() * 4));
+        for (let i = 0; i < 4; i++) bag(52 + i * 44 + (rnd() - 0.5) * 6, gbaseB - 32 + (rnd() - 0.5) * 6, 43 + Math.floor(rnd() * 4), 22 + Math.floor(rnd() * 4));
+        for (let i = 0; i < 3; i++) bag(74 + i * 45 + (rnd() - 0.5) * 6, gbaseB - 50 + (rnd() - 0.5) * 4, 44 + Math.floor(rnd() * 4), 22 + Math.floor(rnd() * 3));
         // доска-балка поперёк
         ctx.save();
-        ctx.translate(pad + bw / 2, gbaseB - 52);
+        ctx.translate(W / 2, gbaseB - 56);
         ctx.rotate(-0.12);
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
-        ctx.fillRect(-86, -4, 172, 12);
+        ctx.fillRect(-96, -4, 192, 12);
         ctx.fillStyle = '#6e542f';
-        ctx.fillRect(-88, -8, 172, 12);
+        ctx.fillRect(-98, -8, 192, 12);
         ctx.fillStyle = 'rgba(255,240,210,0.15)';
-        ctx.fillRect(-88, -8, 172, 3);
+        ctx.fillRect(-98, -8, 192, 3);
         ctx.strokeStyle = edge;
         ctx.lineWidth = 2;
-        ctx.strokeRect(-88, -8, 172, 12);
+        ctx.strokeRect(-98, -8, 192, 12);
         ctx.restore();
         // пара кирпичей сбоку
         ctx.fillStyle = '#7a5a44';
-        ctx.fillRect(pad + bw - 34, gbaseB - 24, 22, 10);
-        ctx.fillRect(pad + bw - 30, gbaseB - 34, 22, 10);
+        ctx.fillRect(W - 44, gbaseB - 26, 24, 11);
+        ctx.fillRect(W - 40, gbaseB - 38, 24, 11);
         ctx.strokeStyle = edge;
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(pad + bw - 34, gbaseB - 24, 22, 10);
-        ctx.strokeRect(pad + bw - 30, gbaseB - 34, 22, 10);
+        ctx.strokeRect(W - 44, gbaseB - 26, 24, 11);
+        ctx.strokeRect(W - 40, gbaseB - 38, 24, 11);
         // щебень во всю ширину низа — до края холста
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         ctx.fillRect(0, H - 12, W, 12);
@@ -1706,33 +1841,41 @@ export function generateMapBuilding(key) {
       body(pad, topY + 26, bw, bh - 26, shabby ? '#8a7a64' : '#7a7e84', false);
       gable(pad, topY + 28, bw, key === 'map_domik' ? 52 : 42, '#6e3a24');
       stains(2, pad + 8, topY + 40, pad + bw - 8, topY + bh - 60);
-      // труба на коньке
+      // Труба на коньке
       ctx.fillStyle = '#4e3423';
       ctx.fillRect(pad + bw - 52, topY - 6, 14, 34);
       ctx.fillStyle = 'rgba(0,0,0,0.35)';
       ctx.fillRect(pad + bw - 55, topY - 10, 20, 5);
-      // заколоченное окно у ветхих — левее двери, с зазором
+      // Входная дверь по центру
+      const ddx = pad + bw / 2 - 19, ddy = topY + 54, ddw = 38, ddh = bh - 60;
+      canopy(ddx, ddy, ddw);
+      door(ddx, ddy, ddw, ddh);
+      wallLamp(ddx + ddw / 2, ddy - 16);
+      // Окна — строго на одной горизонтали с дверью (ddy), а не опущены в цоколь!
       if (shabby) {
-        const wx = pad + 14, wy = topY + 70;
+        // Одно окно заколочено досками крест-накрест
+        const wx = pad + 14, wy = ddy;
         ctx.fillStyle = 'rgba(10,12,18,0.92)';
-        ctx.fillRect(wx, wy, 44, 48);
+        ctx.fillRect(wx, wy, 38, 38);
         ctx.strokeStyle = '#6e5638';
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 4;
         for (let pI = -1; pI < 3; pI++) {
           ctx.beginPath();
-          ctx.moveTo(wx - 4, wy + 12 + pI * 16);
-          ctx.lineTo(wx + 48, wy + 4 + pI * 16);
+          ctx.moveTo(wx - 3, wy + 10 + pI * 12);
+          ctx.lineTo(wx + 41, wy + 4 + pI * 12);
           ctx.stroke();
         }
-        ctx.lineWidth = 2;
-        winRow(pad + bw - 66, topY + 70, 1, 28, 32, 0);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = edge;
+        ctx.strokeRect(wx, wy, 38, 38);
+        // Второе окно нормальное справа
+        winRow(pad + bw - 52, ddy, 1, 28, 34, 0);
       } else {
-        // два окна по бокам от двери
-        winRow(pad + 14, topY + 70, 1, 28, 32, 0);
-        winRow(pad + 130, topY + 70, 1, 28, 32, 0);
+        // Два окна по бокам от двери на уровне ddy
+        winRow(pad + 16, ddy, 1, 28, 34, 0);
+        winRow(pad + bw - 46, ddy, 1, 28, 34, 0);
       }
-      door(pad + bw / 2 - 19, topY + bh - 68, 38, 58);
-      // трещины
+      // Трещины на штукатурке
       ctx.strokeStyle = 'rgba(0,0,0,0.4)';
       ctx.lineWidth = 2;
       ctx.beginPath();

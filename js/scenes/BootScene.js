@@ -86,7 +86,7 @@ export default class BootScene extends Phaser.Scene {
     this._jokeIdx = Math.floor(Math.random() * FUNNY_LOADS.length);
     this._barPct = 0;
     this._barText = this.add.text(W / 2, barY + 24, FUNNY_LOADS[this._jokeIdx] + ' 0%', {
-      fontSize: '13px', color: '#8899bb'
+      fontSize: '26px', color: '#8899bb'
     }).setOrigin(0.5);
     this._barPctLabel = this.add.text(barX + barW + 14, barY, '0%', {
       fontSize: '14px', color: '#66ccff', fontFamily: 'monospace'
@@ -577,8 +577,7 @@ export default class BootScene extends Phaser.Scene {
   _showCheckResult(up) {
     const t = this._barText;
     if (t) {
-      t.setText(up ? '✓ Актуальная версия' : '⚠ Требуется обновление');
-      t.setColor(up ? '#88ff88' : '#ff8888');
+      t.setText('');
     }
     if (this._barFill) this._barFill.width = Math.max(0, this._barW);
     if (up) {

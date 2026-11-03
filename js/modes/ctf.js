@@ -2,7 +2,7 @@
 // (было в GameScene). _rewardObjective и _playFlagSfx общие с BOMB —
 // bomb.js зовёт их через сцену.
 import Flag from '../entities/Flag.js?v=171';
-import { gameState, addCoins, addExperience } from '../data/gameState.js?v=172';
+import { gameState, addCoins, addExperience } from '../data/gameState.js?v=175';
 import { bumpObj } from '../combat/match.js?v=350';
 
 // Внезапная смерть CTF: оба флага исчезают, в центре — один золотой.

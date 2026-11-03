@@ -1,4 +1,4 @@
-import { gameState, saveGameState } from './gameState.js?v=171';
+import { gameState, saveGameState } from './gameState.js?v=175';
 
 // Дерево прокачки: 12 навыков на 95 очков (полное закрытие — 96 уровень).
 // Ядро — по 9 уровней, гранаты как были: осколочные 3, дымовые 2

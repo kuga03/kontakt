@@ -188,20 +188,14 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
   if (scene.textures.exists(texKey)) {
     try { img.destroy(); } catch (e) {}
     const spr = scene.add.image(x, y, texKey).setDepth(85);
-    if (texKey === 'map_wreck') {
-      // Остов машины рисуем в 1.5 раза крупнее укрытия. Низ оставляем на
-      // месте (сдвигаем центр вверх), чтобы колёса не уходили под землю.
-      // Физику/хитбокс не трогаем — это только внешний вид.
-      const dh = height * 1.5;
-      spr.setDisplaySize(width * 1.5, dh);
-      spr.y = y - (dh - height) / 2;
-    } else {
-      spr.setDisplaySize(width, height);
-    }
+    // Физические границы укрытий должны совпадать с визуальными: спрайт
+    // рисуем ровно по хитбоксу (без «увеличений только для вида»), а
+    // несовпадения устраняем в самом арте (см. FIT в artBuildings.js).
+    spr.setDisplaySize(width, height);
     if (alpha < 1) spr.setAlpha(alpha);
   }
 
-  const shW = texKey === 'map_wreck' ? width * 1.35 : width * 0.9;
+  const shW = width * 0.9;
   scene.add.ellipse(x, y + height / 2 + 2, shW, 8, 0x000000, 0.35).setDepth(84);
 
   try { if (scene) scene._losRects = []; } catch (e) {}

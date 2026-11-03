@@ -1,12 +1,12 @@
 import Assault from '../../entities/Assault.js?v=319';
-import EnemyAI from '../../ai/EnemyAI.js?v=66';
+import EnemyAI from '../../ai/EnemyAI.js?v=67';
 import Tank from '../../entities/Tank.js?v=319';
 import Medic from '../../entities/Medic.js?v=319';
 import Sniper from '../../entities/Sniper.js?v=320';
 
 
 import { randomBotNames } from '../../data/names.js?v=169';
-import { gameState } from '../../data/gameState.js?v=171';
+import { gameState } from '../../data/gameState.js?v=175';
 
 import { weaponsList, weaponByClass, classDefinitions } from '../../data/weapons.js?v=170';
 
@@ -148,12 +148,17 @@ export function createEnemies() {
       if (cl.tutorial) {
         const mkBot = (x, y, type, name, team, tint, dummy) => {
           const BotClass = classMap[type] || Assault;
+          let sx = x, sy = y;
           try {
-            if (this._inSolid && this._inSolid(x, y, 30)) y = this._groundSpawnY(x);
-            const esc = this._escapeSolid ? this._escapeSolid(x, y, 30) : { x, y };
-            x = esc.x; y = esc.y;
+            if (this._validateSpawn) {
+              const sv = this._validateSpawn(sx, sy);
+              if (sv && Number.isFinite(sv.x) && Number.isFinite(sv.y)) {
+                sx = sv.x;
+                sy = sv.y;
+              }
+            }
           } catch (e) {}
-          const b = new BotClass(this, x, y, {
+          const b = new BotClass(this, sx, sy, {
             name, team, isAI: true
           });
           b.setTexture('enemy');
@@ -163,20 +168,24 @@ export function createEnemies() {
           this.physics.add.collider(b, this.platforms);
           this.physics.add.collider(b, this.covers);
           b.ai = new EnemyAI(b, this);
-          if (dummy) b.ai.dummy = true;
-          // Манекену сложность не применяем: иначе на ветеране жирный,
-          // и 4-й шаг туториала ломается.
-          if (!dummy) { this.applyBotDifficulty(b); try { b.damageMult = (b.damageMult || 1) / 10; b._diffDmgMult = b.damageMult; } catch (e) {} try { b.fragGrenades = 0; b.smokeGrenades = 0; } catch (e) {} try { if (b.ai) b.ai.noGrenades = true; } catch (e) {} try { if (b.ai) b.ai.stationary = true; } catch (e) {} }
+          if (dummy) {
+            b.ai.dummy = true;
+          } else {
+            // Живые боты для учебного уровня: полноценный AI (движение, стрельба),
+            // без гранат и с комфортным уроном, чтобы новичок мог освоиться в бою.
+            this.applyBotDifficulty(b);
+            try { b.damageMult = (b.damageMult || 1) * 0.6; b._diffDmgMult = b.damageMult; } catch (e) {}
+            try { b.fragGrenades = 0; b.smokeGrenades = 0; } catch (e) {}
+            try { if (b.ai) b.ai.noGrenades = true; } catch (e) {}
+          }
           this._paintName(b);
           return b;
         };
 
         this.tutDummy = mkBot(680, 560, 'Assault', 'Манекен', 'red', 0xffaaaa, true);
-        // Живые враги стартуют с земли (y как у подборов), а не с неба:
-        // иначе падают на крыши/ступени, где новичку их не достать
-        // и не выцепить. Манекен выше — он мишень для гранаты.
-        mkBot(1400, 815, 'Assault', 'Враг 1', 'red', 0xff5555);
-        mkBot(1800, 815, 'Assault', 'Враг 2', 'red', 0xff5555);
+        // Живые враги: два полноценных бота на виду правее манекена
+        mkBot(920, 750, 'Assault', 'Враг 1', 'red', 0xff5555);
+        mkBot(1080, 750, 'Assault', 'Враг 2', 'red', 0xff5555);
         this.tutorialSpawns = { weapon: { x: 250, y: 815 }, frag: { x: 560, y: 815 }, medkit: { x: 1150, y: 815 } };
         return;
       }

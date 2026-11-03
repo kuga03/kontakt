@@ -1,4 +1,4 @@
-import { gameState, saveGameState } from './gameState.js?v=171';
+import { gameState, saveGameState } from './gameState.js?v=175';
 
 // Геном: 2 ветки улучшений за очки генома (только из легендарных контрактов).
 // Названия простые, бонусы умеренные — через те же модификаторы, что навыки.

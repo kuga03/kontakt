@@ -1,5 +1,5 @@
 import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState, hasWeapon, unlockWeapon, saveGameState, hasHead, getEquippedHead, hasShoes, getEquippedShoes, hasTorso, getEquippedTorso, hasPants, getEquippedPants } from '../data/gameState.js?v=171';
+import { gameState, hasWeapon, unlockWeapon, saveGameState, hasHead, getEquippedHead, hasShoes, getEquippedShoes, hasTorso, getEquippedTorso, hasPants, getEquippedPants } from '../data/gameState.js?v=175';
 import {
   weaponsList,
   classDefinitions,

@@ -1,5 +1,5 @@
 ﻿
-import { getEquippedShoes, getEquippedPants } from '../../../data/gameState.js?v=171';
+import { getEquippedShoes, getEquippedPants } from '../../../data/gameState.js?v=175';
 
 import { ensureGeoTextures } from './gear.js';
 import { artTex, cropH, cropW, GEO_HUMAN, partCfg, targetH } from './config.js';

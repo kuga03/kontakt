@@ -1,4 +1,4 @@
-import { gameState } from '../../data/gameState.js?v=171';
+import { gameState } from '../../data/gameState.js?v=175';
 import { NET_ARENA, NET_BUILD } from '../../net/arena.js?v=169';
 
 import { ensureClassBadgeTextures } from '../../data/weapons.js?v=170';

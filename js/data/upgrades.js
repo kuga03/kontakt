@@ -3,7 +3,7 @@
 // разброс, дальность). Урон и темп НЕ трогаем вообще — лестница ТТК (п.3)
 // и зеркала с сервером целы. Неудач нет (100% успех).
 // Импортирует только gameState/weapons (циклов нет); guns.js зовёт отсюда.
-import { gameState, saveGameState, addCoins } from './gameState.js?v=171';
+import { gameState, saveGameState, addCoins } from './gameState.js?v=175';
 import { weaponsList } from './weapons.js?v=170';
 
 export const UPGRADE_MAX = 5;

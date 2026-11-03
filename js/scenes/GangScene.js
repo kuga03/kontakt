@@ -3,7 +3,7 @@
 // контракты справа. Всё подписано: сверху — как играть одной строкой.
 import { gameW, UX } from '../ui/layout.js?v=3';
 import { classOfWeapon, weaponsList, getWeaponLabel } from '../data/weapons.js?v=170';
-import { gameState } from '../data/gameState.js?v=171';
+import { gameState } from '../data/gameState.js?v=175';
 import {
   ensureGang, ensureTurf, turfTick, ENEMY_GANGS, GANG_COSTS, GANG_RULES,
   hireMember, buySlot, healAll, claimIncome, assignGun, toggleBattle,

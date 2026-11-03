@@ -1,4 +1,4 @@
-import { gameState, addCoins, addExperience, saveGameState, getPass } from '../../data/gameState.js?v=171';
+import { gameState, addCoins, addExperience, saveGameState, getPass } from '../../data/gameState.js?v=175';
 
 import * as Gang from '../../data/gang.js?v=7';
 import { reapplyGlassOnRevive } from '../../data/mutators.js?v=2';

@@ -2,7 +2,7 @@
 import { ensureClassBadgeTextures } from '../../data/weapons.js?v=170';
 import { getShowFps } from '../../scenes/SettingsScene.js?v=176';
 
-import { gameState } from '../../data/gameState.js?v=171';
+import { gameState } from '../../data/gameState.js?v=175';
 
 const STAT_ICONS = { 'Ф': 'icon_stat_frags', 'С': 'icon_stat_deaths', 'ФЛ': 'icon_stat_flag', 'УРОН': 'icon_stat_damage', 'ПИНГ': 'icon_stat_ping', 'КПД': 'icon_stat_kpd' };
 export function statHeaderIcons(scene, add, edges, cols, y, opts) {

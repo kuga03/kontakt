@@ -1,5 +1,5 @@
 import { gameW } from '../../ui/layout.js?v=3';
-import { gameState, saveGameState, addCoins } from '../../data/gameState.js?v=171';
+import { gameState, saveGameState, addCoins } from '../../data/gameState.js?v=175';
 import { getWeaponLabel } from '../../data/weapons.js?v=170';
 import { weaponSkins, RARITY } from '../../data/skins.js?v=169';
 

@@ -1,5 +1,5 @@
 import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState } from '../data/gameState.js?v=171';
+import { gameState } from '../data/gameState.js?v=175';
 import { ACHIEVEMENTS, achievementProgress, isClaimed, claimAchievement } from '../data/achievements.js?v=170';
 
 // Достижения цепочками: виден только текущий тир.

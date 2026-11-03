@@ -1,4 +1,4 @@
-import { gameState, addCoins, addExperience, setTrialRecord, saveGameState } from '../../data/gameState.js?v=171';
+import { gameState, addCoins, addExperience, setTrialRecord, saveGameState } from '../../data/gameState.js?v=175';
 
 import { trialEndedTime } from '../../modes/trial.js?v=206';
 
@@ -220,10 +220,10 @@ export function handleDeath(scene, victim, killer, src) {
       }).setOrigin(0.5).setScrollFactor(0).setDepth(303);
 
       const retryBtn = scene.add.text(640, 408, 'Начать заново', {
-        fontSize: '24px',
+        fontSize: '22px',
         color: '#ffffff',
         backgroundColor: '#287a45',
-        padding: 14
+        padding: { left: 18, right: 18, top: 12, bottom: 12 },
       }).setOrigin(0.5).setScrollFactor(0).setDepth(302);
 
       retryBtn.setInteractive({ useHandCursor: true });

@@ -5,7 +5,7 @@ import Tank from '../entities/Tank.js?v=319';
 import Medic from '../entities/Medic.js?v=319';
 import Sniper from '../entities/Sniper.js?v=320';
 import EnemyAI from '../ai/EnemyAI.js?v=1';
-import { gameState } from '../data/gameState.js?v=171';
+import { gameState } from '../data/gameState.js?v=175';
 
 const classMap = { Assault, Tank, Medic, Sniper };
 

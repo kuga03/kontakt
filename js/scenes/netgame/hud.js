@@ -1,4 +1,4 @@
-import { gameState, expRequired } from '../../data/gameState.js?v=171';
+import { gameState, expRequired } from '../../data/gameState.js?v=175';
 import { NET_BUILD } from '../../net/arena.js?v=169';
 import { getCrosshair, drawCrosshairFigure } from '../../data/crosshair.js?v=169';
 import { weaponIcon, weaponImage, weaponHudScale, getWeaponLabel, weaponHasMag, classBadgeKey } from '../../data/weapons.js?v=170';

@@ -5,8 +5,8 @@ import Sniper from '../../entities/Sniper.js?v=320';
 
 
 
-import { gameState, saveGameState } from '../../data/gameState.js?v=171';
-import { getAllCampaignLevels } from '../../data/levels.js?v=171';
+import { gameState, saveGameState } from '../../data/gameState.js?v=175';
+import { getAllCampaignLevels } from '../../data/levels.js?v=172';
 import { getModeMap, getFreeMap, getRandomMap } from '../../data/modeMaps.js?v=171';
 import { isClassUnlocked } from '../../data/weapons.js?v=170';
 import { getBotDifficulty } from '../../data/difficulty.js?v=170';

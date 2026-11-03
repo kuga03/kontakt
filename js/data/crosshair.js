@@ -1,4 +1,4 @@
-import { gameState, saveGameState } from './gameState.js?v=171';
+import { gameState, saveGameState } from './gameState.js?v=175';
 
 // Прицел: цвет/фигура/размер/толщина/точка/динамика.
 // Дефолт = старый вид (кольцо + лапки + точка, pale green).

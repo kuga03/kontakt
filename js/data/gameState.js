@@ -117,7 +117,7 @@ const defaultState = {
   weaponSkinDates: {}
 };
 
-const OLD_STARTERS = ['bad_ak47', 'Makarov', 'Glock', 'M1911'];
+const OLD_STARTERS = ['bad_ak47', 'LAR', 'Glock', 'M1911'];
 
 let storedState = null;
 try {
@@ -703,8 +703,38 @@ export function getEquippedPants(cls) {
   return _wardrobeGet('pants', gameState.equippedPants, cls);
 }
 
-export function advanceCampaignLevel() {
-  gameState.campaignLevel += 1;
+export function syncGameState() {
+  try {
+    const raw = localStorage.getItem('sideShooterState');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        if (Number.isFinite(+parsed.campaignLevel)) {
+          gameState.campaignLevel = Math.max(1, Math.floor(+parsed.campaignLevel));
+        }
+        if (Number.isFinite(+parsed.coins)) {
+          gameState.coins = Math.max(0, Math.floor(+parsed.coins));
+        }
+        if (Number.isFinite(+parsed.level)) {
+          gameState.level = Math.max(1, Math.floor(+parsed.level));
+        }
+        if (Number.isFinite(+parsed.experience)) {
+          gameState.experience = Math.max(0, Math.floor(+parsed.experience));
+        }
+      }
+    }
+  } catch (e) {}
+  return gameState;
+}
+
+export function advanceCampaignLevel(completedLevelIndex) {
+  if (typeof completedLevelIndex === 'number' && Number.isFinite(completedLevelIndex)) {
+    if (gameState.campaignLevel <= completedLevelIndex + 1) {
+      gameState.campaignLevel = completedLevelIndex + 2;
+    }
+  } else {
+    gameState.campaignLevel += 1;
+  }
   saveGameState();
 }
 

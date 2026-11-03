@@ -1,4 +1,4 @@
-import { gameState, mostPlayedClass, expRequired, getEquipment } from '../../data/gameState.js?v=171';
+import { gameState, mostPlayedClass, expRequired, getEquipment } from '../../data/gameState.js?v=175';
 
 import { getRank } from '../../data/ranks.js?v=169';
 import { classDefinitions } from '../../data/weapons.js?v=170';

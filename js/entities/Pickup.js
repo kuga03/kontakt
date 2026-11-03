@@ -1,4 +1,4 @@
-import { unlockWeapon } from '../data/gameState.js?v=171';
+import { unlockWeapon } from '../data/gameState.js?v=175';
 import { getWeaponLabel, weaponImage } from '../data/weapons.js?v=170';
 import { fragMax, smokeMax } from '../data/skills.js?v=169';
 

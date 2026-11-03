@@ -1,5 +1,5 @@
 import { gameW, UX } from '../ui/layout.js?v=3';
-import { resetProgress, resetCampaign, addCoins, addExperience, saveGameState, gameState, renamePlayer, unlockHead, unlockShoes, unlockTorso, unlockPants } from '../data/gameState.js?v=171';
+import { resetProgress, resetCampaign, addCoins, addExperience, saveGameState, gameState, renamePlayer, unlockHead, unlockShoes, unlockTorso, unlockPants } from '../data/gameState.js?v=175';
 import { campaignLevels } from '../data/levels.js?v=172';
 import { GEAR_ITEMS } from '../data/wardrobe.js?v=172';
 import { musicVol, sfxVol, volLabel, refreshLiveVolumes } from '../data/audio.js?v=170';

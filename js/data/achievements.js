@@ -1,4 +1,4 @@
-import { gameState, addCoins, saveGameState } from './gameState.js?v=171';
+import { gameState, addCoins, saveGameState } from './gameState.js?v=175';
 
 // Достижения тирами (меню v2): gameState.achievements = ЗАБРАННЫЕ награды.
 // Выполненное, но незабранное — светится в меню, забирается кнопкой

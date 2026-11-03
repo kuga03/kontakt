@@ -1,5 +1,5 @@
 import { gameW } from '../../ui/layout.js?v=3';
-import { gameState, setCharacterColor, getCharacterColors, equipHead, equipShoes, equipTorso, equipPants, hasHead, hasShoes, hasTorso, hasPants, getEquippedHead, getEquippedTorso, getEquippedPants, getEquippedShoes } from '../../data/gameState.js?v=171';
+import { gameState, setCharacterColor, getCharacterColors, equipHead, equipShoes, equipTorso, equipPants, hasHead, hasShoes, hasTorso, hasPants, getEquippedHead, getEquippedTorso, getEquippedPants, getEquippedShoes } from '../../data/gameState.js?v=175';
 import { classDefinitions, getWeaponLabel, isClassUnlocked, classOpenLevel } from '../../data/weapons.js?v=170';
 import { weaponSkins } from '../../data/skins.js?v=169';
 

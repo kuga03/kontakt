@@ -1,5 +1,5 @@
 import { classDefinitions } from '../data/weapons.js?v=170';
-import { getEquipment, getCharacterColors, getEquippedHead, getEquippedTorso } from '../data/gameState.js?v=171';
+import { getEquipment, getCharacterColors, getEquippedHead, getEquippedTorso } from '../data/gameState.js?v=175';
 import { fragMax, smokeMax } from '../data/skills.js?v=169';
 import { getRigConfig } from '../data/rigConfig.js?v=169';
 import * as Damage from './player/damage.js?v=318';
@@ -415,7 +415,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     );
     if (!this.isAI && !inTutorial && !noDef && this.inventory.length === 0) {
       let defPrimary = 'bad_ak47';
-      let defSecondary = 'Makarov';
+      let defSecondary = 'LAR';
       const defs = classDefinitions.find(cd => cd.id === this.constructor.name);
       if (defs) {
         defPrimary = defs.defaultPrimary || 'bad_ak47';

@@ -1,5 +1,5 @@
 import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState } from '../data/gameState.js?v=171';
+import { gameState } from '../data/gameState.js?v=175';
 import {
   skillDefinitions,
   SKILL_ORDER,

@@ -1,5 +1,5 @@
 import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState, saveGameState, mostPlayedClass, addCoins } from '../data/gameState.js?v=171';
+import { gameState, saveGameState, mostPlayedClass, addCoins } from '../data/gameState.js?v=175';
 import { getRank } from '../data/ranks.js?v=169';
 import { ACHIEVEMENTS } from '../data/achievements.js?v=170';
 import { detectPlatform, platformLabel, getViewer, getPlatformFriends, inviteFriend } from '../platform/index.js?v=169';

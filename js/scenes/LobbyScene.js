@@ -1,6 +1,4 @@
-import { gameState } from '../data/gameState.js?v=171';
-import { saveGameState } from '../data/gameState.js?v=171';
-import { renamePlayer } from '../data/gameState.js?v=171';
+import { gameState, saveGameState, renamePlayer, syncGameState } from '../data/gameState.js?v=175';
 import { getBotDifficulty, nextBotDifficulty, botDifficulties } from '../data/difficulty.js?v=170';
 import { campaignLevels } from '../data/levels.js?v=172';
 import { classDefinitions, isClassUnlocked, classOpenLevel } from '../data/weapons.js?v=170';
@@ -131,7 +129,9 @@ export default class LobbyScene extends Phaser.Scene {
     // Закрытый класс из старого сейва/ссылки — откат на штурмовика
     // (танк со 2, медик с 3, снайпер с 4 уровня).
     if (!isClassUnlocked(this.selectedClass, gameState.level)) this.selectedClass = 'Assault';
-    this.levelIndex = data.levelIndex ?? Math.max(0, Math.min(campaignLevels.length - 1, gameState.campaignLevel - 1));
+    syncGameState();
+    const campLv = Math.max(1, Math.floor(Number(gameState && gameState.campaignLevel) || 1));
+    this.levelIndex = data.levelIndex ?? Math.max(0, Math.min(campaignLevels.length - 1, campLv - 1));
     this.activeButton = null;
     this._previews = [];
 

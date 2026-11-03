@@ -1,5 +1,5 @@
-import { gameState, addCoins, addExperience, advanceCampaignLevel, getPass, unlockWeapon, hasWeapon } from '../../data/gameState.js?v=171';
-import { campaignLevels } from '../../data/levels.js?v=171';
+import { gameState, addCoins, addExperience, advanceCampaignLevel, getPass, unlockWeapon, hasWeapon } from '../../data/gameState.js?v=175';
+import { campaignLevels } from '../../data/levels.js?v=172';
 
 import { gameW } from '../../ui/layout.js?v=3';
 
@@ -132,7 +132,7 @@ export function completeCampaignLevel(scene) {
   } catch (e) {}
   // Свои уровни кампанию не двигают: после встроенной кампании
   // (20 миссий) финала в «Мои уровни» нет, они живут отдельно.
-  if (!cl.custom) advanceCampaignLevel();
+  if (!cl.custom) advanceCampaignLevel(scene.levelIndex);
 
   scene.showStory(
     cl.storyOutro || `Ты прошёл «${cl.name}»!\nЭто твой собственный уровень.`,
@@ -218,10 +218,12 @@ export function completeCampaignLevel(scene) {
         if (isLast) {
           scene.scene.start('MenuScene');
         } else {
+          const nextIdx = Math.min((scene.levelIndex || 0) + 1, campaignLevels.length - 1);
           scene.scene.start('GameScene', {
             mode: 'CAMPAIGN',
             selectedClass: scene.selectedClass,
-            levelIndex: scene.levelIndex + 1
+            levelIndex: nextIdx,
+            playerName: scene.playerName
           });
         }
       });

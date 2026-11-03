@@ -298,10 +298,11 @@ export function updateTick(time, delta) {
         // Заморозка врагов (туториал/интро): останавливаем КАЖДЫЙ кадр,
         // а не только в тики думанья — иначе в промежуточных тиках висит
         // старая скорость и бот скользит.
-        if (this.enemiesActiveAt && time < this.enemiesActiveAt) {
+        const sleeping = !!(this.enemiesActiveAt && time < this.enemiesActiveAt);
+        if (sleeping) {
           try { player.stop(); } catch (e) {}
         }
-        if ((player._aiPhase | 0) === (this._aiPhaseRun | 0)) {
+        if (!sleeping && (player._aiPhase | 0) === (this._aiPhaseRun | 0)) {
           // Один глючный бот не роняет весь кадр: ловим, троттлим лог,
           // бот просто пропустит такт. Без этого null.x в ИИ = красный экран.
           try {
