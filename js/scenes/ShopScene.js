@@ -513,7 +513,7 @@ export default class ShopScene extends Phaser.Scene {
     const lv = getWeaponLevel(name);
     const price = nextUpgradeCost(name);
     const label = getWeaponLabel(name);
-    const cx = gameW(this) / 2, cy = 360, W = 560, H = 380;
+    const cx = gameW(this) / 2, cy = 360, W = 490, H = 290;
     const elems = [];
     const overlay = this.add.rectangle(cx, cy, gameW(this), 720, 0x000000, 0.7).setDepth(300);
     overlay.setInteractive();
@@ -521,19 +521,51 @@ export default class ShopScene extends Phaser.Scene {
     const bg = this.add.rectangle(cx, cy, W, H, 0x14142e, 1).setDepth(301)
       .setStrokeStyle(2, 0xffd24a, 1);
     elems.push(overlay, bg);
-    elems.push(this.add.text(cx, cy - H / 2 + 28, `УЛУЧШЕНИЕ · ${label}`, {
-      fontSize: '19px', color: '#ffdd88', fontStyle: 'bold'
+    elems.push(this.add.text(cx, cy - H / 2 + 22, `УЛУЧШЕНИЕ · ${label}`, {
+      fontSize: '18px', color: '#ffdd88', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(302));
+
+    const isMax = price == null;
+    const plateW = 430;
+    const plateH = 25;
+    const plateGap = 5;
+    const plateStartY = cy - H / 2 + 46;
 
     UPGRADE_BONUS.forEach((b, i) => {
       const done = i < lv, next = i === lv;
       const mark = done ? '✓' : (next ? '→' : '·');
       const isJustCompleted = justUpgraded && i === lv - 1;
-      const txt = this.add.text(cx, cy - H / 2 + 88 + i * 24, `${mark} +${i + 1}: ${b}`, {
-        fontSize: '14px',
-        color: isJustCompleted ? '#ffffff' : (done ? '#557755' : (next ? '#ffd24a' : '#667788')),
+      const py = plateStartY + plateH / 2 + i * (plateH + plateGap);
+
+      // Аккуратная плашка строки улучшения
+      const pl = this.add.graphics().setDepth(302);
+      elems.push(pl);
+
+      const r = 6;
+      if (done) {
+        pl.fillStyle(0x132619, 0.7);
+        pl.fillRoundedRect(cx - plateW / 2, py - plateH / 2, plateW, plateH, r);
+        pl.lineStyle(1, 0x2e663e, 0.85);
+        pl.strokeRoundedRect(cx - plateW / 2, py - plateH / 2, plateW, plateH, r);
+      } else if (next) {
+        pl.fillStyle(0x282010, 0.9);
+        pl.fillRoundedRect(cx - plateW / 2, py - plateH / 2, plateW, plateH, r);
+        pl.fillStyle(0xffffff, 0.08);
+        pl.fillRoundedRect(cx - plateW / 2, py - plateH / 2, plateW, 5, { tl: r, tr: r, bl: 0, br: 0 });
+        pl.lineStyle(1.5, 0xffd24a, 1);
+        pl.strokeRoundedRect(cx - plateW / 2, py - plateH / 2, plateW, plateH, r);
+      } else {
+        pl.fillStyle(0x101322, 0.5);
+        pl.fillRoundedRect(cx - plateW / 2, py - plateH / 2, plateW, plateH, r);
+        pl.lineStyle(1, 0x222638, 0.6);
+        pl.strokeRoundedRect(cx - plateW / 2, py - plateH / 2, plateW, plateH, r);
+      }
+
+      const txt = this.add.text(cx, py, `${mark} +${i + 1}: ${b}`, {
+        fontSize: '13px',
+        color: isJustCompleted ? '#ffffff' : (done ? '#77cc88' : (next ? '#ffd24a' : '#667788')),
         fontStyle: (next || isJustCompleted) ? 'bold' : 'normal'
-      }).setOrigin(0.5).setDepth(302);
+      }).setOrigin(0.5).setDepth(303);
       elems.push(txt);
 
       if (isJustCompleted) {
@@ -545,25 +577,24 @@ export default class ShopScene extends Phaser.Scene {
           duration: 350,
           ease: 'Back.Out',
           onComplete: () => {
-            try { txt.setStyle({ color: '#77cc77' }); } catch (e) {}
+            try { txt.setStyle({ color: '#77cc88' }); } catch (e) {}
           }
         });
       }
     });
 
-    if (price == null) {
-      elems.push(this.add.text(cx, cy - H / 2 + 88 + 5 * 24 + 16, 'МАКСИМУМ', {
-        fontSize: '15px', color: '#88dd88', fontStyle: 'bold'
+    if (isMax) {
+      elems.push(this.add.text(cx, cy + H / 2 - 76, 'МАКСИМУМ', {
+        fontSize: '13px', color: '#88dd88', fontStyle: 'bold'
       }).setOrigin(0.5).setDepth(302));
     }
 
-    const isMax = price == null;
     const canAfford = !isMax && (Number(gameState.coins) || 0) >= price;
-    const by = cy + H / 2 - 46;
-    const bh = 44;
+    const by = cy + H / 2 - 42;
+    const bh = 42;
 
     if (justUpgraded) {
-      const targetY = cy - H / 2 + 88 + Math.max(0, lv - 1) * 24;
+      const targetY = plateStartY + plateH / 2 + Math.max(0, lv - 1) * (plateH + plateGap);
       this._playUpgradeEffect(cx, targetY, isMax, elems);
       this.tweens.add({
         targets: bg,
