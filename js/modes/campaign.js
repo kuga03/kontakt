@@ -130,8 +130,21 @@ export function showStory(scene, text, onComplete, btnLabel) {
           if (curPct >= 1) {
             barLabel.setText(`✓ БОЙЦЫ ГОТОВЫ К БОЮ (${p100}%)`);
             barLabel.setColor('#00ff88');
+            if (revealed && !finished) {
+              hint.setText('Бойцы готовы · жми В БОЙ! или Enter');
+              hint.setVisible(true);
+              goBtn.setVisible(true);
+            }
           } else {
             barLabel.setText(`ПОДГОТОВКА ПОДРАЗДЕЛЕНИЯ... ${p100}%`);
+          }
+        } else if (curPct >= 1 && warmDone) {
+          barLabel.setText('✓ БОЙЦЫ ГОТОВЫ К БОЮ (100%)');
+          barLabel.setColor('#00ff88');
+          if (revealed && !finished && !goBtn.visible) {
+            hint.setText('Бойцы готовы · жми В БОЙ! или Enter');
+            hint.setVisible(true);
+            goBtn.setVisible(true);
           }
         }
       }
@@ -205,9 +218,15 @@ export function showStory(scene, text, onComplete, btnLabel) {
       if (scene.typeTimer === typeTimer) scene.typeTimer = null;
     } catch (e) {}
     storyText.setText(text);
-    hint.setText(byTimer ? 'Enter — в бой' : 'Текст показан · жми В БОЙ! или Enter');
-    hint.setVisible(true);
-    goBtn.setVisible(true);
+    if (!isIntro || (warmDone && curPct >= 1)) {
+      hint.setText(byTimer ? 'Enter — в бой' : 'Текст показан · жми В БОЙ! или Enter');
+      hint.setVisible(true);
+      goBtn.setVisible(true);
+    } else {
+      hint.setText('Подготовка подразделения к бою...');
+      hint.setVisible(true);
+      goBtn.setVisible(false);
+    }
   };
 
   const finish = () => {
@@ -273,14 +292,18 @@ export function showStory(scene, text, onComplete, btnLabel) {
     }
     // Enter тАФ ╤В╨╛╨╗╤М╨║╨╛ ╨┐╨╛╤Б╨╗╨╡ ╨┐╨╛╨╗╨╜╨╛╨│╨╛ ╨┐╨╛╨║╨░╨╖╨░ ╨╕ ╤Б ╨┐╨░╤Г╨╖╨╛╨╣ ╨╛╤В ╨╜╨╡╨│╨╛.
     if (k === 'Enter') {
+      if (isIntro && (!warmDone || curPct < 1)) return;
       try {
-        if (scene.time && scene.time.now - revealT > 1200) finish();
+        if (scene.time && scene.time.now - revealT > 800) finish();
       } catch (e) {}
     }
   };
 
   goBtn.setInteractive({ useHandCursor: true });
-  goBtn.on('pointerdown', () => finish());
+  goBtn.on('pointerdown', () => {
+    if (isIntro && (!warmDone || curPct < 1)) return;
+    finish();
+  });
   goBtn.on('pointerover', () => scene._hoverSfx());
 
   scene.input.on('pointerdown', onDown);

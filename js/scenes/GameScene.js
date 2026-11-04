@@ -24,7 +24,7 @@ import * as Trial from '../modes/trial.js?v=206';
 import * as Koth from '../modes/koth.js?v=169';
 import * as Ctf from '../modes/ctf.js?v=350';
 import * as BombMode from '../modes/bomb.js?v=350';
-import * as Campaign from '../modes/campaign.js?v=174';
+import * as Campaign from '../modes/campaign.js?v=175';
 import * as Match from '../combat/match.js?v=349';
 
 import * as Bullets from '../combat/bullets.js?v=322';
