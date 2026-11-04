@@ -507,34 +507,150 @@ export default class ShopScene extends Phaser.Scene {
         fontStyle: next ? 'bold' : 'normal'
       }).setOrigin(0.5).setDepth(302));
     });
-    const priceY = cy - H / 2 + 88 + 5 * 24 + 10;
-    elems.push(this.add.text(cx, priceY, price == null ? 'МАКСИМУМ — дальше некуда' : `Цена: ${price} монет (у тебя ${gameState.coins | 0})`, {
-      fontSize: '15px', color: price == null ? '#88dd88' : ((gameState.coins | 0) >= price ? '#ffee88' : '#ff8888'), fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(302));
-    const okBtn = this.add.text(cx - 120, cy + H / 2 - 42, price == null ? 'МАКС' : `УЛУЧШИТЬ · ${price}`, {
-      fontSize: '15px', color: price == null ? '#667788' : '#ffffff',
-      backgroundColor: price == null ? '#22223a' : '#2a5a2a', padding: 8
-    }).setOrigin(0.5).setDepth(302);
-    elems.push(okBtn);
-    if (price != null) {
-      okBtn.setInteractive({ useHandCursor: true });
-      okBtn.on('pointerover', () => okBtn.setStyle({ color: '#ffff55' }));
-      okBtn.on('pointerout', () => okBtn.setStyle({ color: '#ffffff' }));
-      okBtn.on('pointerdown', () => {
+    if (price == null) {
+      elems.push(this.add.text(cx, cy - H / 2 + 88 + 5 * 24 + 16, 'МАКСИМУМ', {
+        fontSize: '15px', color: '#88dd88', fontStyle: 'bold'
+      }).setOrigin(0.5).setDepth(302));
+    }
+
+    const isMax = price == null;
+    const canAfford = !isMax && (Number(gameState.coins) || 0) >= price;
+    const by = cy + H / 2 - 46;
+    const bh = 44;
+
+    const probeOk = this.add.text(0, 0, isMax ? 'МАКСИМУМ' : `УЛУЧШИТЬ · ${price}`, {
+      fontSize: '15px', fontStyle: 'bold'
+    });
+    const okTextW = Math.ceil(probeOk.displayWidth);
+    probeOk.destroy();
+
+    const okContentW = isMax ? okTextW : (okTextW + 8 + 20);
+    const okW = isMax ? Math.max(150, okTextW + 36) : Math.max(200, Math.round(okContentW + 36));
+
+    const probeClose = this.add.text(0, 0, 'ЗАКРЫТЬ', {
+      fontSize: '15px', fontStyle: 'bold'
+    });
+    const closeTextW = Math.ceil(probeClose.displayWidth);
+    probeClose.destroy();
+    const closeW = Math.max(140, Math.round(closeTextW + 40));
+
+    const btnGap = 24;
+    const totalBtnW = okW + btnGap + closeW;
+    const okX = Math.round(cx - totalBtnW / 2 + okW / 2);
+    const closeX = Math.round(cx - totalBtnW / 2 + okW + btnGap + closeW / 2);
+
+    // Кнопка УЛУЧШИТЬ в стиле меню БАНДЫ: скругление 8px, верхний блик,
+    // аккуратная рамка со свечением при ховере, иконка монет после числа.
+    const okFr = this.add.graphics().setDepth(302);
+    elems.push(okFr);
+
+    const okBgc = isMax ? 0x1c1c30 : (canAfford ? 0x1e4a24 : 0x2d1f1f);
+    const okBrc = isMax ? 0x3a3a55 : (canAfford ? 0x35d07f : 0x884444);
+    const okCol = isMax ? '#667788' : (canAfford ? '#ffffff' : '#ffaaaa');
+
+    const paintOk = (hot) => {
+      try {
+        okFr.clear();
+        okFr.fillStyle(okBgc, 1);
+        okFr.fillRoundedRect(okX - okW / 2, by - bh / 2, okW, bh, 8);
+        okFr.fillStyle(0xffffff, hot ? 0.14 : 0.07);
+        okFr.fillRoundedRect(okX - okW / 2, by - bh / 2, okW, 6, { tl: 8, tr: 8, bl: 0, br: 0 });
+        okFr.lineStyle(hot ? 2.5 : 1.5, hot ? (canAfford ? 0xffff88 : 0xff7777) : okBrc, 1);
+        okFr.strokeRoundedRect(okX - okW / 2, by - bh / 2, okW, bh, 8);
+      } catch (e) {}
+    };
+    paintOk(false);
+
+    let okTxt = null;
+    let okCoin = null;
+    if (isMax) {
+      okTxt = this.add.text(okX, by, 'МАКСИМУМ', {
+        fontSize: '15px', color: okCol, fontStyle: 'bold'
+      }).setOrigin(0.5).setDepth(303);
+      elems.push(okTxt);
+    } else {
+      const okStartX = Math.round(okX - okContentW / 2);
+      okTxt = this.add.text(okStartX, by, `УЛУЧШИТЬ · ${price}`, {
+        fontSize: '15px', color: okCol, fontStyle: 'bold'
+      }).setOrigin(0, 0.5).setDepth(303);
+      elems.push(okTxt);
+
+      okCoin = this.add.image(okStartX + okTextW + 8, by, 'icon_coins')
+        .setOrigin(0, 0.5)
+        .setDisplaySize(20, 15)
+        .setDepth(303);
+      if (!canAfford) okCoin.setTint(0xff8888);
+      elems.push(okCoin);
+    }
+
+    if (!isMax) {
+      const okHit = this.add.rectangle(okX, by, okW, bh, 0xffffff, 0)
+        .setDepth(304)
+        .setInteractive({ useHandCursor: true });
+      elems.push(okHit);
+
+      okHit.on('pointerover', () => {
+        paintOk(true);
+        if (okTxt) okTxt.setStyle({ color: canAfford ? '#ffff55' : '#ffcccc' });
+      });
+      okHit.on('pointerout', () => {
+        paintOk(false);
+        if (okTxt) okTxt.setStyle({ color: okCol });
+      });
+      okHit.on('pointerdown', () => {
+        if (!canAfford) {
+          this._denyToast(`Не хватает монет: нужно ${price}`, 400);
+          return;
+        }
         const r = upgradeWeapon(name);
         if (!r.ok) return;
         this._sfxBuy();
         try { this._closeUpgradeModal(); } catch (e) {}
-        // Остаёмся на той же вкладке (без scene.restart — он сбрасывал таб).
         try { this.redrawTab(); } catch (e) {}
+        try { if (this.coinsText) this.coinsText.setText(String(gameState.coins | 0)); } catch (e) {}
       });
     }
-    const closeBtn = this.add.text(cx + 120, cy + H / 2 - 42, 'ЗАКРЫТЬ', {
-      fontSize: '15px', color: '#ffffff', backgroundColor: '#553333', padding: 8
-    }).setOrigin(0.5).setDepth(302);
-    elems.push(closeBtn);
-    closeBtn.setInteractive({ useHandCursor: true });
-    closeBtn.on('pointerdown', () => this._closeUpgradeModal());
+
+    // Кнопка ЗАКРЫТЬ в стиле меню БАНДЫ: тёмно-красный фон, кант, ховер
+    const closeFr = this.add.graphics().setDepth(302);
+    elems.push(closeFr);
+
+    const closeBgc = 0x4a1e1e;
+    const closeBrc = 0xd05555;
+    const closeCol = '#ffffff';
+
+    const paintClose = (hot) => {
+      try {
+        closeFr.clear();
+        closeFr.fillStyle(closeBgc, 1);
+        closeFr.fillRoundedRect(closeX - closeW / 2, by - bh / 2, closeW, bh, 8);
+        closeFr.fillStyle(0xffffff, hot ? 0.14 : 0.07);
+        closeFr.fillRoundedRect(closeX - closeW / 2, by - bh / 2, closeW, 6, { tl: 8, tr: 8, bl: 0, br: 0 });
+        closeFr.lineStyle(hot ? 2.5 : 1.5, hot ? 0xffff88 : closeBrc, 1);
+        closeFr.strokeRoundedRect(closeX - closeW / 2, by - bh / 2, closeW, bh, 8);
+      } catch (e) {}
+    };
+    paintClose(false);
+
+    const closeTxt = this.add.text(closeX, by, 'ЗАКРЫТЬ', {
+      fontSize: '15px', color: closeCol, fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(303);
+    elems.push(closeTxt);
+
+    const closeHit = this.add.rectangle(closeX, by, closeW, bh, 0xffffff, 0)
+      .setDepth(304)
+      .setInteractive({ useHandCursor: true });
+    elems.push(closeHit);
+
+    closeHit.on('pointerover', () => {
+      paintClose(true);
+      closeTxt.setStyle({ color: '#ffff55' });
+    });
+    closeHit.on('pointerout', () => {
+      paintClose(false);
+      closeTxt.setStyle({ color: closeCol });
+    });
+    closeHit.on('pointerdown', () => this._closeUpgradeModal());
     this._upModal = elems;
   }
 
@@ -795,7 +911,7 @@ export default class ShopScene extends Phaser.Scene {
   }
 
   // Короткий отказ-тост по центру низа (клик по недоступному).
-  _denyToast(text) {
+  _denyToast(text, depth = 100) {
     try {
       if (this._denyTxt) {
         try { this._denyTxt.destroy(); } catch (e) {}
@@ -805,7 +921,7 @@ export default class ShopScene extends Phaser.Scene {
       const t = this.add.text(_cx, 690, text, {
         fontSize: '16px', fontStyle: 'bold', color: '#ff8888',
         backgroundColor: '#111133dd', padding: 8
-      }).setOrigin(0.5).setDepth(100);
+      }).setOrigin(0.5).setDepth(depth);
       this._denyTxt = t;
       this.tweens.add({
         targets: t, alpha: 0, y: 670, duration: 1500,
