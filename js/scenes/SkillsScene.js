@@ -43,17 +43,43 @@ export default class SkillsScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#0a0a2a');
+    this.cameras.main.setBackgroundColor('#080914');
+
+    // Атмосферный темный градиент фона (в стиле Инвентаря / Банд)
+    try {
+      const bgb = this.add.graphics();
+      bgb.fillStyle(0x0f1224, 1);
+      bgb.fillRect(0, 0, gameW(this), 240);
+      bgb.fillStyle(0x0a0c1a, 1);
+      bgb.fillRect(0, 240, gameW(this), 240);
+      bgb.fillStyle(0x060710, 1);
+      bgb.fillRect(0, 480, gameW(this), 240);
+    } catch (e) {}
+
     this.activeButton = null;
     const _cx = gameW(this) / 2;
 
     this.add.text(_cx, 40, 'БОЕВАЯ ПОДГОТОВКА', {
-      fontSize: '36px',
-      color: '#ffffff'
+      fontSize: '28px',
+      color: '#ffffff',
+      fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    this.pointsText = this.add.text(_cx, 82, '', {
-      fontSize: '20px',
+    // Золотая черта с ромбом под заголовком
+    try {
+      const fl = this.add.graphics();
+      fl.lineStyle(2, 0xffd24a, 0.75);
+      fl.lineBetween(_cx - 120, 64, _cx + 120, 64);
+      fl.fillStyle(0xffd24a, 0.85);
+      const dd = 5;
+      fl.fillPoints([
+        new Phaser.Geom.Point(_cx, 64 - dd), new Phaser.Geom.Point(_cx + dd, 64),
+        new Phaser.Geom.Point(_cx, 64 + dd), new Phaser.Geom.Point(_cx - dd, 64)
+      ], true);
+    } catch (e) {}
+
+    this.pointsText = this.add.text(_cx, 90, '', {
+      fontSize: '18px',
       color: '#ffee88'
     }).setOrigin(0.5);
 
@@ -64,40 +90,50 @@ export default class SkillsScene extends Phaser.Scene {
     this._resetSkillsCoin = null;
     {
       const btn = this.add.text(_cx, 668, '', {
-        fontSize: '17px',
+        fontSize: '15px',
         color: '#ffffff',
-        backgroundColor: '#252560',
-        padding: { left: 20, right: 20, top: 8, bottom: 8 }
+        fontStyle: 'bold'
       }).setOrigin(0.5);
-      let coin = null;
-      try {
-        if (this.textures.exists('icon_coins')) {
-          coin = this.add.image(0, 0, 'icon_coins').setOrigin(0.5).setVisible(false);
-          try { coin.setDisplaySize(20, 15); } catch (e) {}
-          this._resetSkillsCoin = coin;
-        }
-      } catch (e) { coin = null; }
+      const btnFr = this.add.graphics();
       const paint = () => {
         const cost = skillResetCost();
         if (coin) coin.setVisible(false);
+        btnFr.clear();
+        let bw = 320, bh = 36, br = 8;
         if (cost == null) {
+          btnFr.fillStyle(0x141420, 0.9);
+          btnFr.fillRoundedRect(_cx - bw / 2, 668 - bh / 2, bw, bh, br);
+          btnFr.lineStyle(1, 0x222238, 1);
+          btnFr.strokeRoundedRect(_cx - bw / 2, 668 - bh / 2, bw, bh, br);
           btn.setText('Сброс недоступен');
           btn.setColor('#666677');
           btn.disableInteractive();
         } else if (!this._resetSkillsArmed) {
+          btnFr.fillStyle(0x252a40, 0.95);
+          btnFr.fillRoundedRect(_cx - bw / 2, 668 - bh / 2, bw, bh, br);
+          btnFr.fillStyle(0xffffff, 0.1);
+          btnFr.fillRoundedRect(_cx - bw / 2, 668 - bh / 2, bw, 4, { tl: br, tr: br, bl: 0, br: 0 });
+          btnFr.lineStyle(1.5, 0x4a5a88, 1);
+          btnFr.strokeRoundedRect(_cx - bw / 2, 668 - bh / 2, bw, bh, br);
           btn.setText(cost > 0
             ? `Сбросить подготовку · ${cost.toLocaleString('ru-RU')}`
             : 'Сбросить подготовку');
           btn.setColor('#ffffff');
           btn.setInteractive({ useHandCursor: true });
         } else {
+          btnFr.fillStyle(0x4a1e24, 0.95);
+          btnFr.fillRoundedRect(_cx - bw / 2, 668 - bh / 2, bw, bh, br);
+          btnFr.fillStyle(0xffffff, 0.15);
+          btnFr.fillRoundedRect(_cx - bw / 2, 668 - bh / 2, bw, 4, { tl: br, tr: br, bl: 0, br: 0 });
+          btnFr.lineStyle(2, 0xd05555, 1);
+          btnFr.strokeRoundedRect(_cx - bw / 2, 668 - bh / 2, bw, bh, br);
           btn.setText(cost > 0
             ? `Точно? Сброс за ${cost.toLocaleString('ru-RU')}`
             : 'Точно? Жми ещё раз');
-          btn.setColor('#ff8888');
+          btn.setColor('#ffb0b0');
           if (coin && cost > 0) {
             coin.setVisible(true);
-            coin.setPosition(btn.x + btn.displayWidth / 2 + 18, btn.y);
+            coin.setPosition(_cx + btn.displayWidth / 2 + 18, 668);
           }
         }
       };
@@ -128,7 +164,7 @@ export default class SkillsScene extends Phaser.Scene {
       this._resetSkillsBtn = btn;
     }
 
-    this.add.text(_cx, 112, 'Клик — вложить очко подготовки; очки даются за каждый уровень', {
+    this.add.text(_cx, 118, 'Клик — вложить очко подготовки; очки даются за каждый уровень', {
       fontSize: '14px',
       color: '#9aacdd'
     }).setOrigin(0.5);
@@ -149,19 +185,43 @@ export default class SkillsScene extends Phaser.Scene {
     }).setDepth(101);
     this.hideTip();
 
-    const back = this.add.text(UX(this, 70), 28, '← Назад', {
-      fontSize: '18px',
+    // Кнопка Назад в стиле меню Банды / Инвентаря
+    const backX = UX(this, 70), backY = 28;
+    const backW = 104, backH = 34;
+    const backFr = this.add.graphics().setDepth(59);
+
+    const renderBack = (hot) => {
+      backFr.clear();
+      backFr.fillStyle(0x3a1e24, 1);
+      backFr.fillRoundedRect(backX - backW / 2, backY - backH / 2, backW, backH, 8);
+      backFr.fillStyle(0xffffff, hot ? 0.15 : 0.08);
+      backFr.fillRoundedRect(backX - backW / 2, backY - backH / 2, backW, 5, { tl: 8, tr: 8, bl: 0, br: 0 });
+      backFr.lineStyle(hot ? 2 : 1.5, hot ? 0xffff88 : 0x9e4a5a, 1);
+      backFr.strokeRoundedRect(backX - backW / 2, backY - backH / 2, backW, backH, 8);
+    };
+    renderBack(false);
+
+    const back = this.add.text(backX, backY, '← Назад', {
+      fontSize: '15px',
       color: '#ffffff',
-      backgroundColor: '#553333',
-      padding: 8
-    }).setOrigin(0.5);
+      fontStyle: 'bold',
+      fixedWidth: backW,
+      padding: { top: 7, bottom: 7 },
+      align: 'center'
+    }).setOrigin(0.5).setDepth(60);
 
     back.setInteractive({ useHandCursor: true });
     back.on('pointerdown', () => {
       this.scene.start('MenuScene');
     });
-    back.on('pointerover', () => back.setStyle({ color: '#ffff55' }));
-    back.on('pointerout', () => back.setStyle({ color: '#ffffff' }));
+    back.on('pointerover', () => {
+      renderBack(true);
+      back.setStyle({ color: '#ffff55' });
+    });
+    back.on('pointerout', () => {
+      renderBack(false);
+      back.setStyle({ color: '#ffffff' });
+    });
   }
 
   refreshHeader() {
