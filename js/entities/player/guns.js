@@ -7,7 +7,7 @@ import { weaponsList } from '../../data/weapons.js?v=170';
 import { mergeGeneMods } from '../../data/genes.js?v=169';
 import { totalSkillMods } from '../../data/skills.js?v=169';
 import { gearSetBonus } from '../../data/gearSets.js?v=172';
-import { applyWeaponUpgrade } from '../../data/upgrades.js?v=2';
+import { applyWeaponUpgrade } from '../../data/upgrades.js?v=3';
 
 export function addWeapon(player, name) {
   const data = weaponsList.find(item => item.name === name);

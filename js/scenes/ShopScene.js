@@ -22,7 +22,7 @@ import { GEAR_ITEMS } from '../data/wardrobe.js?v=172';
 import {
   getWeaponLevel, nextUpgradeCost, isUpgradeable,
   upgradeWeapon, UPGRADE_MAX, UPGRADE_BONUS
-} from '../data/upgrades.js?v=2';
+} from '../data/upgrades.js?v=3';
 
 // Подписи следующего уровня для карточек (коротко, как в UpgradeScene).
 const UP_NEXT_SHORT = ['перезаряд −6%', 'магазин +20%', 'разброс −15%', 'дальность +10%', 'перезаряд −6%'];
@@ -552,7 +552,7 @@ export default class ShopScene extends Phaser.Scene {
     });
 
     if (price == null) {
-      elems.push(this.add.text(cx, cy - H / 2 + 88 + 5 * 24 + 16, 'МАКСИМУМ — дальше некуда', {
+      elems.push(this.add.text(cx, cy - H / 2 + 88 + 5 * 24 + 16, 'МАКСИМУМ', {
         fontSize: '15px', color: '#88dd88', fontStyle: 'bold'
       }).setOrigin(0.5).setDepth(302));
     }
