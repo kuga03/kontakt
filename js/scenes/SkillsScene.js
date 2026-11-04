@@ -47,7 +47,7 @@ export default class SkillsScene extends Phaser.Scene {
 
     // Атмосферный темный градиент фона (в стиле Инвентаря / Банд)
     try {
-      const bgb = this.add.graphics();
+      const bgb = this.add.graphics().setDepth(-5);
       bgb.fillStyle(0x0f1224, 1);
       bgb.fillRect(0, 0, gameW(this), 240);
       bgb.fillStyle(0x0a0c1a, 1);
@@ -178,7 +178,7 @@ export default class SkillsScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     this.lines = this.add.graphics();
-    this.lines.setDepth(-1);
+    this.lines.setDepth(0);
 
     this.drawConnections();
     this.buildNodes();
