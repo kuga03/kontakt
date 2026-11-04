@@ -2,7 +2,7 @@
 // Ровно 4 (v1, не больше): ножи / туман / луна / стекло. Комбо — макс 2.
 // Реализация хуками (урон/дальность/гравитация/выдача/подбор), без копипасты режимов.
 // Циклов нет: только gameState. Бой/лобби/HUD зовут отсюда.
-import { gameState, saveGameState, addCoins } from './gameState.js?v=175';
+import { gameState, saveGameState, addCoins } from './gameState.js';
 
 const MUTATORS = [
   { id: 'knives', name: 'Ножи', short: 'НОЖИ', color: '#ffdd55', desc: 'Все только с ножом, подбор стволов запрещён' },

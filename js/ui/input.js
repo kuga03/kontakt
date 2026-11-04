@@ -3,7 +3,7 @@
 // снятие — в onShutdown сцены как раньше.
 // + мобильное управление (touch.js): два джойстика только на телефоне.
 // + переназначение клавиш (data/gameSettings.js) и вибрация.
-import { createTouchControls, destroyTouchControls, touchOwns } from './touch.js?v=4';
+import { createTouchControls, destroyTouchControls, touchOwns } from './touch.js';
 import { getKeyCode, vibrate } from '../data/gameSettings.js';
 
 export function createInput(scene) {

@@ -1,4 +1,4 @@
-import { gameState } from './gameState.js?v=175';
+import { gameState } from './gameState.js';
 
 // Громкость музыки и звуков (0..1, 0 = Выкл). Хранится в gameState.
 export function musicVol() {

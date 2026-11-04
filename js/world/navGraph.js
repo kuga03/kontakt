@@ -2,7 +2,7 @@
 // Все функции принимают сцену первым аргументом. Внешние вызовы
 // (EnemyAI/Player/Flag/Bomb/pickups через scene._inSolid и т.д.)
 // работают как раньше — в сцене остались тонкие обёртки.
-import { getRigConfig } from '../data/rigConfig.js?v=169';
+import { getRigConfig } from '../data/rigConfig.js';
 
 export function buildNavGraph(scene) {
   const rects = [];

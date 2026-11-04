@@ -1,9 +1,9 @@
 // ctf.js — режим «Захват флага» + общие баннеры/звуки объективов
 // (было в GameScene). _rewardObjective и _playFlagSfx общие с BOMB —
 // bomb.js зовёт их через сцену.
-import Flag from '../entities/Flag.js?v=172';
-import { gameState, addCoins, addExperience } from '../data/gameState.js?v=175';
-import { bumpObj } from '../combat/match.js?v=350';
+import Flag from '../entities/Flag.js';
+import { gameState, addCoins, addExperience } from '../data/gameState.js';
+import { bumpObj } from '../combat/match.js';
 
 // Внезапная смерть CTF: оба флага исчезают, в центре — один золотой.
 // Доставка его на свою базу решает матч (см. updateFlags).

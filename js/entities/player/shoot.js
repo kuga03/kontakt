@@ -2,8 +2,8 @@
 // Функции принимают игрока первым аргументом; в классе остались тонкие
 // обёртки с теми же именами. Внутри модуля зовём друг друга напрямую,
 // методы класса (aimAngle/_getSide/_gunOffset/...) — через player.*.
-import { weaponImage } from '../../data/weapons.js?v=170';
-import { playSynthSwing } from '../../data/gunSynth.js?v=5';
+import { weaponImage } from '../../data/weapons.js';
+import { playSynthSwing } from '../../data/gunSynth.js';
 
 export function drawGun(player) {
   const g = player.gun;

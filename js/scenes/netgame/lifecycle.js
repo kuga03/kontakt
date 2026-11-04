@@ -1,20 +1,20 @@
-import { gameState } from '../../data/gameState.js?v=175';
-import { NET_ARENA, NET_BUILD } from '../../net/arena.js?v=169';
+import { gameState } from '../../data/gameState.js';
+import { NET_ARENA, NET_BUILD } from '../../net/arena.js';
 
-import { ensureClassBadgeTextures } from '../../data/weapons.js?v=170';
+import { ensureClassBadgeTextures } from '../../data/weapons.js';
 
-import { getRigConfig } from '../../data/rigConfig.js?v=169';
+import { getRigConfig } from '../../data/rigConfig.js';
 
 import { getKeyCode, vibrate } from '../../data/gameSettings.js';
 
-import * as ObjView from '../../net/objview.js?v=170';
-import Assault from '../../entities/Assault.js?v=380';
-import Tank from '../../entities/Tank.js?v=380';
-import Medic from '../../entities/Medic.js?v=380';
-import Sniper from '../../entities/Sniper.js?v=380';
+import * as ObjView from '../../net/objview.js';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
-import { createTouchControls, destroyTouchControls } from '../../ui/touch.js?v=4';
-import { gameW } from '../../ui/layout.js?v=3';
+import { createTouchControls, destroyTouchControls } from '../../ui/touch.js';
+import { gameW } from '../../ui/layout.js';
 
 const CLASSES = { Assault, Tank, Medic, Sniper };
 

@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { setupDom, setupClock } from './dom.mjs';
 import { stubAssets } from './assets.mjs';
-import { gameState } from '../../js/data/gameState.js?v=171';
+import { gameState } from '../../js/data/gameState.js';
 
 const SEED = parseInt(process.argv.find((a, i) => i > 0 && process.argv[i - 1] === '--seed') || '1337', 10);
 const TICKS = parseInt(process.argv.find((a, i) => i > 0 && process.argv[i - 1] === '--ticks') || '18000', 10);

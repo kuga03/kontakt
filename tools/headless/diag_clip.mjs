@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { setupDom, setupClock } from './dom.mjs';
 import { stubAssets } from './assets.mjs';
 import { collectMetrics } from './metrics.mjs';
-import { gameState } from '../../js/data/gameState.js?v=171';
+import { gameState } from '../../js/data/gameState.js';
 
 const TICKS = parseInt(process.argv.find((a, i) => i > 0 && process.argv[i - 1] === '--ticks') || '18000', 10);
 const SEED = parseInt(process.argv.find((a, i) => i > 0 && process.argv[i - 1] === '--seed') || '1337', 10);

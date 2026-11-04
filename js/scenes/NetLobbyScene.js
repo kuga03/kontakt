@@ -1,7 +1,7 @@
-import { gameState, getEquippedHead, getEquippedShoes, getEquippedTorso, getEquippedPants, getCharacterColors } from '../data/gameState.js?v=175';
-import NetClient, { fetchRooms, OFFICIAL_NET_HOST, NET_SERVERS } from '../net/client.js?v=170';
-import { NET_BUILD } from '../net/arena.js?v=169';
-import { gameW, UX } from '../ui/layout.js?v=3';
+import { gameState, getEquippedHead, getEquippedShoes, getEquippedTorso, getEquippedPants, getCharacterColors } from '../data/gameState.js';
+import NetClient, { fetchRooms, OFFICIAL_NET_HOST, NET_SERVERS } from '../net/client.js';
+import { NET_BUILD } from '../net/arena.js';
+import { gameW, UX } from '../ui/layout.js';
 
 const NET_MODES = [
   { id: 'TDM', label: 'Командный бой' },
@@ -46,9 +46,9 @@ async function netBuildMaxesFull(cls) {
     const base = NET_CLASS_BASE[cls] || NET_CLASS_BASE.Assault;
     let mh = base.hp, ma = base.armor;
     const [{ totalSkillMods }, { mergeGeneMods }, { gearSetBonus }] = await Promise.all([
-      import('../data/skills.js?v=169'),
-      import('../data/genes.js?v=169'),
-      import('../data/gearSets.js?v=172')
+      import('../data/skills.js'),
+      import('../data/genes.js'),
+      import('../data/gearSets.js')
     ]);
     let m = {};
     try { m = totalSkillMods() || {}; } catch (e) { m = {}; }

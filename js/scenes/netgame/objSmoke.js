@@ -1,12 +1,12 @@
 
 
-import * as ObjView from '../../net/objview.js?v=170';
-import Assault from '../../entities/Assault.js?v=380';
-import Tank from '../../entities/Tank.js?v=380';
-import Medic from '../../entities/Medic.js?v=380';
-import Sniper from '../../entities/Sniper.js?v=380';
+import * as ObjView from '../../net/objview.js';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
-import Grenade from '../../entities/Grenade.js?v=172';
+import Grenade from '../../entities/Grenade.js';
 
 const CLASSES = { Assault, Tank, Medic, Sniper };
 

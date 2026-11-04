@@ -1,13 +1,13 @@
-import { gameW } from '../../ui/layout.js?v=3';
-import { gameState, saveGameState, addCoins } from '../../data/gameState.js?v=175';
-import { getWeaponLabel } from '../../data/weapons.js?v=170';
-import { weaponSkins, RARITY } from '../../data/skins.js?v=169';
+import { gameW } from '../../ui/layout.js';
+import { gameState, saveGameState, addCoins } from '../../data/gameState.js';
+import { getWeaponLabel } from '../../data/weapons.js';
+import { weaponSkins, RARITY } from '../../data/skins.js';
 
-import { isGenomeMaxed } from '../../data/genes.js?v=169';
-import Assault from '../../entities/Assault.js?v=319';
-import Tank from '../../entities/Tank.js?v=319';
-import Medic from '../../entities/Medic.js?v=319';
-import Sniper from '../../entities/Sniper.js?v=320';
+import { isGenomeMaxed } from '../../data/genes.js';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
 const PREVIEW_CLASSES = { Assault, Tank, Medic, Sniper };
 

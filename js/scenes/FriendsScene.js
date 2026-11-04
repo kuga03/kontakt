@@ -1,15 +1,15 @@
-import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState, saveGameState, mostPlayedClass, addCoins } from '../data/gameState.js?v=175';
-import { getRank } from '../data/ranks.js?v=169';
-import { ACHIEVEMENTS } from '../data/achievements.js?v=170';
-import { detectPlatform, platformLabel, getViewer, getPlatformFriends, inviteFriend } from '../platform/index.js?v=169';
-import { CLASS_IDS, CLASS_LABELS, mockFriendProfile, buildSelfProfile, fmtPct, fmtLastSeen } from '../data/friendProfiles.js?v=169';
-import { MEDALS, getMedalCounts } from '../data/medals.js?v=176';
-import { drawMedalIcons } from '../ui/medalsView.js?v=9';
-import Assault from '../entities/Assault.js?v=319';
-import Tank from '../entities/Tank.js?v=319';
-import Medic from '../entities/Medic.js?v=319';
-import Sniper from '../entities/Sniper.js?v=320';
+import { gameW, UX } from '../ui/layout.js';
+import { gameState, saveGameState, mostPlayedClass, addCoins } from '../data/gameState.js';
+import { getRank } from '../data/ranks.js';
+import { ACHIEVEMENTS } from '../data/achievements.js';
+import { detectPlatform, platformLabel, getViewer, getPlatformFriends, inviteFriend } from '../platform/index.js';
+import { CLASS_IDS, CLASS_LABELS, mockFriendProfile, buildSelfProfile, fmtPct, fmtLastSeen } from '../data/friendProfiles.js';
+import { MEDALS, getMedalCounts } from '../data/medals.js';
+import { drawMedalIcons } from '../ui/medalsView.js';
+import Assault from '../entities/Assault.js';
+import Tank from '../entities/Tank.js';
+import Medic from '../entities/Medic.js';
+import Sniper from '../entities/Sniper.js';
 
 const PREVIEW_CLASSES = { Assault, Tank, Medic, Sniper };
 

@@ -3,8 +3,8 @@
 // обёртки с теми же именами (наследники Assault/Tank/Medic/Sniper зовут
 // super.die/super.destroy — работает как раньше). Внутри модуля зовём
 // друг друга напрямую, методы класса — через player.*.
-import { saveGameState, recordPassProgress } from '../../data/gameState.js?v=175';
-import { fragMax, smokeMax } from '../../data/skills.js?v=169';
+import { saveGameState, recordPassProgress } from '../../data/gameState.js';
+import { fragMax, smokeMax } from '../../data/skills.js';
 
 
 // zone: 'head' | 'body' | 'legs'. Голова x2 (кроме взрывов),

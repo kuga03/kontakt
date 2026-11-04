@@ -1,9 +1,9 @@
 ﻿// campaign.js тАФ ╨║╨░╨╝╨┐╨░╨╜╨╕╤П: ╤Б╤О╨╢╨╡╤В╨╜╤Л╨╣ ╤Н╨║╤А╨░╨╜ ╨╕ ╨╛╨▒╤Г╤З╨╡╨╜╨╕╨╡ (╨▒╤Л╨╗╨╛ ╨▓ GameScene).
 // ╨д╤Г╨╜╨║╤Ж╨╕╨╕ ╨┐╤А╨╕╨╜╨╕╨╝╨░╤О╤В ╤Б╤Ж╨╡╨╜╤Г; ╨▒╨░╨╜╨╜╨╡╤А╤Л/╨┐╨╛╨┤╨▒╨╛╤А╤Л/╨╖╨▓╤Г╨║╨╕ тАФ ╤З╨╡╤А╨╡╨╖ ╨╛╨▒╤С╤А╤В╨║╨╕ ╤Б╤Ж╨╡╨╜╤Л
 // (trackModalElems/hoverSfx/spawnPickup/groundHeightAt), ╤Б╨▓╨╛╨╕╤Е ╨╕╨╝╨┐╨╛╤А╤В╨╛╨▓ ╨╜╨╡╤В.
-import { gameW } from '../ui/layout.js?v=3';
-import Assault from '../entities/Assault.js?v=319';
-import { navGraph as navMeshGraph } from '../ai/navMesh.js?v=25';
+import { gameW } from '../ui/layout.js';
+import Assault from '../entities/Assault.js';
+import { navGraph as navMeshGraph } from '../ai/navMesh.js';
 
 
 export function showStory(scene, text, onComplete, btnLabel) {

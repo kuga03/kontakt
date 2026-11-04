@@ -1,5 +1,5 @@
-import { statHeaderIcons } from './hudBuild.js?v=372';
-import { classBadgeKey } from '../../data/weapons.js?v=170';
+import { statHeaderIcons } from './hudBuild.js';
+import { classBadgeKey } from '../../data/weapons.js';
 
 import { contribScore } from '../../combat/score.js';
 

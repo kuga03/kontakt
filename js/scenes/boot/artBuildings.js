@@ -1,5 +1,5 @@
 ﻿
-import { drawSandbags } from './artSandbags.js?v=410';
+import { drawSandbags } from './artSandbags.js';
 
 export function generateMapBuilding(key) {
     const SIZES = {

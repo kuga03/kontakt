@@ -9,7 +9,7 @@
 // ВАЖНО: прямой WebAudio идёт МИМО патча sound.play (audio.js),
 // поэтому регулятор Звуки (sfxVol) и SFX_GAIN применяем здесь вручную —
 // иначе при 0% синтез продолжает орать (баг 0%).
-import { sfxVol, sfxGain } from './audio.js?v=170';
+import { sfxVol, sfxGain } from './audio.js';
 // lp0 — старт lowpass тела (Гц), tail — длина тела/хвоста (с),
 // punch — старт басового осциллятора (Гц), thump — его форма
 // (sine — кругло, triangle — злее, с гармониками),

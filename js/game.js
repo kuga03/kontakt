@@ -1,22 +1,22 @@
-import BootScene from './scenes/BootScene.js?v=412';
-import MenuScene from './scenes/MenuScene2.js?v=379';
-import LobbyScene from './scenes/LobbyScene.js?v=207';
-import GameScene from './scenes/GameScene.js?v=418';
-import ShopScene from './scenes/ShopScene.js?v=185';
-import DonateScene from './scenes/DonateScene.js?v=3';
-import LootBoxScene from './scenes/LootBoxScene.js?v=176';
-import InventoryScene from './scenes/InventoryScene.js?v=196';
-import SettingsScene, { getScreenRes, getFpsCap, getVsync } from './scenes/SettingsScene.js?v=182';
+import BootScene from './scenes/BootScene.js';
+import MenuScene from './scenes/MenuScene2.js';
+import LobbyScene from './scenes/LobbyScene.js';
+import GameScene from './scenes/GameScene.js';
+import ShopScene from './scenes/ShopScene.js';
+import DonateScene from './scenes/DonateScene.js';
+import LootBoxScene from './scenes/LootBoxScene.js';
+import InventoryScene from './scenes/InventoryScene.js';
+import SettingsScene, { getScreenRes, getFpsCap, getVsync } from './scenes/SettingsScene.js';
 import { getQuality, getCamShake } from './data/gameSettings.js';
-import LevelEditorScene from './scenes/LevelEditorScene.js?v=411';
-import MyLevelsScene from './scenes/MyLevelsScene.js?v=172';
-import SkillsScene from './scenes/SkillsScene.js?v=175';
-import GenomeScene from './scenes/GenomeScene.js?v=171';
-import AchievementsScene from './scenes/AchievementsScene.js?v=171';
-import FriendsScene from './scenes/FriendsScene.js?v=200';
-import GangScene from './scenes/GangScene.js?v=14';
-import NetLobbyScene from './scenes/NetLobbyScene.js?v=172';
-import NetGameScene from './scenes/NetGameScene.js?v=380';
+import LevelEditorScene from './scenes/LevelEditorScene.js';
+import MyLevelsScene from './scenes/MyLevelsScene.js';
+import SkillsScene from './scenes/SkillsScene.js';
+import GenomeScene from './scenes/GenomeScene.js';
+import AchievementsScene from './scenes/AchievementsScene.js';
+import FriendsScene from './scenes/FriendsScene.js';
+import GangScene from './scenes/GangScene.js';
+import NetLobbyScene from './scenes/NetLobbyScene.js';
+import NetGameScene from './scenes/NetGameScene.js';
 import BenchmarkScene from './scenes/BenchmarkScene.js';
 
 
@@ -25,8 +25,8 @@ import BenchmarkScene from './scenes/BenchmarkScene.js';
 // поэтому в кэш-цепочке их быть не должно.
 try {
   const _build = {
-    game: '393', scene: '386', boot: '381', ai: '194', shoot: '176',
-    navGraph: '171', matchTick: 'unversioned', at: '2026-10-30'
+    game: '393', scene: '386', boot: '381', ai: '195', shoot: '176',
+    navGraph: '172', matchTick: 'unversioned', at: '2026-11-04'
   };
   if (typeof window !== 'undefined') window.__KONTAKT_BUILD__ = _build;
   if (typeof console !== 'undefined') console.info('[KONTAKT BUILD]', _build);
@@ -47,7 +47,7 @@ const _fpsCap = ['0', '30', '60'].includes(_rawFps) ? _rawFps : '0';
 // FIT при совпадающем аспекте даёт точное заполнение без полос.
 // UI центрируется через layout.js (OX/CX), мир — сам (камера).
 // Настройка screenRes размер НЕ меняет (иначе UI уезжает влево-вверх).
-import { bootW, BASE_H } from './ui/layout.js?v=3';
+import { bootW, BASE_H } from './ui/layout.js';
 const _w = bootW();
 const _h = BASE_H;
 const scaleConfig = {

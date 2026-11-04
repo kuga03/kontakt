@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { setupDom, setupClock } from './dom.mjs';
 import { stubAssets } from './assets.mjs';
-import { gameState } from '../../js/data/gameState.js?v=171';
+import { gameState } from '../../js/data/gameState.js';
 
 const TICKS = parseInt(process.argv.find((a, i) => i > 0 && process.argv[i - 1] === '--ticks') || '18000', 10);
 const SEED = parseInt(process.argv.find((a, i) => i > 0 && process.argv[i - 1] === '--seed') || '1337', 10);
@@ -18,7 +18,7 @@ const Phaser = globalThis.Phaser;
 stubAssets(Phaser);
 if (Phaser.Math && Phaser.Math.RND && Phaser.Math.RND.seed) Phaser.Math.RND.seed([SEED, SEED + 1]);
 const { default: GameScene } = await import('../../js/scenes/GameScene.js');
-const { default: EnemyAI } = await import('../../js/ai/EnemyAI.js?v=194');
+const { default: EnemyAI } = await import('../../js/ai/EnemyAI.js');
 
 const S = {
   hits: 0, withLos: 0, reacted: 0, reactedLos: 0, shotBack: 0,

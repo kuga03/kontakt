@@ -1,7 +1,7 @@
-import Assault from '../../entities/Assault.js?v=319';
-import Tank from '../../entities/Tank.js?v=319';
-import Medic from '../../entities/Medic.js?v=319';
-import Sniper from '../../entities/Sniper.js?v=320';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
 
 
@@ -9,14 +9,14 @@ import Sniper from '../../entities/Sniper.js?v=320';
 
 import { vibrate } from '../../data/gameSettings.js';
 
-import * as Hud from '../../ui/hud.js?v=370';
+import * as Hud from '../../ui/hud.js';
 
-import * as Koth from '../../modes/koth.js?v=169';
+import * as Koth from '../../modes/koth.js';
 
-import * as Match from '../../combat/match.js?v=349';
+import * as Match from '../../combat/match.js';
 
-import { touchMove, touchAimWorld, consumeTouchJump, updateTouchTransform } from '../../ui/touch.js?v=4';
-import { gameW } from '../../ui/layout.js?v=3';
+import { touchMove, touchAimWorld, consumeTouchJump, updateTouchTransform } from '../../ui/touch.js';
+import { gameW } from '../../ui/layout.js';
 
 const classMap = { Assault, Tank, Medic, Sniper };
 

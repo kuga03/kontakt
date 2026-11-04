@@ -1,6 +1,6 @@
 
 
-import { gameW, OX, BASE_CX } from '../layout.js?v=3';
+import { gameW, OX, BASE_CX } from '../layout.js';
 export function updateHudTransform(scene) {
   const z = scene.cameras.main.zoom;
   // Адаптив: центр — реальная середина экрана (на 16:9 = 640, как было),

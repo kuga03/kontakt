@@ -1,5 +1,5 @@
-import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState, hasWeapon, unlockWeapon, saveGameState, syncGameState, hasHead, getEquippedHead, hasShoes, getEquippedShoes, hasTorso, getEquippedTorso, hasPants, getEquippedPants } from '../data/gameState.js?v=175';
+import { gameW, UX } from '../ui/layout.js';
+import { gameState, hasWeapon, unlockWeapon, saveGameState, syncGameState, hasHead, getEquippedHead, hasShoes, getEquippedShoes, hasTorso, getEquippedTorso, hasPants, getEquippedPants } from '../data/gameState.js';
 import {
   weaponsList,
   classDefinitions,
@@ -11,18 +11,18 @@ import {
   classOfWeapon,
   classOpenLevel,
   isClassUnlocked
-} from '../data/weapons.js?v=170';
+} from '../data/weapons.js';
 
 // slot: куда надевается ('head' — на голову, 'shoes' — на ноги).
 // cat: столбец вкладки ВНЕШНОСТЬ ('hair' — Волосы, 'hat' — Уборы,
 // 'shoes' — Обувь; позже сюда же 'torso' — Торс и 'pants' — Штаны).
 // Каталог живёт в data/wardrobe.js (им же пользуется кейс «Гардероб»).
-import { GEAR_ITEMS } from '../data/wardrobe.js?v=172';
+import { GEAR_ITEMS } from '../data/wardrobe.js';
 
 import {
   getWeaponLevel, nextUpgradeCost, isUpgradeable,
   upgradeWeapon, UPGRADE_MAX, UPGRADE_BONUS
-} from '../data/upgrades.js?v=3';
+} from '../data/upgrades.js';
 
 // Подписи следующего уровня для карточек (коротко, как в UpgradeScene).
 const UP_NEXT_SHORT = ['перезаряд −6%', 'магазин +20%', 'разброс −15%', 'дальность +10%', 'перезаряд −6%'];

@@ -1,7 +1,7 @@
 // bomb.js — режим «Бомба» + овертайм-турель (было в GameScene).
 // _rewardObjective/_ctfBanner/_playFlagSfx живут в modes/ctf.js —
 // зовём через сцену (там же обёртки).
-import { bumpObj } from '../combat/match.js?v=349';
+import { bumpObj } from '../combat/match.js';
 export function interact(scene) {
   // Флаги теперь подбираются автоматически (_updateFlags).
   // Бомба: подбор своей/сброшенной клавишей тоже работает (автоподбор

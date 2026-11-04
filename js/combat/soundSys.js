@@ -1,7 +1,7 @@
 // soundSys.js — позиционные звуки (было в GameScene.sfxShot/_sfxVolAt/_sfxAt/_alertNoise/_hoverSfx).
 // Все функции принимают сцену первым аргументом, чтобы их могли звать
 // и GameScene, и NetGameScene без копипаста.
-import { synthVoiceFor, playSynthShot } from '../data/gunSynth.js?v=5';
+import { synthVoiceFor, playSynthShot } from '../data/gunSynth.js';
 
 export function sfxVolAt(scene, sx, sy, base) {
   let volume = base;

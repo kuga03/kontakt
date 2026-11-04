@@ -3,8 +3,8 @@
 // Только ВИЗУАЛ по серверному снапшоту (scene._obj): геометрию мира
 // и протокол (net.*) не трогаем — они остаются в сцене.
 // Функции принимают сцену; в классе остались тонкие обёртки.
-import { NET_ARENA } from './arena.js?v=169';
-import { gameState } from '../data/gameState.js?v=175';
+import { NET_ARENA } from './arena.js';
+import { gameState } from '../data/gameState.js';
 
 export function buildObjVisuals(scene) {
   scene._objLetters = [];

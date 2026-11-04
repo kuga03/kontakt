@@ -1,17 +1,17 @@
-import { gameW } from '../../ui/layout.js?v=3';
-import { gameState, setCharacterColor, getCharacterColors, equipHead, equipShoes, equipTorso, equipPants, hasHead, hasShoes, hasTorso, hasPants, getEquippedHead, getEquippedTorso, getEquippedPants, getEquippedShoes } from '../../data/gameState.js?v=175';
-import { classDefinitions, getWeaponLabel, isClassUnlocked, classOpenLevel } from '../../data/weapons.js?v=170';
-import { weaponSkins } from '../../data/skins.js?v=169';
+import { gameW } from '../../ui/layout.js';
+import { gameState, setCharacterColor, getCharacterColors, equipHead, equipShoes, equipTorso, equipPants, hasHead, hasShoes, hasTorso, hasPants, getEquippedHead, getEquippedTorso, getEquippedPants, getEquippedShoes } from '../../data/gameState.js';
+import { classDefinitions, getWeaponLabel, isClassUnlocked, classOpenLevel } from '../../data/weapons.js';
+import { weaponSkins } from '../../data/skins.js';
 
-import { GEAR_SETS, gearSetProgress } from '../../data/gearSets.js?v=172';
-import { GEAR_ITEMS } from '../../data/wardrobe.js?v=172';
-import { classAbilities, ultUnlocked } from '../../data/abilities.js?v=169';
-import { getRank } from '../../data/ranks.js?v=169';
+import { GEAR_SETS, gearSetProgress } from '../../data/gearSets.js';
+import { GEAR_ITEMS } from '../../data/wardrobe.js';
+import { classAbilities, ultUnlocked } from '../../data/abilities.js';
+import { getRank } from '../../data/ranks.js';
 
-import Assault from '../../entities/Assault.js?v=319';
-import Tank from '../../entities/Tank.js?v=319';
-import Medic from '../../entities/Medic.js?v=319';
-import Sniper from '../../entities/Sniper.js?v=320';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
 const PREVIEW_CLASSES = { Assault, Tank, Medic, Sniper };
 

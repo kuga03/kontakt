@@ -1,12 +1,12 @@
-import { gameState, saveGameState, renamePlayer, syncGameState } from '../data/gameState.js?v=175';
-import { getBotDifficulty, nextBotDifficulty, botDifficulties } from '../data/difficulty.js?v=170';
-import { campaignLevels } from '../data/levels.js?v=172';
-import { classDefinitions, isClassUnlocked, classOpenLevel } from '../data/weapons.js?v=170';
-import Assault from '../entities/Assault.js?v=319';
-import Tank from '../entities/Tank.js?v=319';
-import Medic from '../entities/Medic.js?v=319';
-import Sniper from '../entities/Sniper.js?v=320';
-import { gameW, UX } from '../ui/layout.js?v=3';
+import { gameState, saveGameState, renamePlayer, syncGameState } from '../data/gameState.js';
+import { getBotDifficulty, nextBotDifficulty, botDifficulties } from '../data/difficulty.js';
+import { campaignLevels } from '../data/levels.js';
+import { classDefinitions, isClassUnlocked, classOpenLevel } from '../data/weapons.js';
+import Assault from '../entities/Assault.js';
+import Tank from '../entities/Tank.js';
+import Medic from '../entities/Medic.js';
+import Sniper from '../entities/Sniper.js';
+import { gameW, UX } from '../ui/layout.js';
 
 const PREVIEW_CLASSES = { Assault, Tank, Medic, Sniper };
 

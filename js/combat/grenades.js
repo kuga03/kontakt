@@ -1,7 +1,7 @@
 // grenades.js — гранаты: бросок, взрыв осколочной, дым, призрак в дыму.
 // Было в GameScene (throwGrenade/explodeGrenade/emitSmoke/_setSmokeGhost).
 // Функции принимают сцену; класс Grenade импортируем напрямую как в modes/trial.js.
-import Grenade from '../entities/Grenade.js?v=172';
+import Grenade from '../entities/Grenade.js';
 
 export function throwGrenade(scene, owner, type, angle) {
   // Бросок из приседа — из низкой руки (y-20), а не из стоячей (y-38):

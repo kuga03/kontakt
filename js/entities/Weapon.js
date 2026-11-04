@@ -1,4 +1,4 @@
-import { playShellClick, playReloadSequence, clearReloadSfx } from '../data/shellClick.js?v=171';
+import { playShellClick, playReloadSequence, clearReloadSfx } from '../data/shellClick.js';
 
 export default class Weapon {
   constructor(config) {

@@ -1,17 +1,17 @@
 
 
-import { weaponsList } from '../../data/weapons.js?v=170';
+import { weaponsList } from '../../data/weapons.js';
 
-import * as SoundSys from '../../combat/soundSys.js?v=174';
-import * as Fx from '../../combat/fx.js?v=320';
+import * as SoundSys from '../../combat/soundSys.js';
+import * as Fx from '../../combat/fx.js';
 
-import Assault from '../../entities/Assault.js?v=380';
-import Tank from '../../entities/Tank.js?v=380';
-import Medic from '../../entities/Medic.js?v=380';
-import Sniper from '../../entities/Sniper.js?v=380';
-import Bullet from '../../entities/Bullet.js?v=169';
-import Grenade from '../../entities/Grenade.js?v=172';
-import Pickup from '../../entities/Pickup.js?v=177';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
+import Bullet from '../../entities/Bullet.js';
+import Grenade from '../../entities/Grenade.js';
+import Pickup from '../../entities/Pickup.js';
 
 const CLASSES = { Assault, Tank, Medic, Sniper };
 

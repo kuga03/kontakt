@@ -1,8 +1,8 @@
-import { gameState } from '../data/gameState.js?v=175';
-import { campaignLevels } from '../data/levels.js?v=172';
-import { loadCustomLevels, deleteCustomLevel, saveCustomLevel } from '../data/customLevels.js?v=169';
-import { generateLevel } from '../data/levelGen.js?v=169';
-import { gameW, UX } from '../ui/layout.js?v=3';
+import { gameState } from '../data/gameState.js';
+import { campaignLevels } from '../data/levels.js';
+import { loadCustomLevels, deleteCustomLevel, saveCustomLevel } from '../data/customLevels.js';
+import { generateLevel } from '../data/levelGen.js';
+import { gameW, UX } from '../ui/layout.js';
 
 export default class MyLevelsScene extends Phaser.Scene {
   constructor() {

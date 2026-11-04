@@ -1,6 +1,6 @@
 // SimpleBot — ИИ ботов. Движение идёт по графу перемещений (navMesh.js),
 // цель выбирается по режиму; стрельба, гранаты, умения/ульты — здесь же.
-import { navGraph, nearestNode, findPath, followPath, edgeKey } from './navMesh.js?v=24';
+import { navGraph, nearestNode, findPath, followPath, edgeKey } from './navMesh.js';
 
 const CALLSIGNS = [
   'Орион', 'Скала', 'Дикий', 'Буран', 'Волк', 'Рысь', 'Гром', 'Тень',
@@ -201,10 +201,29 @@ export default class EnemyAI {
 
     if (!nav) {
       if (!goal || !grounded || time < this._navCd) { this._fallbackMove(dx > 0 ? 1 : -1, dx); return; }
-      const start = nearestNode(graph, cx, feet, 20, 14);
+      let start = nearestNode(graph, cx, feet, 20, 14);
+      if (!start) start = nearestNode(graph, cx, feet, 60, 40);
+      if (!start) start = nearestNode(graph, cx, feet, 140, 90);
       const now = time;
       for (const [k, until] of this._ban) if (until < now) this._ban.delete(k);
-      const path = start ? findPath(graph, start, goal, new Set(this._ban.keys())) : null;
+
+      let crowdNodes = null;
+      try {
+        if (scene.players && scene.players.length > 2) {
+          crowdNodes = new Set();
+          for (let pi = 0; pi < scene.players.length; pi++) {
+            const mate = scene.players[pi];
+            if (!mate || mate === p || mate.dead || mate.team !== p.team) continue;
+            const mNav = mate.ai && mate.ai._nav;
+            if (mNav && mNav.path && mNav.path[mNav.i]) {
+              crowdNodes.add(mNav.path[mNav.i].to.id);
+            }
+          }
+        }
+      } catch (err) {}
+
+      const isBombCarrier = !!(p.isCarrier && !p.isFlagCarrier);
+      const path = start ? findPath(graph, start, goal, new Set(this._ban.keys()), { isBombCarrier, crowdNodes }) : null;
       if (!path) {
         this._navCd = time + 500;
         this._fallbackMove(dx > 0 ? 1 : -1, dx);

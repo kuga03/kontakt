@@ -1,7 +1,7 @@
-import { gameState, addCoins, addExperience, saveGameState, recordPassProgress } from '../../data/gameState.js?v=175';
+import { gameState, addCoins, addExperience, saveGameState, recordPassProgress } from '../../data/gameState.js';
 
-import * as Gang from '../../data/gang.js?v=7';
-import { reapplyGlassOnRevive } from '../../data/mutators.js?v=2';
+import * as Gang from '../../data/gang.js';
+import { reapplyGlassOnRevive } from '../../data/mutators.js';
 
 import { contribScore } from '../score.js';
 export function flushPlayTime(scene) {

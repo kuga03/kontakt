@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { setupDom, setupClock } from './dom.mjs';
 import { stubAssets } from './assets.mjs';
-import { gameState } from '../../js/data/gameState.js?v=171';
+import { gameState } from '../../js/data/gameState.js';
 
 const sx = parseFloat(process.argv[2] || '610');
 const top = parseFloat(process.argv[3] || '730');

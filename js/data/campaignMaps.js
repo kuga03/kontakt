@@ -9,7 +9,7 @@
 //   - укрытие ВСЕГДА стоит на опоре (низ ящика = верх опоры);
 //   - флаги стоят на земле (низ древка = верх земли);
 //   - спавны висят в чистом небе над землёй.
-import { genFlankArena } from './flankGen.js?v=171';
+import { genFlankArena } from './flankGen.js';
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -300,7 +300,7 @@ function genFortsCampaignMapData(seed, width, height, mode, theme) {
   const flags = objs.filter(o => o.spawnType === 'flagBlue' || o.spawnType === 'flagRed')
     .map(o => ({ ...o, y: FLAG_Y }));
   const picks = objs.filter(o => ['medkit', 'armor', 'ammo', 'frag', 'smoke'].includes(o.spawnType));
-  const geo = objs.filter(o => !o.spawnType);
+  let geo = objs.filter(o => !o.spawnType);
   // Нижние ящики — только вне пролёта моста. На Фортах пара ящиков стоит
   // ПОД мостом (зазор 84 при теле 92), и низовой маршрут физически
   // непроходим: перепрыгнуть ящик мешает настил. В кампании ставим все
@@ -309,8 +309,16 @@ function genFortsCampaignMapData(seed, width, height, mode, theme) {
   const lowCovers = geo.filter(o => o.type === 'cover' &&
     Math.abs((o.y + (o.h || 0) / 2) - (height - 50)) <= 2).sort((a, b) => a.x - b.x);
   if (lowCovers.length === 4) {
-    const xs = [740, 860, width - 860, width - 740];
-    lowCovers.forEach((o, i) => { o.x = xs[i]; });
+    if (mode === 'KOTH') {
+      const ptAx = Math.round(width * 0.25);
+      const ptCx = Math.round(width * 0.75);
+      // В KOTH укрытия фланкируют точки А и С (отступ 150), чтобы зоны захвата не блокировались ящиками
+      const xs = [ptAx - 150, ptAx + 150, ptCx - 150, ptCx + 150];
+      lowCovers.forEach((o, i) => { o.x = xs[i]; });
+    } else {
+      const xs = [740, 860, width - 860, width - 740];
+      lowCovers.forEach((o, i) => { o.x = xs[i]; });
+    }
   }
   // Разная высота нижних/мостовых ящиков от уровня к уровню (50–70):
   // все они вне настила, прыгаются одиночным; это даёт картам разный
@@ -320,6 +328,26 @@ function genFortsCampaignMapData(seed, width, height, mode, theme) {
   const bridgeH = 50 + (Math.floor(seed / 3) % 3) * 10;
   geo.filter(o => o.type === 'cover' && Math.abs((o.y + (o.h || 0) / 2) - 690) <= 2)
     .forEach(o => { o.h = bridgeH; o.y = 690 - bridgeH / 2; });
+
+  if (mode === 'KOTH') {
+    // Точки А, Б, С в режиме KOTH:
+    // Б стоит по центру (width / 2) на мосту/платформе; А и С — на земле (0.25W и 0.75W).
+    // Убираем укрытия, накладывающиеся на флаги и зоны захвата.
+    const ptAx = Math.round(width * 0.25);
+    const ptBx = Math.round(width / 2);
+    const ptCx = Math.round(width * 0.75);
+    const pts = [
+      { x: ptAx, y: height - 50 },
+      { x: ptBx, y: 690 },
+      { x: ptCx, y: height - 50 }
+    ];
+    geo = geo.filter(o => {
+      if (o.type !== 'cover') return true;
+      const hw = (o.w || 60) / 2;
+      return !pts.some(p => Math.abs(o.x - p.x) < hw + 50 && Math.abs(o.y - p.y) < 150);
+    });
+  }
+
   settleCrates(geo);
   const objects = [...geo, {...player}, ...team.map(o => ({ ...o })), ...enemy.map(o => ({ ...o }))];
   // Флаги — только CTF; в TDM/FFA/BOMB/KOTH их нет (в генераторе они есть

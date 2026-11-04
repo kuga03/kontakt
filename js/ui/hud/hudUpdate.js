@@ -1,13 +1,13 @@
 import { renderTeamsBoard, drawScoreDots } from './boards.js';
 import { updateHudTransform } from './hudModal.js';
 import { drawAbilityCircle, drawCrosshair, drawReloadIcon } from './indicators.js';
-import { weaponIcon, weaponImage, weaponHudScale, getWeaponLabel, weaponHasMag } from '../../data/weapons.js?v=170';
+import { weaponIcon, weaponImage, weaponHudScale, getWeaponLabel, weaponHasMag } from '../../data/weapons.js';
 
-import { getClassAbility, ultUnlocked } from '../../data/abilities.js?v=169';
-import { gameState, expRequired } from '../../data/gameState.js?v=175';
-import { getRank } from '../../data/ranks.js?v=169';
+import { getClassAbility, ultUnlocked } from '../../data/abilities.js';
+import { gameState, expRequired } from '../../data/gameState.js';
+import { getRank } from '../../data/ranks.js';
 
-import { gameW, BASE_CX } from '../layout.js?v=3';
+import { gameW, BASE_CX } from '../layout.js';
 export function updateHud(scene, time, delta) {
   const P = (typeof Phaser !== 'undefined') ? Phaser : null;
   const clamp = (P && P.Math && P.Math.Clamp) ? P.Math.Clamp : (v, a, b) => Math.max(a, Math.min(b, v));

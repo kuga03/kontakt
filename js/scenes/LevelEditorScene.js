@@ -1,7 +1,7 @@
-import { loadCustomLevels, saveCustomLevel } from '../data/customLevels.js?v=169';
-import { resolveBuildingTex } from '../world/mapPrimitives.js?v=411';
-import { bakePanorama } from '../data/bgPanorama.js?v=268';
-import { gameW, UX } from '../ui/layout.js?v=3';
+import { loadCustomLevels, saveCustomLevel } from '../data/customLevels.js';
+import { resolveBuildingTex } from '../world/mapPrimitives.js';
+import { bakePanorama } from '../data/bgPanorama.js';
+import { gameW, UX } from '../ui/layout.js';
 
 const OBJECT_TYPES = {
   wall:     { color: 0x6b5a4a, w: 60,   h: 200 },

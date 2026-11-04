@@ -1,9 +1,9 @@
-﻿import { weaponImage } from '../../../data/weapons.js?v=170';
+﻿import { weaponImage } from '../../../data/weapons.js';
 
-import { RIG_DEFAULTS } from '../../../data/rigConfig.js?v=169';
-import { getCharacterColors, getEquippedTorso } from '../../../data/gameState.js?v=175';
+import { RIG_DEFAULTS } from '../../../data/rigConfig.js';
+import { getCharacterColors, getEquippedTorso } from '../../../data/gameState.js';
 
-import { ensureGeoTextures } from './gear.js?v=395';
+import { ensureGeoTextures } from './gear.js';
 import { artTex, cropH, cropInfo, cropW, elbowCache, GEO_HUMAN, jointsCache, partCfg } from './config.js';
 
 // Средний цвет текстуры торса: рукав должен совпадать с надетым торсом,
@@ -202,7 +202,6 @@ function armElbow(player, texKey, cut) {
     if (!artKey || !player.scene.textures.exists(artKey)) return null;
     if (!player.scene.textures.exists(texKey)) return null;
     // Кэш на сессию: один арт+срез считается раз (лобби строит 4 превью).
-    elbowCache = elbowCache || new Map();
     const ck = `${artKey}|${(+cut).toFixed(2)}`;
     if (elbowCache.has(ck)) {
       const hit = elbowCache.get(ck);
@@ -464,7 +463,6 @@ function armJoints(player, texKey, fx, fy, fw, fh, kind, elbowPx) {
     ? { j0: { x: 0.06, y: 0.08 }, j1: { x: 0.97, y: 0.55 } }
     : { j0: { x: 0.03, y: 0.55 }, j1: { x: 0.95, y: 0.5 } };
   // Кэш на сессию: суставы среза зависят только от арта (лобби/рестарт).
-  jointsCache = jointsCache || new Map();
   const ekey = elbowPx && elbowPx.W
     ? `${Math.round(elbowPx.x)}:${Math.round(elbowPx.y)}` : 'n';
   const jkey = `${texKey}|${fx}|${fy}|${fw}|${fh}|${kind}|${ekey}`;

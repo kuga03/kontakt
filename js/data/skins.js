@@ -1,4 +1,4 @@
-import { weaponsList, getWeaponLabel } from './weapons.js?v=170';
+import { weaponsList, getWeaponLabel } from './weapons.js';
 
 // Эпитеты вместо плоских «Неон»/«Золотой»: имя скина = оружие + эпитет,
 // как «АК-47 Кровавый дракон». Распределение детерминированное (по индексу),

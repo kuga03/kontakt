@@ -1,4 +1,4 @@
-import { gameState } from './gameState.js?v=175';
+import { gameState } from './gameState.js';
 
 export const classAbilities = {
   Assault: {

@@ -1,23 +1,23 @@
-import Assault from '../../entities/Assault.js?v=319';
-import Tank from '../../entities/Tank.js?v=319';
-import Medic from '../../entities/Medic.js?v=319';
-import Sniper from '../../entities/Sniper.js?v=320';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
 
 
-import { gameState, saveGameState } from '../../data/gameState.js?v=175';
-import { getAllCampaignLevels } from '../../data/levels.js?v=172';
-import { getModeMap, getFreeMap, getRandomMap } from '../../data/modeMaps.js?v=171';
-import { isClassUnlocked } from '../../data/weapons.js?v=170';
-import { getBotDifficulty } from '../../data/difficulty.js?v=170';
+import { gameState, saveGameState } from '../../data/gameState.js';
+import { getAllCampaignLevels } from '../../data/levels.js';
+import { getModeMap, getFreeMap, getRandomMap } from '../../data/modeMaps.js';
+import { isClassUnlocked } from '../../data/weapons.js';
+import { getBotDifficulty } from '../../data/difficulty.js';
 
-import * as Koth from '../../modes/koth.js?v=169';
+import * as Koth from '../../modes/koth.js';
 
-import * as Gang from '../../data/gang.js?v=7';
-import { isMutId, hasMut, stripToKnife, applySpawnStats } from '../../data/mutators.js?v=2';
-import { navGraph as navMeshGraph } from '../../ai/navMesh.js?v=25';
+import * as Gang from '../../data/gang.js';
+import { isMutId, hasMut, stripToKnife, applySpawnStats } from '../../data/mutators.js';
+import { navGraph as navMeshGraph } from '../../ai/navMesh.js';
 
-import { gameW } from '../../ui/layout.js?v=3';
+import { gameW } from '../../ui/layout.js';
 
 const classMap = { Assault, Tank, Medic, Sniper };
 

@@ -1,6 +1,6 @@
 // pauseModal.js — меню паузы (было в GameScene.createPauseMenu/togglePause).
 // Функции принимают сцену; колбэки зовут методы сцены как раньше.
-import { gameW } from './layout.js?v=3';
+import { gameW } from './layout.js';
 
 export function createPauseMenu(scene) {
   // Адаптив: затемнение на всю ширину (позицию центрит updateHudTransform).

@@ -2,8 +2,8 @@
 // эталон «Форты» (3 фланга), симметрия, лейны на поверхностях, бюджеты
 // подъёма/пролёта, флаги/точки/предметы и количество объектов.
 // Запуск: node --import ./tools/headless/register.mjs ./tools/headless/check_campaign_maps.mjs
-import { campaignLevels } from '../../js/data/levels.js?v=172';
-import { validateArena } from '../../js/data/flankGen.js?v=171';
+import { campaignLevels } from '../../js/data/levels.js';
+import { validateArena } from '../../js/data/flankGen.js';
 
 const ITEM_TYPES = ['medkit', 'armor', 'ammo', 'frag', 'smoke'];
 let fail = 0;

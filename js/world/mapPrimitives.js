@@ -6,8 +6,8 @@
 // сгенерировать недостающую текстуру даже в GameScene (у BootScene-хелперов
 // там нет). Версии (?v=) обязательны: иначе браузер/WebView кеширует старый
 // модуль без новых вариантов ящиков/бочек.
-import * as ArtEnv from '../scenes/boot/artEnv.js?v=404';
-import * as ArtBuildings from '../scenes/boot/artBuildings.js?v=410';
+import * as ArtEnv from '../scenes/boot/artEnv.js';
+import * as ArtBuildings from '../scenes/boot/artBuildings.js';
 
 // Старые PNG-здания assets/buildings (bld_*) больше не грузим:
 // подменяем рисованными map_* (те же ключи, что палитра редактора).
@@ -165,12 +165,6 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
     texKey = bi === 0 ? 'map_barrel' : 'map_barrel' + bi;
   }
 
-  const body = scene.add.rectangle(x, y, width, height, 0xffffff, 0);
-  scene.physics.add.existing(body, true);
-  body.setVisible(false);
-  if (alpha < 1) body.setAlpha(alpha);
-  scene.covers.add(body);
-
   // Гарантируем, что текстура существует: если BootScene её не создал
   // (старый кеш, смена списка артов), рисуем прямо здесь.
   try {
@@ -180,14 +174,83 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
     }
   } catch (e) {}
 
+  // Для ступенчатых укрытий (машина / мешки) разбиваем физику на sub-rectangles,
+  // чтобы форма коллайдера соответствовала силуэту и боты/игроки могли перепрыгивать
+  // и стрелять через низкие края (капот/багажник/плечи мешков).
+  const subBodies = [];
+  const baseBotY = y + height / 2;
+  const leftX = x - width / 2;
+
+  if (texKey === 'map_wreck') {
+    // Вектор кузова map_wreck (200x120):
+    // Капот (лево): w: 29%, h: 58%
+    // Кабина (центр): w: 35%, h: 72%
+    // Багажник (право): w: 36%, h: 56%
+    const parts = [
+      { rw: width * 0.29, rh: height * 0.58 },
+      { rw: width * 0.35, rh: height * 0.72 },
+      { rw: width * 0.36, rh: height * 0.56 },
+    ];
+    let curX = leftX;
+    for (const p of parts) {
+      const px = curX + p.rw / 2;
+      const py = baseBotY - p.rh / 2;
+      const sb = scene.add.rectangle(px, py, p.rw, p.rh, 0xffffff, 0);
+      scene.physics.add.existing(sb, true);
+      sb.setVisible(false);
+      if (alpha < 1) sb.setAlpha(alpha);
+      scene.covers.add(sb);
+      subBodies.push(sb);
+      curX += p.rw;
+    }
+  } else if (texKey === 'map_bags') {
+    // Пирамида мешков map_bags (240x120):
+    // Левое плечо: w: 24%, h: 46%
+    // Гребень (центр): w: 52%, h: 62%
+    // Правое плечо: w: 24%, h: 46%
+    const parts = [
+      { rw: width * 0.24, rh: height * 0.46 },
+      { rw: width * 0.52, rh: height * 0.62 },
+      { rw: width * 0.24, rh: height * 0.46 },
+    ];
+    let curX = leftX;
+    for (const p of parts) {
+      const px = curX + p.rw / 2;
+      const py = baseBotY - p.rh / 2;
+      const sb = scene.add.rectangle(px, py, p.rw, p.rh, 0xffffff, 0);
+      scene.physics.add.existing(sb, true);
+      sb.setVisible(false);
+      if (alpha < 1) sb.setAlpha(alpha);
+      scene.covers.add(sb);
+      subBodies.push(sb);
+      curX += p.rw;
+    }
+  }
+
+  // Главное тело: если ступенчатое укрытие, главное тело делаем бестелесным триггером/сенсором
+  // либо отключаем его физику, чтобы коллизии шли через subBodies.
+  const body = scene.add.rectangle(x, y, width, height, 0xffffff, 0);
+  scene.physics.add.existing(body, true);
+  body.setVisible(false);
+  if (alpha < 1) body.setAlpha(alpha);
+
+  if (subBodies.length > 0) {
+    // Отключаем хитбокс габаритного тела, чтобы коллизии не блокировали свободное пространство
+    if (body.body) body.body.enable = false;
+    body._subBodies = subBodies;
+  } else {
+    scene.covers.add(body);
+  }
+
   // Всегда рисуем надежную текстурную подложку нужного оттенка под спрайтом
   const bgCol = (texKey && texKey.indexOf('barrel') >= 0) ? 0x5a6068 : 0x8b6b43;
-  const img = scene.add.rectangle(x, y, width, height, bgCol).setStrokeStyle(2, 0x3e2d1a).setDepth(85);
+  let img = scene.add.rectangle(x, y, width, height, bgCol).setStrokeStyle(2, 0x3e2d1a).setDepth(85);
   if (alpha < 1) img.setAlpha(alpha);
 
+  let spr = null;
   if (scene.textures.exists(texKey)) {
-    try { img.destroy(); } catch (e) {}
-    const spr = scene.add.image(x, y, texKey).setDepth(85);
+    try { img.destroy(); img = null; } catch (e) {}
+    spr = scene.add.image(x, y, texKey).setDepth(85);
     // Физические границы укрытий должны совпадать с визуальными: спрайт
     // рисуем ровно по хитбоксу (без «увеличений только для вида»), а
     // несовпадения устраняем в самом арте (см. FIT в artBuildings.js).
@@ -196,7 +259,19 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
   }
 
   const shW = width * 0.9;
-  scene.add.ellipse(x, y + height / 2 + 2, shW, 8, 0x000000, 0.35).setDepth(84);
+  const sh = scene.add.ellipse(x, y + height / 2 + 2, shW, 8, 0x000000, 0.35).setDepth(84);
+
+  body.on('destroy', () => {
+    try { if (img && img.active) img.destroy(); } catch (e) {}
+    try { if (spr && spr.active) spr.destroy(); } catch (e) {}
+    try { if (sh && sh.active) sh.destroy(); } catch (e) {}
+    if (body._subBodies) {
+      for (const sb of body._subBodies) {
+        try { if (sb && sb.active) sb.destroy(); } catch (e) {}
+      }
+      body._subBodies = null;
+    }
+  });
 
   try { if (scene) scene._losRects = []; } catch (e) {}
   return body;

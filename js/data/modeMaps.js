@@ -5,7 +5,7 @@
 // Ручная подмена карты без правки файла (dev/тесты):
 //   localStorage.setItem('sideShooterModeMaps', JSON.stringify({ CTF: {...} }))
 //   localStorage.removeItem('sideShooterModeMaps')
-import { genFlankArena } from './flankGen.js?v=170';
+import { genFlankArena } from './flankGen.js';
 
 const MAP_FILES = { BOMB: 'bomb', CTF: 'ctf', KOTH: 'koth' };
 

@@ -2,7 +2,7 @@
 // Было копией в combat/match.js — вынесено, чтобы итоги боя и полка
 // «НАГРАДЫ» в профиле выглядели одинаково. Логика выдачи — в data/medals.js.
 // Импортирует только medalById (циклов нет: match.js и FriendsScene зовут отсюда).
-import { medalById } from '../data/medals.js?v=176';
+import { medalById } from '../data/medals.js';
 
 // Цвета лент медалей по id.
 const MEDAL_RIBBON = {

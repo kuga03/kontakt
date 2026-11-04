@@ -1,4 +1,4 @@
-import { currentSeasonId, initTierProgress, recordPassProgress as recordPassProgressPass } from './pass.js?v=175';
+import { currentSeasonId, initTierProgress, recordPassProgress as recordPassProgressPass } from './pass.js';
 
 // Версия формата сейва: сейвы без версии считаются v1.
 const SAVE_VER = 2;

@@ -1,18 +1,18 @@
-import { gameState, saveGameState, syncGameState } from '../data/gameState.js?v=175';
+import { gameState, saveGameState, syncGameState } from '../data/gameState.js';
 
-import { campaignLevels } from '../data/levels.js?v=172';
-import { skillPoints } from '../data/skills.js?v=169';
-import { genePoints } from '../data/genes.js?v=169';
+import { campaignLevels } from '../data/levels.js';
+import { skillPoints } from '../data/skills.js';
+import { genePoints } from '../data/genes.js';
 
-import { completedAchievements } from '../data/achievements.js?v=170';
+import { completedAchievements } from '../data/achievements.js';
 
-import { turfTick } from '../data/gang.js?v=7';
-import { isWeekend, eventMutatorDef, nextWeekendStart, fmtCountdown } from '../data/mutators.js?v=2';
-import Assault from '../entities/Assault.js?v=319';
-import Tank from '../entities/Tank.js?v=319';
-import Medic from '../entities/Medic.js?v=319';
-import Sniper from '../entities/Sniper.js?v=320';
-import { gameW, UX } from '../ui/layout.js?v=3';
+import { turfTick } from '../data/gang.js';
+import { isWeekend, eventMutatorDef, nextWeekendStart, fmtCountdown } from '../data/mutators.js';
+import Assault from '../entities/Assault.js';
+import Tank from '../entities/Tank.js';
+import Medic from '../entities/Medic.js';
+import Sniper from '../entities/Sniper.js';
+import { gameW, UX } from '../ui/layout.js';
 
 const PREVIEW_CLASSES = { Assault, Tank, Medic, Sniper };
 
@@ -54,7 +54,7 @@ import * as Daily from './menu/daily.js';
 import * as History from './menu/history.js';
 import * as Showcase from './menu/showcase.js';
 import * as Widgets from './menu/widgets.js';
-import * as News from './menu/news.js?v=378';
+import * as News from './menu/news.js';
 export default class MenuScene extends Phaser.Scene {
   constructor() {
     super('MenuScene');

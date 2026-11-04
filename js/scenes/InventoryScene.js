@@ -1,12 +1,12 @@
-import { gameW, UX } from '../ui/layout.js?v=3';
-import { syncGameState } from '../data/gameState.js?v=175';
+import { gameW, UX } from '../ui/layout.js';
+import { syncGameState } from '../data/gameState.js';
 
-import { classDefinitions } from '../data/weapons.js?v=170';
+import { classDefinitions } from '../data/weapons.js';
 
-import Assault from '../entities/Assault.js?v=319';
-import Tank from '../entities/Tank.js?v=319';
-import Medic from '../entities/Medic.js?v=319';
-import Sniper from '../entities/Sniper.js?v=320';
+import Assault from '../entities/Assault.js';
+import Tank from '../entities/Tank.js';
+import Medic from '../entities/Medic.js';
+import Sniper from '../entities/Sniper.js';
 
 const PREVIEW_CLASSES = { Assault, Tank, Medic, Sniper };
 
@@ -31,11 +31,11 @@ const COMPARE_SLOTS = [
   { x: 500, y: 565, slot: 1 }
 ];
 
-import * as ContractModal from './inventory/contractModal.js?v=3';
-import * as EquipDnD from './inventory/equipDnD.js?v=3';
-import * as SkinsTab from './inventory/skinsTab.js?v=3';
-import * as WardrobeTab from './inventory/wardrobeTab.js?v=401';
-import * as WeaponsTab from './inventory/weaponsTab.js?v=3';
+import * as ContractModal from './inventory/contractModal.js';
+import * as EquipDnD from './inventory/equipDnD.js';
+import * as SkinsTab from './inventory/skinsTab.js';
+import * as WardrobeTab from './inventory/wardrobeTab.js';
+import * as WeaponsTab from './inventory/weaponsTab.js';
 export default class InventoryScene extends Phaser.Scene {
   constructor() {
     super('InventoryScene');

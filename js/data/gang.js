@@ -1,8 +1,8 @@
 // gang.js — Война банд (ТЗ п.14.6): своя банда + карта города 3×3 + контракты.
 // Отдельный модуль в js/data (общая логика — сюда, а не в modes/*, см. ТЗ п.4).
 // Циклов нет: импортирует только gameState/names. match.js/GameScene зовут отсюда.
-import { gameState, saveGameState, addCoins, addExperience, hasWeapon } from './gameState.js?v=175';
-import { randomBotNames } from './names.js?v=169';
+import { gameState, saveGameState, addCoins, addExperience, hasWeapon } from './gameState.js';
+import { randomBotNames } from './names.js';
 
 export const GANG_ID = 'player';
 export const ENEMY_GANGS = [

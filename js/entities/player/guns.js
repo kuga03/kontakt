@@ -2,12 +2,12 @@
 // Функции принимают игрока первым аргументом; в классе остались тонкие
 // обёртки с теми же именами. Геттер weapon — accessor, остаётся в классе.
 // Внутри модуля зовём друг друга напрямую.
-import Weapon from '../Weapon.js?v=171';
-import { weaponsList } from '../../data/weapons.js?v=170';
-import { mergeGeneMods } from '../../data/genes.js?v=169';
-import { totalSkillMods } from '../../data/skills.js?v=169';
-import { gearSetBonus } from '../../data/gearSets.js?v=172';
-import { applyWeaponUpgrade } from '../../data/upgrades.js?v=3';
+import Weapon from '../Weapon.js';
+import { weaponsList } from '../../data/weapons.js';
+import { mergeGeneMods } from '../../data/genes.js';
+import { totalSkillMods } from '../../data/skills.js';
+import { gearSetBonus } from '../../data/gearSets.js';
+import { applyWeaponUpgrade } from '../../data/upgrades.js';
 
 export function addWeapon(player, name) {
   const data = weaponsList.find(item => item.name === name);

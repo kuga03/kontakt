@@ -1,4 +1,4 @@
-import { gameW, UX } from '../ui/layout.js?v=3';
+import { gameW, UX } from '../ui/layout.js';
 
 import {
   geneDefinitions,
@@ -9,7 +9,7 @@ import {
   genePrereqMet,
   canLearnGene,
   learnGene
-} from '../data/genes.js?v=169';
+} from '../data/genes.js';
 
 const NODE_W = 88;
 const NODE_H = 88;

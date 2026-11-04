@@ -1,15 +1,15 @@
 // GangScene — окно «Банда» (ТЗ п.14.6): ростер, карта Новиграда, контракты, казна.
 // Ростер слева, карта в центре (органические цветные районы по держателю),
 // контракты справа. Всё подписано: сверху — как играть одной строкой.
-import { gameW, UX } from '../ui/layout.js?v=3';
-import { classOfWeapon, weaponsList, getWeaponLabel } from '../data/weapons.js?v=170';
-import { gameState } from '../data/gameState.js?v=175';
+import { gameW, UX } from '../ui/layout.js';
+import { classOfWeapon, weaponsList, getWeaponLabel } from '../data/weapons.js';
+import { gameState } from '../data/gameState.js';
 import {
   ensureGang, ensureTurf, turfTick, ENEMY_GANGS, GANG_COSTS, GANG_RULES,
   hireMember, buySlot, healAll, claimIncome, assignGun, toggleBattle,
   setLieutenant, dismissMember, acceptRecruit, declineRecruit, contractReward,
   gangBadgeKey
-} from '../data/gang.js?v=7';
+} from '../data/gang.js';
 
 const CLASS_LABEL = { Assault: 'Штурмовик', Tank: 'Танк', Medic: 'Медик', Sniper: 'Снайпер' };
 const HOLDER_CSS = { player: '#35d07f', syndicate: '#ff6666', swarm: '#c07bff', chimera: '#7db8ff' };

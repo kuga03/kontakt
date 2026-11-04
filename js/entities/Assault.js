@@ -1,5 +1,5 @@
-import Player from './Player.js?v=384';
-import { classAbilities } from '../data/abilities.js?v=169';
+import Player from './Player.js';
+import { classAbilities } from '../data/abilities.js';
 
 export default class Assault extends Player {
   constructor(scene, x, y, config = {}) {

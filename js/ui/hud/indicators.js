@@ -1,8 +1,8 @@
-import { getWeaponLabel } from '../../data/weapons.js?v=170';
+import { getWeaponLabel } from '../../data/weapons.js';
 
-import { getCrosshair, drawCrosshairFigure } from '../../data/crosshair.js?v=169';
+import { getCrosshair, drawCrosshairFigure } from '../../data/crosshair.js';
 
-import { gameW, BASE_CX } from '../layout.js?v=3';
+import { gameW, BASE_CX } from '../layout.js';
 export function drawAbilityCircle(scene, ready01) {
   const r = 22;
 

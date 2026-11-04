@@ -1,4 +1,4 @@
-import { sfxVol } from './audio.js?v=170';
+import { sfxVol } from './audio.js';
 
 // Поштучное клацанье трубки без файлов: щелчок синтезируется через
 // WebAudio (контекст Phaser) — шумовой burst через bandpass + короткий

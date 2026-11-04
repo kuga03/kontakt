@@ -1,11 +1,11 @@
-import { gameState, addCoins, addExperience, advanceCampaignLevel, saveGameState, recordPassProgress } from '../../data/gameState.js?v=175';
-import { campaignLevels } from '../../data/levels.js?v=172';
+import { gameState, addCoins, addExperience, advanceCampaignLevel, saveGameState, recordPassProgress } from '../../data/gameState.js';
+import { campaignLevels } from '../../data/levels.js';
 
-import { checkBattleMedals, awardMedals } from '../../data/medals.js?v=176';
-import { drawMedalRow } from '../../ui/medalsView.js?v=9';
-import * as Gang from '../../data/gang.js?v=7';
-import { recordMutWin } from '../../data/mutators.js?v=2';
-import { gameW } from '../../ui/layout.js?v=3';
+import { checkBattleMedals, awardMedals } from '../../data/medals.js';
+import { drawMedalRow } from '../../ui/medalsView.js';
+import * as Gang from '../../data/gang.js';
+import { recordMutWin } from '../../data/mutators.js';
+import { gameW } from '../../ui/layout.js';
 
 import { flushPlayTime, playerAfk } from './activity.js';
 let _newMedals = [];

@@ -2,8 +2,8 @@
 // Было в GameScene (spawnBullet/_bulletHitWall/_sweepBullets/_hitZone/explodeRPG).
 // Функции принимают сцену; вызовы LOS/звуков/эффектов — через сцену
 // (обёртки с теми же именами), класс Bullet импортируем напрямую как в modes/trial.js.
-import Bullet from '../entities/Bullet.js?v=169';
-import { tintTracer, isAllyShot } from './fx.js?v=320';
+import Bullet from '../entities/Bullet.js';
+import { tintTracer, isAllyShot } from './fx.js';
 
 export function spawnBullet(scene, owner, angle, damage, range, startX, startY, visual) {
   if (owner !== scene.player && scene.mode === 'CAMPAIGN') {

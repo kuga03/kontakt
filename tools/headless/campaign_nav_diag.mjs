@@ -10,7 +10,7 @@ globalThis.Phaser = createRequire(import.meta.url)('../../vendor/phaser.min.js')
 const Phaser = globalThis.Phaser;
 stubAssets(Phaser);
 const { default: GameScene } = await import('../../js/scenes/GameScene.js');
-const { gameState } = await import('../../js/data/gameState.js?v=171');
+const { gameState } = await import('../../js/data/gameState.js');
 
 const idx = Number(process.argv[2] || 0);
 const secs = Number(process.argv[3] || 20);

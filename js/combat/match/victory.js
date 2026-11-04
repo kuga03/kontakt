@@ -1,7 +1,7 @@
-import { gameState, addCoins, addExperience, advanceCampaignLevel, recordPassProgress, unlockWeapon, hasWeapon } from '../../data/gameState.js?v=175';
-import { campaignLevels } from '../../data/levels.js?v=172';
+import { gameState, addCoins, addExperience, advanceCampaignLevel, recordPassProgress, unlockWeapon, hasWeapon } from '../../data/gameState.js';
+import { campaignLevels } from '../../data/levels.js';
 
-import { gameW } from '../../ui/layout.js?v=3';
+import { gameW } from '../../ui/layout.js';
 
 import { flushPlayTime } from './activity.js';
 import { recordMatch } from './endGame.js';

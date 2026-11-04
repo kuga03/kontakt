@@ -1,34 +1,34 @@
-import Assault from '../entities/Assault.js?v=380';
-import Tank from '../entities/Tank.js?v=380';
-import Medic from '../entities/Medic.js?v=380';
-import Sniper from '../entities/Sniper.js?v=380';
+import Assault from '../entities/Assault.js';
+import Tank from '../entities/Tank.js';
+import Medic from '../entities/Medic.js';
+import Sniper from '../entities/Sniper.js';
 
-import Pickup from '../entities/Pickup.js?v=177';
+import Pickup from '../entities/Pickup.js';
 
-import { weaponsList } from '../data/weapons.js?v=170';
+import { weaponsList } from '../data/weapons.js';
 
-import * as LosMath from '../world/losMath.js?v=170';
-import * as CameraRig from '../world/cameraRig.js?v=170';
-import * as SoundSys from '../combat/soundSys.js?v=174';
-import * as Fx from '../combat/fx.js?v=322';
+import * as LosMath from '../world/losMath.js';
+import * as CameraRig from '../world/cameraRig.js';
+import * as SoundSys from '../combat/soundSys.js';
+import * as Fx from '../combat/fx.js';
 
-import * as Arenas from '../world/arenas.js?v=412';
-import * as Pickups from '../combat/pickups.js?v=169';
-import * as Dump from '../debug/dump.js?v=220';
-import { installPenWatch } from '../debug/penWatch.js?v=1';
-import * as PauseModal from '../ui/pauseModal.js?v=173';
-import * as Input from '../ui/input.js?v=175';
-import * as NavGraph from '../world/navGraph.js?v=172';
-import * as Hud from '../ui/hud.js?v=371';
-import * as Trial from '../modes/trial.js?v=206';
-import * as Koth from '../modes/koth.js?v=169';
-import * as Ctf from '../modes/ctf.js?v=351';
-import * as BombMode from '../modes/bomb.js?v=350';
-import * as Campaign from '../modes/campaign.js?v=175';
-import * as Match from '../combat/match.js?v=349';
+import * as Arenas from '../world/arenas.js';
+import * as Pickups from '../combat/pickups.js';
+import * as Dump from '../debug/dump.js';
+import { installPenWatch } from '../debug/penWatch.js';
+import * as PauseModal from '../ui/pauseModal.js';
+import * as Input from '../ui/input.js';
+import * as NavGraph from '../world/navGraph.js';
+import * as Hud from '../ui/hud.js';
+import * as Trial from '../modes/trial.js';
+import * as Koth from '../modes/koth.js';
+import * as Ctf from '../modes/ctf.js';
+import * as BombMode from '../modes/bomb.js';
+import * as Campaign from '../modes/campaign.js';
+import * as Match from '../combat/match.js';
 
-import * as Bullets from '../combat/bullets.js?v=322';
-import * as Grenades from '../combat/grenades.js?v=183';
+import * as Bullets from '../combat/bullets.js';
+import * as Grenades from '../combat/grenades.js';
 
 const classMap = { Assault, Tank, Medic, Sniper };
 
@@ -53,10 +53,10 @@ const MAP_THEMES = {
 };
 
 import * as Lifecycle from './game/lifecycle.js';
-import * as MapBuilder from './game/mapBuilder.js?v=411';
-import * as ModeObjects from './game/modeObjects.js?v=412';
-import * as MatchTick from './game/matchTick.js?v=6';
-import * as Spawns from './game/spawns.js?v=305';
+import * as MapBuilder from './game/mapBuilder.js';
+import * as ModeObjects from './game/modeObjects.js';
+import * as MatchTick from './game/matchTick.js';
+import * as Spawns from './game/spawns.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor(key) {

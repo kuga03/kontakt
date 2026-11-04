@@ -7,7 +7,7 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { setupDom, setupClock } from './dom.mjs';
 import { stubAssets } from './assets.mjs';
-import { gameState } from '../../js/data/gameState.js?v=171';
+import { gameState } from '../../js/data/gameState.js';
 
 const argv = process.argv.slice(2);
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 ? argv[i + 1] : d; };
@@ -24,7 +24,7 @@ try { if (Phaser.Math && Phaser.Math.RND && Phaser.Math.RND.seed) Phaser.Math.RN
 const { default: GameScene } = await import('../../js/scenes/GameScene.js');
 // ВАЖНО: игра импортирует EnemyAI с ?v=191 — это ДРУГОЙ экземпляр модуля.
 // Без того же ?v= патч прототипа молча не сработает (грабли §1.8 п.2).
-const { default: EnemyAI } = await import('../../js/ai/EnemyAI.js?v=194');
+const { default: EnemyAI } = await import('../../js/ai/EnemyAI.js');
 
 const game = new Phaser.Game({
   type: Phaser.HEADLESS, width: 1280, height: 720, audio: { noAudio: true }, banner: false,

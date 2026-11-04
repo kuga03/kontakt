@@ -1,15 +1,15 @@
-import { gameW, UX } from '../ui/layout.js?v=3';
-import { resetProgress, resetCampaign, addCoins, addExperience, saveGameState, syncGameState, gameState, renamePlayer, unlockHead, unlockShoes, unlockTorso, unlockPants } from '../data/gameState.js?v=175';
-import { campaignLevels } from '../data/levels.js?v=172';
-import { GEAR_ITEMS } from '../data/wardrobe.js?v=172';
-import { musicVol, sfxVol, volLabel, refreshLiveVolumes } from '../data/audio.js?v=170';
+import { gameW, UX } from '../ui/layout.js';
+import { resetProgress, resetCampaign, addCoins, addExperience, saveGameState, syncGameState, gameState, renamePlayer, unlockHead, unlockShoes, unlockTorso, unlockPants } from '../data/gameState.js';
+import { campaignLevels } from '../data/levels.js';
+import { GEAR_ITEMS } from '../data/wardrobe.js';
+import { musicVol, sfxVol, volLabel, refreshLiveVolumes } from '../data/audio.js';
 import {
   getCrosshair, setCrosshair, crossLabel, crossDotLabel, crossArmsLabel,
   CROSS_COLORS, CROSS_SHAPES, crossDefaults,
   nextCrossColor, nextCrossShape, nextCrossSize, nextCrossThick,
   nextCrossArms, nextCrossDot,
   drawCrosshairFigure
-} from '../data/crosshair.js?v=169';
+} from '../data/crosshair.js';
 import {
   getSettings, getKeyCode, keyName, keyCodeName, KEY_ACTIONS, QUALITY_OPTIONS,
   CONTROL_SCHEMES, getControlScheme, setControlScheme,

@@ -1,6 +1,6 @@
-import { unlockWeapon } from '../data/gameState.js?v=175';
-import { getWeaponLabel, weaponImage } from '../data/weapons.js?v=170';
-import { fragMax, smokeMax } from '../data/skills.js?v=169';
+import { unlockWeapon } from '../data/gameState.js';
+import { getWeaponLabel, weaponImage } from '../data/weapons.js';
+import { fragMax, smokeMax } from '../data/skills.js';
 
 const PICKUP_CONFIG = {
   ammo:    { color: 0x8a5a2a, label: '+Патроны',  heal: 0, armor: 0, ammoAmount: 30, outline: 0x8a5a2a },

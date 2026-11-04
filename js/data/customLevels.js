@@ -1,3 +1,5 @@
+import { generateLevel } from './levelGen.js?v=170';
+
 const KEY = 'sideShooterCustomLevels';
 const OLD_KEY = 'customCampaignLevel';
 
@@ -39,6 +41,16 @@ export function loadCustomLevels() {
       }
     }
   } catch (e) { /* ignore */ }
+
+  if (!arr.length) {
+    try {
+      const def = generateLevel(0);
+      def.id = 1001;
+      def.savedAt = Date.now();
+      arr = [def];
+      migrated = true;
+    } catch (e) { /* ignore */ }
+  }
 
   let changed = false;
   arr.forEach((l, i) => {

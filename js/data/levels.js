@@ -1,4 +1,4 @@
-import { genCampaignMapData } from './campaignMaps.js?v=7';
+import { genCampaignMapData } from './campaignMaps.js';
 ﻿export const campaignLevels = [
   {
     id: 1,

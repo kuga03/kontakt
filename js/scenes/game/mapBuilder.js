@@ -1,14 +1,14 @@
-import Assault from '../../entities/Assault.js?v=319';
-import Tank from '../../entities/Tank.js?v=319';
-import Medic from '../../entities/Medic.js?v=319';
-import Sniper from '../../entities/Sniper.js?v=320';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
-import { bakeHouseLayers } from '../../data/bgHouses.js?v=169';
-import { bakePanorama, bakeCrispBands } from '../../data/bgPanorama.js?v=268';
+import { bakeHouseLayers } from '../../data/bgHouses.js';
+import { bakePanorama, bakeCrispBands } from '../../data/bgPanorama.js';
 
-import * as MapPrims from '../../world/mapPrimitives.js?v=412';
+import * as MapPrims from '../../world/mapPrimitives.js';
 
-import * as Koth from '../../modes/koth.js?v=169';
+import * as Koth from '../../modes/koth.js';
 
 const classMap = { Assault, Tank, Medic, Sniper };
 

@@ -1,9 +1,9 @@
-import { gameState, addCoins, addExperience, setTrialRecord, saveGameState } from '../../data/gameState.js?v=175';
+import { gameState, addCoins, addExperience, setTrialRecord, saveGameState } from '../../data/gameState.js';
 
-import { trialEndedTime } from '../../modes/trial.js?v=206';
+import { trialEndedTime } from '../../modes/trial.js';
 
-import { reapplyGlassOnRevive } from '../../data/mutators.js?v=2';
-import { gameW } from '../../ui/layout.js?v=3';
+import { reapplyGlassOnRevive } from '../../data/mutators.js';
+import { gameW } from '../../ui/layout.js';
 import { bumpObj } from '../score.js';
 import { flushPlayTime, recordPlayerKill, killXP, rewardObjectiveEvent } from './activity.js';
 import { recordMatch } from './endGame.js';

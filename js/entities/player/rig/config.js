@@ -1,6 +1,6 @@
 ﻿
 
-import { RIG_DEFAULTS } from '../../../data/rigConfig.js?v=169';
+import { RIG_DEFAULTS } from '../../../data/rigConfig.js';
 export const GEO_HUMAN = true;
 
 // Уборы пекутся СТРОГО один раз за запуск игры: повторное пересоздание

@@ -1,9 +1,9 @@
 // DonateScene — отдельное меню доната (вход — пончик из топбара меню).
 // Раньше жило скрытой вкладкой ShopScene (tab 'donate') — вынесено наружу,
 // чтобы «Снаряжение» осталось про оружие и модернизацию.
-import { DONATE_ITEMS } from '../data/donate.js?v=170';
-import { donateAvailable } from '../platform/index.js?v=169';
-import { gameW, UX } from '../ui/layout.js?v=3';
+import { DONATE_ITEMS } from '../data/donate.js';
+import { donateAvailable } from '../platform/index.js';
+import { gameW, UX } from '../ui/layout.js';
 
 export default class DonateScene extends Phaser.Scene {
   constructor() { super('DonateScene'); }

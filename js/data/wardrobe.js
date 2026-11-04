@@ -1,8 +1,8 @@
-import { hasHead, unlockHead, equipHead, hasShoes, unlockShoes, equipShoes, hasTorso, unlockTorso, equipTorso, hasPants, unlockPants, equipPants } from './gameState.js?v=175';
+import { hasHead, unlockHead, equipHead, hasShoes, unlockShoes, equipShoes, hasTorso, unlockTorso, equipTorso, hasPants, unlockPants, equipPants } from './gameState.js';
 // Редкости — те же 5 тиров, что у скинов (skins.js), чтобы рамки/подписи
 // буты и одежды читались одинаково. rarity проставлен у каждой вещи,
 // rarityName/rarityColor вычисляются ниже из общего каталога RARITY.
-import { RARITY } from './skins.js?v=169';
+import { RARITY } from './skins.js';
 
 // Единый каталог одежды: магазин и кейс «Гардероб» берут отсюда.
 // slot: 'head' | 'shoes' | 'torso' | 'pants' — куда надевается.

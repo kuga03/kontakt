@@ -1,15 +1,15 @@
-import { classDefinitions } from '../data/weapons.js?v=170';
-import { getEquipment, getCharacterColors, getEquippedHead, getEquippedTorso } from '../data/gameState.js?v=175';
-import { fragMax, smokeMax } from '../data/skills.js?v=169';
-import { getRigConfig } from '../data/rigConfig.js?v=169';
-import * as Damage from './player/damage.js?v=318';
-import * as Shoot from './player/shoot.js?v=175';
-import * as Move from './player/move.js?v=170';
-import * as Abilities from './player/abilities.js?v=169';
-import * as Hud from './player/hud.js?v=395';
-import * as Guns from './player/guns.js?v=175';
-import * as Aim from './player/aim.js?v=169';
-import * as Rig from './player/rig.js?v=396';
+import { classDefinitions } from '../data/weapons.js';
+import { getEquipment, getCharacterColors, getEquippedHead, getEquippedTorso } from '../data/gameState.js';
+import { fragMax, smokeMax } from '../data/skills.js';
+import { getRigConfig } from '../data/rigConfig.js';
+import * as Damage from './player/damage.js';
+import * as Shoot from './player/shoot.js';
+import * as Move from './player/move.js';
+import * as Abilities from './player/abilities.js';
+import * as Hud from './player/hud.js';
+import * as Guns from './player/guns.js';
+import * as Aim from './player/aim.js';
+import * as Rig from './player/rig.js';
 
 // ГЕОМЕТРИЧЕСКИЙ персонаж: вместо собранных PNG-скелетов тело рисуется
 // кодом (круг-голова с глазами, торс-эллипс, руки/ноги-палки, кисти и

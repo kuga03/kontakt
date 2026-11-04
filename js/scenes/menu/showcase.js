@@ -1,13 +1,13 @@
-import { gameState, mostPlayedClass, expRequired, getEquipment } from '../../data/gameState.js?v=175';
+import { gameState, mostPlayedClass, expRequired, getEquipment } from '../../data/gameState.js';
 
-import { getRank } from '../../data/ranks.js?v=169';
-import { classDefinitions } from '../../data/weapons.js?v=170';
+import { getRank } from '../../data/ranks.js';
+import { classDefinitions } from '../../data/weapons.js';
 
-import Assault from '../../entities/Assault.js?v=319';
-import Tank from '../../entities/Tank.js?v=319';
-import Medic from '../../entities/Medic.js?v=319';
-import Sniper from '../../entities/Sniper.js?v=320';
-import { gameW } from '../../ui/layout.js?v=3';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
+import { gameW } from '../../ui/layout.js';
 
 const PREVIEW_CLASSES = { Assault, Tank, Medic, Sniper };
 

@@ -1,13 +1,13 @@
 
 
-import { weaponsList } from '../../data/weapons.js?v=170';
+import { weaponsList } from '../../data/weapons.js';
 
-import * as CameraRig from '../../world/cameraRig.js?v=170';
+import * as CameraRig from '../../world/cameraRig.js';
 
-import Assault from '../../entities/Assault.js?v=380';
-import Tank from '../../entities/Tank.js?v=380';
-import Medic from '../../entities/Medic.js?v=380';
-import Sniper from '../../entities/Sniper.js?v=380';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
 const CLASSES = { Assault, Tank, Medic, Sniper };
 

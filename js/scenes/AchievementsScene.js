@@ -1,6 +1,6 @@
-import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState } from '../data/gameState.js?v=175';
-import { ACHIEVEMENTS, achievementProgress, isClaimed, claimAchievement } from '../data/achievements.js?v=170';
+import { gameW, UX } from '../ui/layout.js';
+import { gameState } from '../data/gameState.js';
+import { ACHIEVEMENTS, achievementProgress, isClaimed, claimAchievement } from '../data/achievements.js';
 
 // Достижения цепочками: виден только текущий тир.
 // Забрал награду — на его месте появился следующий.

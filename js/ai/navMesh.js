@@ -75,6 +75,14 @@ export function sim(loc, x, y, vx, vy, H, bx, by, dbl, vert, hopSkip = false) {
       if (vy > 0 && hits(loc, x, ny, H)) return landed(x, y, bx, by);
       return false;
     }
+
+    // Ранние отсечения: тело уже провалилось ниже целевой опоры или улетело дальше цели
+    if (ny > by + 10 && vy > 0 && (used || !dbl)) return false;
+    if (!vert) {
+      if (vx > 0 && nx > bx + HALF_W + 5) return false;
+      if (vx < 0 && nx < bx - HALF_W - 5) return false;
+    }
+
     x = nx; y = ny;
     if (hopSkipFrames > 0) hopSkipFrames--;
   }
@@ -130,83 +138,101 @@ function build(scene, H) {
       nodes.push(n);
     }
   }
+  // Пространственная сетка корзин (200px) для быстрого отбора узлов
+  const BUCKET = 200;
+  const grid = new Map();
+  for (const nd of nodes) {
+    const bx = Math.floor(nd.x / BUCKET);
+    if (!grid.has(bx)) grid.set(bx, []);
+    grid.get(bx).push(nd);
+  }
+
   for (const a of nodes) {
     const loc = rects.filter(r => r.x1 > a.x - 340 && r.x0 < a.x + 340 && r.y1 > a.y - 260 && r.y0 < a.y + 440);
-    for (const b of nodes) {
-      if (b === a) continue;
-      const dx = b.x - a.x, dy = b.y - a.y;
-      if (Math.abs(dx) > 280 || dy < -230 || dy > 420) continue;
-      if (dy === 0) {
-        if (Math.abs(dx) > STEP + 12) continue;
-        let ok = true, low = false;
-        const s = Math.sign(dx);
-        for (let x = a.x + s * 6; s * (x - a.x) < Math.abs(dx); x += s * 6) {
-          if (hits(loc, x, a.y, H)) {
-            if (HL < H && !hits(loc, x, a.y, HL)) { low = true; continue; }
-            ok = false; break;
+    const minBx = Math.floor((a.x - 280) / BUCKET);
+    const maxBx = Math.floor((a.x + 280) / BUCKET);
+    for (let gbx = minBx; gbx <= maxBx; gbx++) {
+      const bucket = grid.get(gbx);
+      if (!bucket) continue;
+      for (const b of bucket) {
+        if (b === a) continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        if (Math.abs(dx) > 280 || dy < -230 || dy > 420) continue;
+        if (dy === 0) {
+          if (Math.abs(dx) > STEP + 12) continue;
+          let ok = true, low = false;
+          const s = Math.sign(dx);
+          for (let x = a.x + s * 6; s * (x - a.x) < Math.abs(dx); x += s * 6) {
+            if (hits(loc, x, a.y, H)) {
+              if (HL < H && !hits(loc, x, a.y, HL)) { low = true; continue; }
+              ok = false; break;
+            }
           }
-        }
-        if (ok) a.edges.push({ from: a, to: b, type: 'walk', vx: 0, dbl: false, low, cost: Math.abs(dx) / STEP + (low ? 0.5 : 0) });
-        continue;
-      }
-      if (dy < 0) {
-        const D = JUMP1 * JUMP1 - 1800 * (a.y - b.y);
-        if (-dy > 230) continue;
-        let single = false;
-        for (let T = 0.3; T <= 2.2 && !single; T += 0.05) {
-          const vx = dx / T;
-          if (Math.abs(vx) > RUN) continue;
-          if (sim(loc, a.x, a.y, vx, JUMP1, H, b.x, b.y, false, false, true)) {
-            a.edges.push({ from: a, to: b, type: 'jump', vx, dbl: false, cost: 2 + T });
-            single = true;
-          }
-        }
-        if (single) continue;
-        if (sim(loc, a.x, a.y, 0, JUMP1, H, b.x, b.y, false, true, true)) {
-          a.edges.push({ from: a, to: b, type: 'jump', vx: 0, dbl: false, vert: true, cost: 2.5 });
+          if (ok) a.edges.push({ from: a, to: b, type: 'walk', vx: 0, dbl: false, low, cost: Math.abs(dx) / STEP + (low ? 0.5 : 0) });
           continue;
         }
-        if (sim(loc, a.x, a.y, 0, JUMP1, H, b.x, b.y, true, true, true)) {
-          a.edges.push({ from: a, to: b, type: 'jump', vx: 0, dbl: true, vert: true, cost: 3.5 });
-          continue;
-        }
-        for (let T = 0.4; T <= 2.2; T += 0.05) {
-          const vx = dx / T;
-          if (Math.abs(vx) > RUN) continue;
-          if (sim(loc, a.x, a.y, vx, JUMP1, H, b.x, b.y, true, false, true)) {
-            a.edges.push({ from: a, to: b, type: 'jump', vx, dbl: true, cost: 3 + T });
-            break;
-          }
-        }
-        if (HL < H && !a.edges.some(e => e.to === b && e.type === 'jump')) {
-          for (let T = 0.3; T <= 2.2; T += 0.05) {
+        if (dy < 0) {
+          const D = JUMP1 * JUMP1 - 1800 * (a.y - b.y);
+          if (-dy > 230) continue;
+          let single = false;
+          const minT1 = Math.max(0.3, Math.ceil((Math.abs(dx) / RUN) / 0.05) * 0.05);
+          for (let T = minT1; T <= 2.2 && !single; T += 0.05) {
             const vx = dx / T;
             if (Math.abs(vx) > RUN) continue;
-            // Передаем hopSkip = true (11-й аргумент: loc, x, y, vx, vy, H, bx, by, dbl, vert, hopSkip)
-            if (sim(loc, a.x, a.y, vx, JUMP1, HL, b.x, b.y, false, false, true)) {
-              a.edges.push({ from: a, to: b, type: 'jump', vx, dbl: false, low: true, cost: 3 + T });
+            if (sim(loc, a.x, a.y, vx, JUMP1, H, b.x, b.y, false, false, true)) {
+              a.edges.push({ from: a, to: b, type: 'jump', vx, dbl: false, cost: 2 + T });
+              single = true;
+            }
+          }
+          if (single) continue;
+          if (sim(loc, a.x, a.y, 0, JUMP1, H, b.x, b.y, false, true, true)) {
+            a.edges.push({ from: a, to: b, type: 'jump', vx: 0, dbl: false, vert: true, cost: 2.5 });
+            continue;
+          }
+          if (sim(loc, a.x, a.y, 0, JUMP1, H, b.x, b.y, true, true, true)) {
+            a.edges.push({ from: a, to: b, type: 'jump', vx: 0, dbl: true, vert: true, cost: 3.5 });
+            continue;
+          }
+          const minT2 = Math.max(0.4, Math.ceil((Math.abs(dx) / RUN) / 0.05) * 0.05);
+          for (let T = minT2; T <= 2.2; T += 0.05) {
+            const vx = dx / T;
+            if (Math.abs(vx) > RUN) continue;
+            if (sim(loc, a.x, a.y, vx, JUMP1, H, b.x, b.y, true, false, true)) {
+              a.edges.push({ from: a, to: b, type: 'jump', vx, dbl: true, cost: 3 + T });
               break;
             }
           }
+          if (HL < H && !a.edges.some(e => e.to === b && e.type === 'jump')) {
+            for (let T = minT1; T <= 2.2; T += 0.05) {
+              const vx = dx / T;
+              if (Math.abs(vx) > RUN) continue;
+              // Передаем hopSkip = true (11-й аргумент: loc, x, y, vx, vy, H, bx, by, dbl, vert, hopSkip)
+              if (sim(loc, a.x, a.y, vx, JUMP1, HL, b.x, b.y, false, false, true)) {
+                a.edges.push({ from: a, to: b, type: 'jump', vx, dbl: false, low: true, cost: 3 + T });
+                break;
+              }
+            }
+          }
+          continue;
         }
-        continue;
-      }
-      if (dy < 4) continue;
-      for (let T = 0.2; T <= 1.3; T += 0.05) {
-        const vx = dx / T;
-        if (Math.abs(vx) > RUN) continue;
-        if (sim(loc, a.x, a.y, vx, 0, H, b.x, b.y, false)) {
-          a.edges.push({ from: a, to: b, type: 'fall', vx, dbl: false, cost: 1 + T });
-          break;
-        }
-      }
-      if (HL < H && !a.edges.some(e => e.to === b && e.type === 'fall')) {
-        for (let T = 0.2; T <= 1.3; T += 0.05) {
+        if (dy < 4) continue;
+        const minTF = Math.max(0.2, Math.ceil((Math.abs(dx) / RUN) / 0.05) * 0.05);
+        for (let T = minTF; T <= 1.3; T += 0.05) {
           const vx = dx / T;
           if (Math.abs(vx) > RUN) continue;
-          if (sim(loc, a.x, a.y, vx, 0, HL, b.x, b.y, false)) {
-            a.edges.push({ from: a, to: b, type: 'fall', vx, dbl: false, low: true, cost: 1.5 + T });
+          if (sim(loc, a.x, a.y, vx, 0, H, b.x, b.y, false)) {
+            a.edges.push({ from: a, to: b, type: 'fall', vx, dbl: false, cost: 1 + T });
             break;
+          }
+        }
+        if (HL < H && !a.edges.some(e => e.to === b && e.type === 'fall')) {
+          for (let T = minTF; T <= 1.3; T += 0.05) {
+            const vx = dx / T;
+            if (Math.abs(vx) > RUN) continue;
+            if (sim(loc, a.x, a.y, vx, 0, HL, b.x, b.y, false)) {
+              a.edges.push({ from: a, to: b, type: 'fall', vx, dbl: false, low: true, cost: 1.5 + T });
+              break;
+            }
           }
         }
       }
@@ -243,29 +269,132 @@ export function edgeKey(e) {
   return e.from.id + '>' + e.to.id + '|' + e.type + (e.dbl ? '2' : '') + (e.vert ? 'v' : '');
 }
 
-// Дейкстра по рёбрам. Возвращает список рёбер или null (пути нет).
-// banned — Set ключей рёбер (edgeKey), которые сейчас нельзя использовать.
-export function findPath(graph, from, to, banned) {
-  const N = graph.nodes.length;
-  const dist = new Float64Array(N).fill(Infinity);
-  const prev = new Array(N).fill(null);
-  const done = new Uint8Array(N);
-  dist[from.id] = 0;
-  for (;;) {
-    let u = -1, best = Infinity;
-    for (let i = 0; i < N; i++) if (!done[i] && dist[i] < best) { best = dist[i]; u = i; }
-    if (u < 0 || u === to.id) break;
-    done[u] = 1;
-    for (const e of graph.nodes[u].edges) {
-      if (banned && banned.has(edgeKey(e))) continue;
-      const nd = dist[u] + e.cost;
-      if (nd < dist[e.to.id]) { dist[e.to.id] = nd; prev[e.to.id] = e; }
+// Бинарная куча (Min-Heap) и переиспользуемые типизированные буферы для A* поиска путей (без аллокаций).
+class PathMinHeap {
+  constructor(capacity = 256) {
+    this.ids = new Int32Array(capacity);
+    this.keys = new Float32Array(capacity);
+    this.size = 0;
+  }
+  push(id, key) {
+    if (this.size >= this.ids.length) {
+      const nids = new Int32Array(this.ids.length * 2);
+      const nkeys = new Float32Array(this.keys.length * 2);
+      nids.set(this.ids);
+      nkeys.set(this.keys);
+      this.ids = nids;
+      this.keys = nkeys;
+    }
+    let i = this.size++;
+    this.ids[i] = id;
+    this.keys[i] = key;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (this.keys[i] < this.keys[p]) {
+        const tid = this.ids[i], tk = this.keys[i];
+        this.ids[i] = this.ids[p]; this.keys[i] = this.keys[p];
+        this.ids[p] = tid; this.keys[p] = tk;
+        i = p;
+      } else break;
     }
   }
-  if (!isFinite(dist[to.id])) return null;
+  pop() {
+    if (this.size === 0) return -1;
+    const topId = this.ids[0];
+    const last = --this.size;
+    if (last > 0) {
+      this.ids[0] = this.ids[last];
+      this.keys[0] = this.keys[last];
+      let i = 0;
+      while (true) {
+        let best = i;
+        const l = (i << 1) + 1, r = l + 1;
+        if (l < this.size && this.keys[l] < this.keys[best]) best = l;
+        if (r < this.size && this.keys[r] < this.keys[best]) best = r;
+        if (best !== i) {
+          const tid = this.ids[i], tk = this.keys[i];
+          this.ids[i] = this.ids[best]; this.keys[i] = this.keys[best];
+          this.ids[best] = tid; this.keys[best] = tk;
+          i = best;
+        } else break;
+      }
+    }
+    return topId;
+  }
+}
+
+let _aStarN = 0;
+let _gScore = null;
+let _prev = null;
+let _done = null;
+const _heap = new PathMinHeap(256);
+
+// A* по рёбрам графа с очередью с приоритетом и нулевыми аллокациями в кадре.
+// banned — Set ключей рёбер (edgeKey), которые сейчас нельзя использовать.
+// options — { isBombCarrier: boolean, crowdNodes: Set<nodeId> }
+export function findPath(graph, from, to, banned, options = null) {
+  if (!from || !to) return null;
+  if (from.id === to.id) return [];
+  const N = graph.nodes.length;
+  if (_aStarN < N) {
+    _aStarN = N;
+    _gScore = new Float32Array(N);
+    _prev = new Array(N);
+    _done = new Uint8Array(N);
+  }
+  _gScore.fill(Infinity);
+  _prev.fill(null);
+  _done.fill(0);
+  _heap.size = 0;
+
+  const isBombCarrier = !!(options && options.isBombCarrier);
+  const crowdNodes = options && options.crowdNodes;
+
+  _gScore[from.id] = 0;
+  const toX = to.x, toY = to.y;
+  const h0 = Math.hypot(from.x - toX, from.y - toY) / 140;
+  _heap.push(from.id, h0);
+
+  while (_heap.size > 0) {
+    const u = _heap.pop();
+    if (u === to.id) break;
+    if (_done[u]) continue;
+    _done[u] = 1;
+
+    const uDist = _gScore[u];
+    const edges = graph.nodes[u].edges;
+    for (let i = 0; i < edges.length; i++) {
+      const e = edges[i];
+      if (banned && banned.has(edgeKey(e))) continue;
+      // Носитель бомбы не может запрыгивать высоко (штраф импульса прыжка cm=0.8)
+      if (isBombCarrier && e.type === 'jump') {
+        if (e.dbl || (e.from.y - e.to.y) > 78) continue;
+      }
+      const v = e.to.id;
+      if (_done[v]) continue;
+
+      let edgeCost = e.cost;
+      // Штраф за скопление союзников — перенаправляет последующих ботов на свободные фланги
+      if (crowdNodes && crowdNodes.has(v)) {
+        edgeCost += 2.0;
+      }
+
+      const tentG = uDist + edgeCost;
+      if (tentG < _gScore[v]) {
+        _gScore[v] = tentG;
+        _prev[v] = e;
+        const toNode = e.to;
+        const h = Math.hypot(toNode.x - toX, toNode.y - toY) / 140;
+        _heap.push(v, tentG + h);
+      }
+    }
+  }
+
+  if (!isFinite(_gScore[to.id])) return null;
   const path = [];
   for (let v = to.id; v !== from.id;) {
-    const e = prev[v];
+    const e = _prev[v];
+    if (!e) return null;
     path.push(e);
     v = e.from.id;
   }
@@ -286,10 +415,14 @@ export function followPath(p, nav, time) {
   const grounded = !!(body.blocked.down || body.touching.down);
   if (e.type === 'walk') {
     const dx = e.to.x - cx;
-    if (grounded && Math.abs(dx) <= 4 && Math.abs(feet - e.to.y) <= 6) {
-      p.stop();
+    if (grounded && Math.abs(dx) <= 6 && Math.abs(feet - e.to.y) <= 6) {
       nav.i++; nav.phase = 0; nav.et = time;
-      try { if (p.crouching && !nav.path[nav.i]?.low) p.setCrouch(false); } catch (err) {}
+      const nextEdge = nav.path[nav.i];
+      // Плавный бег: останавливаемся только если путь завершён или следующее ребро не продолжает бег в ту же сторону
+      if (!nextEdge || nextEdge.type !== 'walk' || Math.sign(nextEdge.to.x - e.to.x) !== Math.sign(dx)) {
+        p.stop();
+      }
+      try { if (p.crouching && !nextEdge?.low) p.setCrouch(false); } catch (err) {}
       return nav.i >= nav.path.length ? 'done' : 'next';
     }
     if (Math.abs(dx) > 4) p.move(dx > 0 ? 1 : -1); else p.stop();
@@ -327,7 +460,10 @@ export function followPath(p, nav, time) {
       try { if (p.crouching && !nav.path[nav.i]?.low) p.setCrouch(false); } catch (err) {}
       return nav.i >= nav.path.length ? 'done' : 'next';
     }
-    if (time - nav.launch > 2500) {
+    // Быстрый детект неудачной посадки: если бот уже приземлился (через 350мс), но далеко от цели
+    const dtLaunch = time - nav.launch;
+    const landedWrong = dtLaunch > 350 && (Math.abs(feet - e.to.y) > 16 || Math.abs(cx - e.to.x) > HALF_W * 2.5);
+    if (landedWrong || dtLaunch > 2500) {
       nav.reason = 'noland:' + e.type + (e.dbl ? '2' : '') + (e.vert ? 'v' : '');
       // kXXX: прыжки срываются — один retry с скоростью полёта, скорректированной
       // (меньше vx → дольше полёт → другая траектория). Двойной retry — бан.

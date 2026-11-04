@@ -1,16 +1,16 @@
-import { gameState } from '../../data/gameState.js?v=175';
+import { gameState } from '../../data/gameState.js';
 
-import { getWeaponLabel, weaponsList } from '../../data/weapons.js?v=170';
+import { getWeaponLabel, weaponsList } from '../../data/weapons.js';
 
 import { vibrate } from '../../data/gameSettings.js';
 
-import Assault from '../../entities/Assault.js?v=380';
-import Tank from '../../entities/Tank.js?v=380';
-import Medic from '../../entities/Medic.js?v=380';
-import Sniper from '../../entities/Sniper.js?v=380';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
-import { touchMove, touchAimWorld, consumeTouchJump, updateTouchTransform } from '../../ui/touch.js?v=4';
-import { gameW } from '../../ui/layout.js?v=3';
+import { touchMove, touchAimWorld, consumeTouchJump, updateTouchTransform } from '../../ui/touch.js';
+import { gameW } from '../../ui/layout.js';
 
 const CLASSES = { Assault, Tank, Medic, Sniper };
 

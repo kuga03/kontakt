@@ -1,5 +1,5 @@
-import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState, syncGameState } from '../data/gameState.js?v=175';
+import { gameW, UX } from '../ui/layout.js';
+import { gameState, syncGameState } from '../data/gameState.js';
 import {
   skillDefinitions,
   SKILL_ORDER,
@@ -12,7 +12,7 @@ import {
   reqLevel,
   skillResetCost,
   resetSkills
-} from '../data/skills.js?v=169';
+} from '../data/skills.js';
 
 const BRANCHES = {
   body: { name: 'ТЕЛО', color: 0x2aff7a, css: '#2aff7a' },

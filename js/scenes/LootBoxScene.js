@@ -1,4 +1,4 @@
-import { gameW, UX } from '../ui/layout.js?v=3';
+import { gameW, UX } from '../ui/layout.js';
 import {
   gameState,
   unlockWeapon,
@@ -8,12 +8,12 @@ import {
   syncGameState,
   getPass,
   recordPassProgress
-} from '../data/gameState.js?v=175';
+} from '../data/gameState.js';
 
-import { weaponsList, getWeaponLabel, weaponImage } from '../data/weapons.js?v=170';
-import { weaponSkins } from '../data/skins.js?v=169';
-import { GEAR_ITEMS, gearOwned, gearUnlockBuy, gearPreviewTex, GEAR_RARITY_WEIGHT } from '../data/wardrobe.js?v=172';
-import { GEAR_SETS } from '../data/gearSets.js?v=172';
+import { weaponsList, getWeaponLabel, weaponImage } from '../data/weapons.js';
+import { weaponSkins } from '../data/skins.js';
+import { GEAR_ITEMS, gearOwned, gearUnlockBuy, gearPreviewTex, GEAR_RARITY_WEIGHT } from '../data/wardrobe.js';
+import { GEAR_SETS } from '../data/gearSets.js';
 
 const REEL_DURATION = 7000;
 

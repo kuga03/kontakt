@@ -1,16 +1,16 @@
-import { applyVolumePatch } from '../data/audio.js?v=170';
-import { bakeGearTextures } from '../entities/Player.js?v=384';
-import { MAP_VER } from '../data/modeMaps.js?v=172';
-import { gameW } from '../ui/layout.js?v=3';
+import { applyVolumePatch } from '../data/audio.js';
+import { bakeGearTextures } from '../entities/Player.js';
+import { MAP_VER } from '../data/modeMaps.js';
+import { gameW } from '../ui/layout.js';
 import { GAME_VERSION } from './menu/showcase.js';
 import { GENERATED, texUrl, FUNNY_LOADS } from './boot/config.js';
 // ---- delegated generators (extracted to boot/*.js, called with scene as this) ----
 import * as Legs from './boot/legs.js';
 import * as Character from './boot/character.js';
 import * as GunScan from './boot/gunScan.js';
-import * as ArtEnv from './boot/artEnv.js?v=404';
-import * as ArtSmall from './boot/artSmall.js?v=368';
-import * as ArtBuildings from './boot/artBuildings.js?v=410';
+import * as ArtEnv from './boot/artEnv.js';
+import * as ArtSmall from './boot/artSmall.js';
+import * as ArtBuildings from './boot/artBuildings.js';
 import * as Fallback from './boot/fallback.js';
 export default class BootScene extends Phaser.Scene {
   constructor() {

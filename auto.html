@@ -26,7 +26,7 @@ window.addEventListener('error', function(e){ window.__errors.push('WINERR: ' + 
   var s = document.createElement('script');
   s.src = './vendor/phaser.min.js';
   s.onload = function(){
-    import('./js/game.js?v=139').then(function(){
+    import('./js/game.js').then(function(){
       var tries = 0;
       var iv = setInterval(function(){
         tries++;

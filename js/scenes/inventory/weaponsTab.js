@@ -1,13 +1,13 @@
-import { UX } from '../../ui/layout.js?v=3';
-import { gameState, getEquipment } from '../../data/gameState.js?v=175';
-import { weaponsList, classDefinitions, weaponByClass, secondaryWeapons, getWeaponLabel, weaponImage, isClassUnlocked, classOpenLevel } from '../../data/weapons.js?v=170';
+import { UX } from '../../ui/layout.js';
+import { gameState, getEquipment } from '../../data/gameState.js';
+import { weaponsList, classDefinitions, weaponByClass, secondaryWeapons, getWeaponLabel, weaponImage, isClassUnlocked, classOpenLevel } from '../../data/weapons.js';
 
-import { getWeaponLevel, isUpgradeable } from '../../data/upgrades.js?v=3';
+import { getWeaponLevel, isUpgradeable } from '../../data/upgrades.js';
 
-import Assault from '../../entities/Assault.js?v=319';
-import Tank from '../../entities/Tank.js?v=319';
-import Medic from '../../entities/Medic.js?v=319';
-import Sniper from '../../entities/Sniper.js?v=320';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
 const PREVIEW_CLASSES = { Assault, Tank, Medic, Sniper };
 

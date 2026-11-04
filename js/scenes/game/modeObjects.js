@@ -1,19 +1,19 @@
-import Assault from '../../entities/Assault.js?v=319';
-import Tank from '../../entities/Tank.js?v=319';
-import Medic from '../../entities/Medic.js?v=319';
-import Sniper from '../../entities/Sniper.js?v=320';
-import Flag from '../../entities/Flag.js?v=172';
-import Bomb from '../../entities/Bomb.js?v=169';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
+import Flag from '../../entities/Flag.js';
+import Bomb from '../../entities/Bomb.js';
 
 
 
-import { MAP_VER } from '../../data/modeMaps.js?v=171';
+import { MAP_VER } from '../../data/modeMaps.js';
 
-import * as MapPrims from '../../world/mapPrimitives.js?v=411';
+import * as MapPrims from '../../world/mapPrimitives.js';
 
-import * as Koth from '../../modes/koth.js?v=169';
+import * as Koth from '../../modes/koth.js';
 
-import { gameW } from '../../ui/layout.js?v=3';
+import { gameW } from '../../ui/layout.js';
 
 const classMap = { Assault, Tank, Medic, Sniper };
 
@@ -351,6 +351,28 @@ export function createModeObjects() {
         { x: 0.5, y: bTop - 34, gy: bTop, name: 'Б' },
         { x: cxF, y: GT - 34, gy: GT, name: 'С' }
       ];
+
+      // Защитная очистка: если какое-либо укрытие перекрывает точку захвата (флаг/зону),
+      // убираем его, чтобы точка не оказалась внутри монолитного ящика.
+      if (this.covers && this.covers.getChildren) {
+        defs.forEach(d => {
+          const px = Math.round(this.mapWidth * d.x);
+          const py = d.gy;
+          const toRemove = [];
+          this.covers.getChildren().forEach(c => {
+            if (!c || !c.active) return;
+            const cw = c.displayWidth || c.width || 60;
+            const ch = c.displayHeight || c.height || 60;
+            if (Math.abs(c.x - px) < cw / 2 + 30 && Math.abs(c.y - py) < ch / 2 + 50) {
+              toRemove.push(c);
+            }
+          });
+          toRemove.forEach(c => {
+            try { c.destroy(); } catch (e) {}
+          });
+        });
+      }
+
       defs.forEach(d => {
         const px = Math.round(this.mapWidth * d.x);
         // Точка — флаг-арт на древке (синий/красный/нейтральный по владельцу),

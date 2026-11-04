@@ -1,7 +1,7 @@
-import GameScene from './GameScene.js?v=386';
+import GameScene from './GameScene.js';
 import * as Lifecycle from './game/lifecycle.js';
-import * as MatchTick from './game/matchTick.js?v=3';
-import { gameW } from '../ui/layout.js?v=3';
+import * as MatchTick from './game/matchTick.js';
+import { gameW } from '../ui/layout.js';
 import { getQuality, QUALITY_OPTIONS } from '../data/gameSettings.js';
 
 // BenchmarkScene — реалистичный замер FPS: настоящий бой 8 на 8

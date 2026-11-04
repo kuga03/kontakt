@@ -1,18 +1,18 @@
-import { gameState, expRequired } from '../../data/gameState.js?v=175';
-import { NET_BUILD } from '../../net/arena.js?v=169';
-import { getCrosshair, drawCrosshairFigure } from '../../data/crosshair.js?v=169';
-import { weaponIcon, weaponImage, weaponHudScale, getWeaponLabel, weaponHasMag, classBadgeKey } from '../../data/weapons.js?v=170';
-import { getClassAbility, ultUnlocked } from '../../data/abilities.js?v=169';
-import { getRank } from '../../data/ranks.js?v=169';
+import { gameState, expRequired } from '../../data/gameState.js';
+import { NET_BUILD } from '../../net/arena.js';
+import { getCrosshair, drawCrosshairFigure } from '../../data/crosshair.js';
+import { weaponIcon, weaponImage, weaponHudScale, getWeaponLabel, weaponHasMag, classBadgeKey } from '../../data/weapons.js';
+import { getClassAbility, ultUnlocked } from '../../data/abilities.js';
+import { getRank } from '../../data/ranks.js';
 
-import { getShowFps } from '../SettingsScene.js?v=182';
+import { getShowFps } from '../SettingsScene.js';
 
-import Assault from '../../entities/Assault.js?v=380';
-import Tank from '../../entities/Tank.js?v=380';
-import Medic from '../../entities/Medic.js?v=380';
-import Sniper from '../../entities/Sniper.js?v=380';
+import Assault from '../../entities/Assault.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
-import { gameW, OX, BASE_CX } from '../../ui/layout.js?v=3';
+import { gameW, OX, BASE_CX } from '../../ui/layout.js';
 
 const CLASSES = { Assault, Tank, Medic, Sniper };
 

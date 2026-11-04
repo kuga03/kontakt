@@ -1,19 +1,19 @@
-import Assault from '../../entities/Assault.js?v=319';
-import EnemyAI from '../../ai/EnemyAI.js?v=67';
-import Tank from '../../entities/Tank.js?v=319';
-import Medic from '../../entities/Medic.js?v=319';
-import Sniper from '../../entities/Sniper.js?v=320';
+import Assault from '../../entities/Assault.js';
+import EnemyAI from '../../ai/EnemyAI.js';
+import Tank from '../../entities/Tank.js';
+import Medic from '../../entities/Medic.js';
+import Sniper from '../../entities/Sniper.js';
 
 
-import { randomBotNames } from '../../data/names.js?v=169';
-import { gameState } from '../../data/gameState.js?v=175';
+import { randomBotNames } from '../../data/names.js';
+import { gameState } from '../../data/gameState.js';
 
-import { weaponsList, weaponByClass, classDefinitions } from '../../data/weapons.js?v=170';
+import { weaponsList, weaponByClass, classDefinitions } from '../../data/weapons.js';
 
-import * as Koth from '../../modes/koth.js?v=169';
+import * as Koth from '../../modes/koth.js';
 
-import * as Gang from '../../data/gang.js?v=7';
-import { hasMut, stripToKnife, applySpawnStats } from '../../data/mutators.js?v=2';
+import * as Gang from '../../data/gang.js';
+import { hasMut, stripToKnife, applySpawnStats } from '../../data/mutators.js';
 
 const classMap = { Assault, Tank, Medic, Sniper };
 

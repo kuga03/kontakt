@@ -106,34 +106,17 @@
       window.__phaserCdnFailed = function () {
         showErr('Не удалось загрузить Phaser ни локально, ни с CDN. Проверьте интернет.');
       };
-      var sources = [
-        './vendor/phaser.min.js',
-        'https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js',
-        'https://unpkg.com/phaser@3.60.0/dist/phaser.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js'
-      ];
-      window.__bootGame = function () {
-        import('./js/game.js?v=434').then(function () {
-          // игра стартовала — ошибок импорта нет
-        }).catch(function (err) {
-          showErr(fmtErr('Не стартовала игра', err, './js/game.js (и его import-цепочка)'));
-        });
-      };
-      (function loadNext(i) {
-        if (i >= sources.length) {
-          window.__phaserCdnFailed && window.__phaserCdnFailed();
-          return;
-        }
-        var s = document.createElement('script');
-        s.src = sources[i];
-        s.crossOrigin = 'anonymous';
-        s.onload = function () {
-          if (typeof Phaser === 'undefined') loadNext(i + 1);
-          else window.__bootGame();
-        };
-        s.onerror = function () { loadNext(i + 1); };
-        document.head.appendChild(s);
-      })(0);
+    })();
+  </script>
+  <script src="./vendor/phaser.min.js"></script>
+  <script>
+    if (typeof Phaser === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"><\/script>');
+    }
+  </script>
+  <script type="module" src="./js/game.js"></script>
+  <script>
+    (function () {
       (function initOfflineCheck() {
         if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return;
         var overlay = document.getElementById('offline-overlay');

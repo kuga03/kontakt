@@ -3,7 +3,7 @@
 // обёртки с теми же именами. activateAbility/activateUltimate живут
 // в наследниках — зовём через player.* (динамическая диспетчеризация
 // сохраняется). Внутри модуля — прямые вызовы.
-import { getClassAbility, ultUnlocked } from '../../data/abilities.js?v=169';
+import { getClassAbility, ultUnlocked } from '../../data/abilities.js';
 
 export function useAbility(player, time) {
   // Мёртвый и бесклассовый (снайпер) — молча мимо, а не краш.

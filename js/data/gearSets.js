@@ -1,5 +1,5 @@
-import { getEquippedHead, getEquippedTorso, getEquippedPants, getEquippedShoes } from './gameState.js?v=175';
-import { RARITY } from './skins.js?v=169';
+import { getEquippedHead, getEquippedTorso, getEquippedPants, getEquippedShoes } from './gameState.js';
+import { RARITY } from './skins.js';
 
 // Сеты одежды: голова + торс + штаны + ботинки одного стиля дают бонус.
 // Бонусы РАЗНЫЕ ПО ПРИНЦИПУ (не шесть процентов к разному): скорость,
@@ -101,7 +101,7 @@ export const GEAR_SETS = [
 
 // Редкость сета = максимум по редкостям его вещей (GEAR_ITEM_RARITY из wardrobe.js;
 // обратного импорта нет — цикла не образуется).
-import { GEAR_ITEM_RARITY } from './wardrobe.js?v=172';
+import { GEAR_ITEM_RARITY } from './wardrobe.js';
 
 GEAR_SETS.forEach((s) => {
   s.rarity = Math.min(4, Math.max(0, Math.max(

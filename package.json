@@ -7,7 +7,10 @@
     "doc": "docs"
   },
   "scripts": {
-    "www": "node android-build/copy-www.cjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "www": "vite build --outDir www",
     "sync": "npm run www && cap sync android",
     "apk": "npm run sync && cd android && gradlew.bat assembleDebug"
   },
@@ -18,7 +21,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/kuga03/kontakt/issues"
   },
@@ -30,6 +33,8 @@
     "@capgo/capacitor-updater": "^8.53.0"
   },
   "devDependencies": {
-    "jsdom": "^30.1.3"
+    "jsdom": "^30.1.3",
+    "vite": "^8.3.5",
+    "vite-plugin-static-copy": "^4.1.1"
   }
 }

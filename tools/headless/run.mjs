@@ -8,7 +8,7 @@ import { setupDom, setupClock } from './dom.mjs';
 import { stubAssets } from './assets.mjs';
 import { collectMetrics, teamFitness } from './metrics.mjs';
 import { TACTICS } from '../../js/ai/tactics.js';
-import { gameState } from '../../js/data/gameState.js?v=171';
+import { gameState } from '../../js/data/gameState.js';
 
 function deepMerge(base, over) {
   for (const k of Object.keys(over)) {
@@ -47,7 +47,7 @@ const Phaser = globalThis.Phaser;
 // «стоит по роли/на прицеле». Патчим ТОТ ЖЕ экземпляр модуля (?v=191) — иначе
 // патч прототипа молча не сработает (грабли §1.8 п.2).
 try {
-  const { default: _EnemyAI } = await import('../../js/ai/EnemyAI.js?v=194');
+  const { default: _EnemyAI } = await import('../../js/ai/EnemyAI.js');
   const _P = _EnemyAI.prototype;
   const _oMV = _P.moveToward;
   if (typeof _oMV === 'function' && !_P.__movStamp) {
