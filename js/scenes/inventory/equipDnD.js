@@ -22,9 +22,9 @@ const BODY_COLORS = [
 ];
 
 const EQUIP_SLOTS = [
-  { x: 1030, y: 395, slot: 'primary', label: 'ОСНОВНОЕ' },
-  { x: 1030, y: 463, slot: 'secondary', label: 'ВТОРОЕ' },
-  { x: 1030, y: 531, slot: 'melee', label: 'БЛИЖНЕЕ' }
+  { x: 1030, y: 430, slot: 'primary', label: 'ОСНОВНОЕ' },
+  { x: 1030, y: 498, slot: 'secondary', label: 'ВТОРОЕ' },
+  { x: 1030, y: 566, slot: 'melee', label: 'БЛИЖНЕЕ' }
 ];
 
 const COMPARE_SLOTS = [
@@ -36,7 +36,7 @@ export function drawEquipSlots(panel, parent) {
     const eq = getEquipment(this.selectedClass);
     this.equipSlotRects = [];
 
-    const eqLabel = this.add.text(panel.x + panel.w / 2, panel.y + 250, 'СНАРЯЖЕНИЕ', {
+    const eqLabel = this.add.text(panel.x + panel.w / 2, panel.y + 285, 'СНАРЯЖЕНИЕ', {
       fontSize: '16px', color: '#99aacc'
     }).setOrigin(0.5);
     if (parent) parent.add(eqLabel);
@@ -110,30 +110,28 @@ export function drawEquipSlots(panel, parent) {
       const removeBtn = this.add.text(rx, ry, 'снять', {
         fontSize: '12px',
         color: name ? '#ffb0b0' : '#445566',
-        fontStyle: 'bold'
+        fontStyle: 'bold',
+        fixedWidth: rw,
+        padding: { top: 4, bottom: 4 },
+        align: 'center'
       }).setOrigin(0.5).setDepth(1);
       if (parent) parent.add(removeBtn);
 
-      removeBtn.setInteractive(new Phaser.Geom.Rectangle(rx - rw / 2, ry - rh / 2, rw, rh), Phaser.Geom.Rectangle.Contains);
-      if (name) removeBtn.input.cursor = 'pointer';
-
-      removeBtn.on('pointerdown', () => {
-        if (!name) return;
-        setEquippedWeapon(this.selectedClass, slot.slot, null);
-        this.redraw();
-      });
-      removeBtn.on('pointerover', () => {
-        if (name) {
+      if (name) {
+        removeBtn.setInteractive({ useHandCursor: true });
+        removeBtn.on('pointerdown', () => {
+          setEquippedWeapon(this.selectedClass, slot.slot, null);
+          this.redraw();
+        });
+        removeBtn.on('pointerover', () => {
           renderRemove(true);
           removeBtn.setStyle({ color: '#ffffff' });
-        }
-      });
-      removeBtn.on('pointerout', () => {
-        if (name) {
+        });
+        removeBtn.on('pointerout', () => {
           renderRemove(false);
           removeBtn.setStyle({ color: '#ffb0b0' });
-        }
-      });
+        });
+      }
     });
   }
 

@@ -22,9 +22,9 @@ const BODY_COLORS = [
 ];
 
 const EQUIP_SLOTS = [
-  { x: 1030, y: 395, slot: 'primary', label: 'ОСНОВНОЕ' },
-  { x: 1030, y: 463, slot: 'secondary', label: 'ВТОРОЕ' },
-  { x: 1030, y: 531, slot: 'melee', label: 'БЛИЖНЕЕ' }
+  { x: 1030, y: 430, slot: 'primary', label: 'ОСНОВНОЕ' },
+  { x: 1030, y: 498, slot: 'secondary', label: 'ВТОРОЕ' },
+  { x: 1030, y: 566, slot: 'melee', label: 'БЛИЖНЕЕ' }
 ];
 
 const COMPARE_SLOTS = [
@@ -81,13 +81,15 @@ export function drawViewTabs(parent) {
       const btn = this.add.text(tab.x, ty, tab.label, {
         fontSize: '14px',
         color: active ? '#ffd24a' : '#8899bb',
-        fontStyle: active ? 'bold' : 'normal'
+        fontStyle: active ? 'bold' : 'normal',
+        fixedWidth: tw,
+        padding: { top: 7, bottom: 7 },
+        align: 'center'
       }).setOrigin(0.5).setDepth(10);
       if (parent) parent.add(btn);
 
       btn.viewId = tab.id;
-      btn.setInteractive(new Phaser.Geom.Rectangle(tab.x - tw / 2, ty - th / 2, tw, th), Phaser.Geom.Rectangle.Contains);
-      btn.input.cursor = 'pointer';
+      btn.setInteractive({ useHandCursor: true });
       btn.on('pointerdown', () => {
         if (this.view === tab.id) return;
         this.view = tab.id;
@@ -163,30 +165,33 @@ export function drawClassTabs() {
       const tab = this.add.text(x, cy, tabLabel, {
         fontSize: '14px',
         color: selected ? '#ffffff' : (unlocked ? '#99aacc' : '#556677'),
-        fontStyle: selected ? 'bold' : 'normal'
+        fontStyle: selected ? 'bold' : 'normal',
+        fixedWidth: cw,
+        padding: { top: 7, bottom: 7 },
+        align: 'center'
       }).setOrigin(0.5);
       c.add(tab);
 
-      tab.setInteractive(new Phaser.Geom.Rectangle(x - cw / 2, cy - ch / 2, cw, ch), Phaser.Geom.Rectangle.Contains);
-      if (unlocked) tab.input.cursor = 'pointer';
-
-      tab.on('pointerdown', () => {
-        if (!isClassUnlocked(cd.id, gameState.level)) return;
-        this.selectedClass = cd.id;
-        this.redraw();
-      });
-      tab.on('pointerover', () => {
-        if (unlocked && cd.id !== this.selectedClass) {
-          renderClassTab(true);
-          tab.setStyle({ color: '#ffffff' });
-        }
-      });
-      tab.on('pointerout', () => {
-        if (unlocked && cd.id !== this.selectedClass) {
-          renderClassTab(false);
-          tab.setStyle({ color: '#99aacc' });
-        }
-      });
+      if (unlocked) {
+        tab.setInteractive({ useHandCursor: true });
+        tab.on('pointerdown', () => {
+          if (!isClassUnlocked(cd.id, gameState.level)) return;
+          this.selectedClass = cd.id;
+          this.redraw();
+        });
+        tab.on('pointerover', () => {
+          if (cd.id !== this.selectedClass) {
+            renderClassTab(true);
+            tab.setStyle({ color: '#ffffff' });
+          }
+        });
+        tab.on('pointerout', () => {
+          if (cd.id !== this.selectedClass) {
+            renderClassTab(false);
+            tab.setStyle({ color: '#99aacc' });
+          }
+        });
+      }
     });
   }
 

@@ -26,9 +26,9 @@ const BODY_COLORS = [
 ];
 
 const EQUIP_SLOTS = [
-  { x: 1030, y: 395, slot: 'primary', label: 'ОСНОВНОЕ' },
-  { x: 1030, y: 463, slot: 'secondary', label: 'ВТОРОЕ' },
-  { x: 1030, y: 531, slot: 'melee', label: 'БЛИЖНЕЕ' }
+  { x: 1030, y: 430, slot: 'primary', label: 'ОСНОВНОЕ' },
+  { x: 1030, y: 498, slot: 'secondary', label: 'ВТОРОЕ' },
+  { x: 1030, y: 566, slot: 'melee', label: 'БЛИЖНЕЕ' }
 ];
 
 const COMPARE_SLOTS = [
@@ -84,30 +84,33 @@ export function drawWardrobeClassTabs(panel, parent) {
       const tab = this.add.text(x, cy, tabLabel, {
         fontSize: '14px',
         color: selected ? '#ffffff' : (unlocked ? '#99aacc' : '#556677'),
-        fontStyle: selected ? 'bold' : 'normal'
+        fontStyle: selected ? 'bold' : 'normal',
+        fixedWidth: cw,
+        padding: { top: 7, bottom: 7 },
+        align: 'center'
       }).setOrigin(0.5);
       if (parent) parent.add(tab);
 
-      tab.setInteractive(new Phaser.Geom.Rectangle(x - cw / 2, cy - ch / 2, cw, ch), Phaser.Geom.Rectangle.Contains);
-      if (unlocked) tab.input.cursor = 'pointer';
-
-      tab.on('pointerdown', () => {
-        if (!isClassUnlocked(cd.id, gameState.level)) return;
-        this.selectedClass = cd.id;
-        this.redraw();
-      });
-      tab.on('pointerover', () => {
-        if (unlocked && cd.id !== this.selectedClass) {
-          renderTab(true);
-          tab.setStyle({ color: '#ffffff' });
-        }
-      });
-      tab.on('pointerout', () => {
-        if (unlocked && cd.id !== this.selectedClass) {
-          renderTab(false);
-          tab.setStyle({ color: '#99aacc' });
-        }
-      });
+      if (unlocked) {
+        tab.setInteractive({ useHandCursor: true });
+        tab.on('pointerdown', () => {
+          if (!isClassUnlocked(cd.id, gameState.level)) return;
+          this.selectedClass = cd.id;
+          this.redraw();
+        });
+        tab.on('pointerover', () => {
+          if (cd.id !== this.selectedClass) {
+            renderTab(true);
+            tab.setStyle({ color: '#ffffff' });
+          }
+        });
+        tab.on('pointerout', () => {
+          if (cd.id !== this.selectedClass) {
+            renderTab(false);
+            tab.setStyle({ color: '#99aacc' });
+          }
+        });
+      }
     });
   }
 
@@ -621,11 +624,13 @@ export function drawPlayerPanel() {
     renderAbil(false);
 
     const abilBtn = this.add.text(abX, abY, 'УМЕНИЯ', {
-      fontSize: '13px', color: '#ffffff', fontStyle: 'bold'
+      fontSize: '13px', color: '#ffffff', fontStyle: 'bold',
+      fixedWidth: abW,
+      padding: { top: 5, bottom: 5 },
+      align: 'center'
     }).setOrigin(0.5);
     c.add(abilBtn);
-    abilBtn.setInteractive(new Phaser.Geom.Rectangle(abX - abW / 2, abY - abH / 2, abW, abH), Phaser.Geom.Rectangle.Contains);
-    abilBtn.input.cursor = 'pointer';
+    abilBtn.setInteractive({ useHandCursor: true });
     abilBtn.on('pointerdown', () => this._openAbilitiesModal());
     abilBtn.on('pointerover', () => {
       renderAbil(true);
@@ -639,15 +644,15 @@ export function drawPlayerPanel() {
     // Теневой постамент-подсветка под ногами живого 3D-рига
     const ped = this.add.graphics();
     const pedX = panel.x + panel.w / 2;
-    const pedY = panel.y + 210;
+    const pedY = panel.y + 228;
     ped.fillStyle(0x182438, 0.35);
     ped.fillEllipse(pedX, pedY, 140, 22);
     ped.fillStyle(0x080c14, 0.7);
     ped.fillEllipse(pedX, pedY, 96, 14);
     c.add(ped);
 
-    // Живое превью из редактора персонажа (приподнято над слотами снаряжения)
-    this._preview = this._spawnPreview(this.selectedClass, panel.x + panel.w / 2, panel.y + 96, true, 1.5);
+    // Живое превью из редактора персонажа
+    this._preview = this._spawnPreview(this.selectedClass, panel.x + panel.w / 2, panel.y + 114, true, 1.5);
 
     this.drawEquipSlots(panel, c);
 

@@ -20,9 +20,9 @@ const BODY_COLORS = [
 ];
 
 const EQUIP_SLOTS = [
-  { x: 1030, y: 395, slot: 'primary', label: 'ОСНОВНОЕ' },
-  { x: 1030, y: 463, slot: 'secondary', label: 'ВТОРОЕ' },
-  { x: 1030, y: 531, slot: 'melee', label: 'БЛИЖНЕЕ' }
+  { x: 1030, y: 430, slot: 'primary', label: 'ОСНОВНОЕ' },
+  { x: 1030, y: 498, slot: 'secondary', label: 'ВТОРОЕ' },
+  { x: 1030, y: 566, slot: 'melee', label: 'БЛИЖНЕЕ' }
 ];
 
 const COMPARE_SLOTS = [
@@ -30,11 +30,11 @@ const COMPARE_SLOTS = [
   { x: 500, y: 565, slot: 1 }
 ];
 
-import * as ContractModal from './inventory/contractModal.js?v=2';
-import * as EquipDnD from './inventory/equipDnD.js?v=2';
-import * as SkinsTab from './inventory/skinsTab.js?v=2';
-import * as WardrobeTab from './inventory/wardrobeTab.js?v=400';
-import * as WeaponsTab from './inventory/weaponsTab.js?v=2';
+import * as ContractModal from './inventory/contractModal.js?v=3';
+import * as EquipDnD from './inventory/equipDnD.js?v=3';
+import * as SkinsTab from './inventory/skinsTab.js?v=3';
+import * as WardrobeTab from './inventory/wardrobeTab.js?v=401';
+import * as WeaponsTab from './inventory/weaponsTab.js?v=3';
 export default class InventoryScene extends Phaser.Scene {
   constructor() {
     super('InventoryScene');
@@ -95,10 +95,12 @@ export default class InventoryScene extends Phaser.Scene {
     this.backBtn = this.add.text(backX, backY, '← Назад', {
       fontSize: '15px',
       color: '#ffffff',
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      fixedWidth: backW,
+      padding: { top: 7, bottom: 7 },
+      align: 'center'
     }).setOrigin(0.5).setDepth(60);
-    this.backBtn.setInteractive(new Phaser.Geom.Rectangle(backX - backW / 2, backY - backH / 2, backW, backH), Phaser.Geom.Rectangle.Contains);
-    this.backBtn.input.cursor = 'pointer';
+    this.backBtn.setInteractive({ useHandCursor: true });
     this.backBtn.on('pointerdown', () => this.scene.start('MenuScene'));
     this.backBtn.on('pointerover', () => {
       renderBack(true);

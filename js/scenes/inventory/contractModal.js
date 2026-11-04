@@ -22,9 +22,9 @@ const BODY_COLORS = [
 ];
 
 const EQUIP_SLOTS = [
-  { x: 1030, y: 395, slot: 'primary', label: 'ОСНОВНОЕ' },
-  { x: 1030, y: 463, slot: 'secondary', label: 'ВТОРОЕ' },
-  { x: 1030, y: 531, slot: 'melee', label: 'БЛИЖНЕЕ' }
+  { x: 1030, y: 430, slot: 'primary', label: 'ОСНОВНОЕ' },
+  { x: 1030, y: 498, slot: 'secondary', label: 'ВТОРОЕ' },
+  { x: 1030, y: 566, slot: 'melee', label: 'БЛИЖНЕЕ' }
 ];
 
 const COMPARE_SLOTS = [

@@ -21,9 +21,9 @@ const BODY_COLORS = [
 ];
 
 const EQUIP_SLOTS = [
-  { x: 1030, y: 395, slot: 'primary', label: 'ОСНОВНОЕ' },
-  { x: 1030, y: 463, slot: 'secondary', label: 'ВТОРОЕ' },
-  { x: 1030, y: 531, slot: 'melee', label: 'БЛИЖНЕЕ' }
+  { x: 1030, y: 430, slot: 'primary', label: 'ОСНОВНОЕ' },
+  { x: 1030, y: 498, slot: 'secondary', label: 'ВТОРОЕ' },
+  { x: 1030, y: 566, slot: 'melee', label: 'БЛИЖНЕЕ' }
 ];
 
 const COMPARE_SLOTS = [
@@ -219,11 +219,13 @@ export function drawSkinsPanel(panel, parent) {
     const cBtn = this.add.text(cbX, cbY, 'ПОДПИСАТЬ КОНТРАКТ', {
       fontSize: '13px',
       color: '#ffffff',
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      fixedWidth: cbW,
+      padding: { top: 7, bottom: 7 },
+      align: 'center'
     }).setOrigin(0.5);
     if (parent) parent.add(cBtn);
-    cBtn.setInteractive(new Phaser.Geom.Rectangle(cbX - cbW / 2, cbY - cbH / 2, cbW, cbH), Phaser.Geom.Rectangle.Contains);
-    cBtn.input.cursor = 'pointer';
+    cBtn.setInteractive({ useHandCursor: true });
     cBtn.on('pointerdown', () => this._openContractModal());
     cBtn.on('pointerover', () => {
       renderCBtn(true);
@@ -254,11 +256,13 @@ export function drawSkinsPanel(panel, parent) {
     const hBtn = this.add.text(hbX, hbY, 'ИСТОРИЯ ОБМЕНОВ', {
       fontSize: '12px',
       color: '#c0d0f0',
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      fixedWidth: hbW,
+      padding: { top: 7, bottom: 7 },
+      align: 'center'
     }).setOrigin(0.5);
     if (parent) parent.add(hBtn);
-    hBtn.setInteractive(new Phaser.Geom.Rectangle(hbX - hbW / 2, hbY - hbH / 2, hbW, hbH), Phaser.Geom.Rectangle.Contains);
-    hBtn.input.cursor = 'pointer';
+    hBtn.setInteractive({ useHandCursor: true });
     hBtn.on('pointerdown', () => this._openHistoryModal());
     hBtn.on('pointerover', () => {
       renderHBtn(true);
