@@ -466,12 +466,39 @@ export default class ShopScene extends Phaser.Scene {
       wordWrap: { width: cw - 12 }
     }).setOrigin(0.5);
     cont.add(nm);
-    const sub = price == null ? 'МАКС' : `+${lv + 1}: ${UP_NEXT_SHORT[lv]} · ${price}`;
-    const pr = this.add.text(cx, labelY + 20, sub, {
-      fontSize: '11px', color: price == null ? '#88dd88' : ((gameState.coins | 0) >= price ? '#ffee88' : '#ff8888'), align: 'center',
-      wordWrap: { width: cw - 12 }
-    }).setOrigin(0.5);
-    cont.add(pr);
+
+    if (price == null || lv >= 5) {
+      const pr = this.add.text(cx, labelY + 19, 'МАКС', {
+        fontSize: '11px', color: '#88dd88', fontStyle: 'bold', align: 'center'
+      }).setOrigin(0.5);
+      cont.add(pr);
+    } else {
+      // 5 кружочков: изначально пустые, при каждом уровне 1 закрашивается
+      const dg = this.add.graphics();
+      const dotR = 3.5;
+      const step = 13;
+      const startX = cx - (4 * step) / 2;
+      const dotY = labelY + 19;
+      for (let i = 0; i < 5; i++) {
+        const dotX = startX + i * step;
+        if (i < lv) {
+          // Закрашенный кружок (прокачан)
+          dg.fillStyle(0xffd24a, 1);
+          dg.fillCircle(dotX, dotY, dotR);
+          dg.lineStyle(1, 0xfff088, 1);
+          dg.strokeCircle(dotX, dotY, dotR);
+          dg.fillStyle(0xffffff, 0.7);
+          dg.fillCircle(dotX - 1, dotY - 1, 1);
+        } else {
+          // Пустой кружок
+          dg.fillStyle(0x151c28, 0.6);
+          dg.fillCircle(dotX, dotY, dotR);
+          dg.lineStyle(1.2, 0x4a5577, 1);
+          dg.strokeCircle(dotX, dotY, dotR);
+        }
+      }
+      cont.add(dg);
+    }
     const hit = this.add.rectangle(cx, cy, cw, ch, 0xffffff, 0.001)
       .setInteractive({ useHandCursor: true });
     hit.on('pointerover', () => nm.setStyle({ color: '#ffff55' }));
@@ -480,7 +507,7 @@ export default class ShopScene extends Phaser.Scene {
     cont.add(hit);
   }
 
-  _openUpgradeModal(name) {
+  _openUpgradeModal(name, justUpgraded = false) {
     try { this._closeUpgradeModal(); } catch (e) {}
     try { if (!isUpgradeable(name)) return; } catch (e) { return; }
     const lv = getWeaponLevel(name);
@@ -501,14 +528,31 @@ export default class ShopScene extends Phaser.Scene {
     UPGRADE_BONUS.forEach((b, i) => {
       const done = i < lv, next = i === lv;
       const mark = done ? '✓' : (next ? '→' : '·');
-      elems.push(this.add.text(cx, cy - H / 2 + 88 + i * 24, `${mark} +${i + 1}: ${b}`, {
+      const isJustCompleted = justUpgraded && i === lv - 1;
+      const txt = this.add.text(cx, cy - H / 2 + 88 + i * 24, `${mark} +${i + 1}: ${b}`, {
         fontSize: '14px',
-        color: done ? '#557755' : (next ? '#ffd24a' : '#667788'),
-        fontStyle: next ? 'bold' : 'normal'
-      }).setOrigin(0.5).setDepth(302));
+        color: isJustCompleted ? '#ffffff' : (done ? '#557755' : (next ? '#ffd24a' : '#667788')),
+        fontStyle: (next || isJustCompleted) ? 'bold' : 'normal'
+      }).setOrigin(0.5).setDepth(302);
+      elems.push(txt);
+
+      if (isJustCompleted) {
+        txt.setScale(1.2);
+        this.tweens.add({
+          targets: txt,
+          scaleX: 1,
+          scaleY: 1,
+          duration: 350,
+          ease: 'Back.Out',
+          onComplete: () => {
+            try { txt.setStyle({ color: '#77cc77' }); } catch (e) {}
+          }
+        });
+      }
     });
+
     if (price == null) {
-      elems.push(this.add.text(cx, cy - H / 2 + 88 + 5 * 24 + 16, 'МАКСИМУМ', {
+      elems.push(this.add.text(cx, cy - H / 2 + 88 + 5 * 24 + 16, 'МАКСИМУМ — дальше некуда', {
         fontSize: '15px', color: '#88dd88', fontStyle: 'bold'
       }).setOrigin(0.5).setDepth(302));
     }
@@ -517,6 +561,19 @@ export default class ShopScene extends Phaser.Scene {
     const canAfford = !isMax && (Number(gameState.coins) || 0) >= price;
     const by = cy + H / 2 - 46;
     const bh = 44;
+
+    if (justUpgraded) {
+      const targetY = cy - H / 2 + 88 + Math.max(0, lv - 1) * 24;
+      this._playUpgradeEffect(cx, targetY, isMax, elems);
+      this.tweens.add({
+        targets: bg,
+        scaleX: 1.018,
+        scaleY: 1.018,
+        duration: 90,
+        yoyo: true,
+        ease: 'Quad.Out'
+      });
+    }
 
     const probeOk = this.add.text(0, 0, isMax ? 'МАКСИМУМ' : `УЛУЧШИТЬ · ${price}`, {
       fontSize: '15px', fontStyle: 'bold'
@@ -605,9 +662,8 @@ export default class ShopScene extends Phaser.Scene {
         const r = upgradeWeapon(name);
         if (!r.ok) return;
         this._sfxBuy();
-        try { this._closeUpgradeModal(); } catch (e) {}
         try { this.redrawTab(); } catch (e) {}
-        try { if (this.coinsText) this.coinsText.setText(String(gameState.coins | 0)); } catch (e) {}
+        this._openUpgradeModal(name, true);
       });
     }
 
@@ -660,6 +716,65 @@ export default class ShopScene extends Phaser.Scene {
       this._upModal = null;
       if (m) m.forEach(o => { try { o.destroy(); } catch (e) {} });
     } catch (e) {}
+  }
+
+  // Эффект улучшения: золотая ударная волна, сноп искр и всплывающая плашка
+  _playUpgradeEffect(cx, targetY, isMax, elems) {
+    try {
+      // 1. Расширяющееся золотое кольцо-ударная волна
+      const ring = this.add.circle(cx, targetY, 18, 0x35d07f, 0).setDepth(310);
+      ring.setStrokeStyle(3, 0xffd24a, 1);
+      if (elems) elems.push(ring);
+      this.tweens.add({
+        targets: ring,
+        scale: 4.8,
+        alpha: 0,
+        duration: 520,
+        ease: 'Quad.Out',
+        onComplete: () => { try { ring.destroy(); } catch (e) {} }
+      });
+
+      // 2. Вспышка золотых и изумрудных искр во все стороны
+      const pCount = isMax ? 26 : 20;
+      for (let i = 0; i < pCount; i++) {
+        const ang = (Math.PI * 2 * i) / pCount + (Math.random() - 0.5) * 0.35;
+        const dist = 38 + Math.random() * (isMax ? 85 : 60);
+        const r = 2.2 + Math.random() * 2.4;
+        const col = (i % 3 === 0) ? 0xffffff : (i % 3 === 1 ? 0xffd24a : 0x35d07f);
+        const p = this.add.circle(cx, targetY, r, col, 1).setDepth(311);
+        if (elems) elems.push(p);
+        this.tweens.add({
+          targets: p,
+          x: cx + Math.cos(ang) * dist,
+          y: targetY + Math.sin(ang) * dist * 0.75,
+          alpha: 0,
+          scale: 0.1,
+          duration: 380 + Math.random() * 260,
+          ease: 'Cubic.Out',
+          onComplete: () => { try { p.destroy(); } catch (e) {} }
+        });
+      }
+
+      // 3. Всплывающая плашка с поздравлением
+      const label = isMax ? 'МАКСИМАЛЬНЫЙ УРОВЕНЬ! ★' : '+1 УРОВЕНЬ! ★';
+      const pop = this.add.text(cx, targetY, label, {
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: isMax ? '#ffd24a' : '#99ffaa'
+      }).setOrigin(0.5).setDepth(312);
+      pop.setStroke('#111124', 4);
+      pop.setScale(0.7);
+      if (elems) elems.push(pop);
+      this.tweens.add({
+        targets: pop,
+        y: targetY - 32,
+        scale: 1.15,
+        alpha: 0,
+        duration: 750,
+        ease: 'Back.Out',
+        onComplete: () => { try { pop.destroy(); } catch (e) {} }
+      });
+    } catch (e) { /* эффект не роняет окно */ }
   }
 
   // Ячейка с реальным PNG оружия выше, чтобы арт влез без искажений
