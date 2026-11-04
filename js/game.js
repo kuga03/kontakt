@@ -5,7 +5,7 @@ import GameScene from './scenes/GameScene.js?v=414';
 import ShopScene from './scenes/ShopScene.js?v=184';
 import DonateScene from './scenes/DonateScene.js?v=3';
 import LootBoxScene from './scenes/LootBoxScene.js?v=175';
-import InventoryScene from './scenes/InventoryScene.js?v=192';
+import InventoryScene from './scenes/InventoryScene.js?v=193';
 import SettingsScene, { getScreenRes, getFpsCap, getVsync } from './scenes/SettingsScene.js?v=181';
 import { getQuality, getCamShake } from './data/gameSettings.js';
 import LevelEditorScene from './scenes/LevelEditorScene.js?v=411';

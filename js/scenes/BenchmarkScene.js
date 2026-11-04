@@ -79,9 +79,10 @@ export default class BenchmarkScene extends GameScene {
     // Текст бенчмарка держим постоянного размера на экране: компенсируем
     // зум камеры (на всей карте камера далеко — текст иначе мельчает).
     const zs = 1 / (this.cameras.main.zoom || 1);
-    this._fpsTxt = this.add.text(16, 12, '', {
+    const W = gameW(this);
+    this._fpsTxt = this.add.text(W / 2, 4, '', {
       fontSize: '18px', color: '#9fff9f', backgroundColor: '#00000088', padding: 6
-    }).setOrigin(0, 0).setScrollFactor(0).setDepth(5000).setScale(zs);
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(5000).setScale(1);
     // Квадрат настроек в правом верхнем углу (текущие графические параметры).
     try {
       const qLabel = (QUALITY_OPTIONS.find(q => q.id === getQuality()) || {}).label || getQuality();
@@ -93,15 +94,15 @@ export default class BenchmarkScene extends GameScene {
       this._settingsBox.strokeRoundedRect(w - 130, 12, 110, 42, 6);
       this.add.text(w - 75, 20, `FPS · ${qLabel}`, {
         fontSize: '10px', color: '#ccddee', align: 'center'
-      }).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(5001).setScale(zs);
+      }).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(5001).setScale(1);
     } catch (e) {}
     this._hint = this.add.text(gameW(this) / 2, 700, 'Предзагрузка уровня…', {
       fontSize: '16px', color: '#99aacc'
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(5000).setScale(zs);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(5000).setScale(1);
 
     this._back = this.add.text(gameW(this) / 2, 730, 'ВЫЙТИ', {
       fontSize: '15px', color: '#ffffff', backgroundColor: '#553333', padding: 8
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(5000).setScale(zs).setInteractive({ useHandCursor: true });
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(5000).setScale(1).setInteractive({ useHandCursor: true });
     this._back.on('pointerdown', () => this.scene.start('SettingsScene'));
     this._back.on('pointerover', () => this._back.setStyle({ color: '#ffff55' }));
     this._back.on('pointerout', () => this._back.setStyle({ color: '#ffffff' }));

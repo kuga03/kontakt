@@ -200,29 +200,74 @@ export function drawSkinsPanel(panel, parent) {
         fontSize: '11px', color: '#99aacc'
       }).setOrigin(0, 0.5);
     if (parent) parent.add(cStatus);
-    const cBtn = this.add.text(startX, cy + 52, 'ПОДПИСАТЬ КОНТРАКТ', {
-      fontSize: '14px',
+    const cbW = 180, cbH = 34, cbR = 7;
+    const cbX = startX + cbW / 2, cbY = cy + 52;
+    const cbFr = this.add.graphics();
+    if (parent) parent.add(cbFr);
+
+    const renderCBtn = (hot) => {
+      cbFr.clear();
+      cbFr.fillStyle(hot ? 0x4d3a12 : 0x36280a, 0.95);
+      cbFr.fillRoundedRect(cbX - cbW / 2, cbY - cbH / 2, cbW, cbH, cbR);
+      cbFr.fillStyle(0xffffff, hot ? 0.14 : 0.07);
+      cbFr.fillRoundedRect(cbX - cbW / 2, cbY - cbH / 2, cbW, 4, { tl: cbR, tr: cbR, bl: 0, br: 0 });
+      cbFr.lineStyle(1.5, hot ? 0xffff88 : 0xaa8822, 1);
+      cbFr.strokeRoundedRect(cbX - cbW / 2, cbY - cbH / 2, cbW, cbH, cbR);
+    };
+    renderCBtn(false);
+
+    const cBtn = this.add.text(cbX, cbY, 'ПОДПИСАТЬ КОНТРАКТ', {
+      fontSize: '13px',
       color: '#ffffff',
-      backgroundColor: '#5a4a1a',
-      padding: 7
-    }).setOrigin(0, 0.5);
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
     if (parent) parent.add(cBtn);
-    cBtn.setInteractive({ useHandCursor: true });
+    cBtn.setInteractive(new Phaser.Geom.Rectangle(cbX - cbW / 2, cbY - cbH / 2, cbW, cbH), Phaser.Geom.Rectangle.Contains);
+    cBtn.input.cursor = 'pointer';
     cBtn.on('pointerdown', () => this._openContractModal());
-    cBtn.on('pointerover', () => cBtn.setStyle({ color: '#ffff55' }));
-    cBtn.on('pointerout', () => cBtn.setStyle({ color: '#ffffff' }));
-    // История — в том же ряду справа, не под кнопкой (налезала).
-    const hBtn = this.add.text(startX + 225, cy + 52, 'ИСТОРИЯ ОБМЕНОВ', {
+    cBtn.on('pointerover', () => {
+      renderCBtn(true);
+      cBtn.setStyle({ color: '#ffff55' });
+    });
+    cBtn.on('pointerout', () => {
+      renderCBtn(false);
+      cBtn.setStyle({ color: '#ffffff' });
+    });
+
+    // История — в том же ряду справа
+    const hbW = 150, hbH = 34, hbR = 7;
+    const hbX = startX + 210 + hbW / 2, hbY = cy + 52;
+    const hbFr = this.add.graphics();
+    if (parent) parent.add(hbFr);
+
+    const renderHBtn = (hot) => {
+      hbFr.clear();
+      hbFr.fillStyle(hot ? 0x222a42 : 0x141828, 0.95);
+      hbFr.fillRoundedRect(hbX - hbW / 2, hbY - hbH / 2, hbW, hbH, hbR);
+      hbFr.fillStyle(0xffffff, hot ? 0.12 : 0.05);
+      hbFr.fillRoundedRect(hbX - hbW / 2, hbY - hbH / 2, hbW, 4, { tl: hbR, tr: hbR, bl: 0, br: 0 });
+      hbFr.lineStyle(1.5, hot ? 0x8fb8ff : 0x3a4868, 1);
+      hbFr.strokeRoundedRect(hbX - hbW / 2, hbY - hbH / 2, hbW, hbH, hbR);
+    };
+    renderHBtn(false);
+
+    const hBtn = this.add.text(hbX, hbY, 'ИСТОРИЯ ОБМЕНОВ', {
       fontSize: '12px',
-      color: '#ffffff',
-      backgroundColor: '#252560',
-      padding: 6
-    }).setOrigin(0, 0.5);
+      color: '#c0d0f0',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
     if (parent) parent.add(hBtn);
-    hBtn.setInteractive({ useHandCursor: true });
+    hBtn.setInteractive(new Phaser.Geom.Rectangle(hbX - hbW / 2, hbY - hbH / 2, hbW, hbH), Phaser.Geom.Rectangle.Contains);
+    hBtn.input.cursor = 'pointer';
     hBtn.on('pointerdown', () => this._openHistoryModal());
-    hBtn.on('pointerover', () => hBtn.setStyle({ color: '#ffff55' }));
-    hBtn.on('pointerout', () => hBtn.setStyle({ color: '#ffffff' }));
+    hBtn.on('pointerover', () => {
+      renderHBtn(true);
+      hBtn.setStyle({ color: '#ffffff' });
+    });
+    hBtn.on('pointerout', () => {
+      renderHBtn(false);
+      hBtn.setStyle({ color: '#c0d0f0' });
+    });
     this._contractStatus = cStatus;
   }
 

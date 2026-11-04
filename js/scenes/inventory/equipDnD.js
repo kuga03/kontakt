@@ -49,10 +49,12 @@ export function drawEquipSlots(panel, parent) {
 
       const rect = { x: slot.x - 85, y: slot.y - 22, w: 170, h: 44 };
       const slotGfx = this.add.graphics();
-      slotGfx.fillStyle(0x0d0d2a, 1);
-      slotGfx.fillRoundedRect(rect.x, rect.y, rect.w, rect.h, 6);
-      slotGfx.lineStyle(ulevel >= 4 ? 3 : 2, ulevel >= 4 ? (ulevel >= 5 ? 0xffe97a : 0xffd24a) : (name ? 0x88aa44 : 0x445577));
-      slotGfx.strokeRoundedRect(rect.x, rect.y, rect.w, rect.h, 6);
+      slotGfx.fillStyle(0x111422, 1);
+      slotGfx.fillRoundedRect(rect.x, rect.y, rect.w, rect.h, 7);
+      slotGfx.fillStyle(0xffffff, 0.04);
+      slotGfx.fillRoundedRect(rect.x, rect.y, rect.w, 4, { tl: 7, tr: 7, bl: 0, br: 0 });
+      slotGfx.lineStyle(ulevel >= 4 ? 2.5 : 1.5, ulevel >= 4 ? (ulevel >= 5 ? 0xffe97a : 0xffd24a) : (name ? 0x2e884e : 0x2b344c));
+      slotGfx.strokeRoundedRect(rect.x, rect.y, rect.w, rect.h, 7);
       if (parent) parent.add(slotGfx);
       this.equipSlotRects.push({ g: slotGfx, rect, slot });
 
@@ -80,26 +82,58 @@ export function drawEquipSlots(panel, parent) {
       }
 
       const slotLabel = this.add.text(slot.x - 90, slot.y, slot.label, {
-        fontSize: '12px', color: '#99aacc'
+        fontSize: '12px', color: '#8899bb', fontStyle: 'bold'
       }).setOrigin(1, 0.5);
       if (parent) parent.add(slotLabel);
 
-      const removeBtn = this.add.text(slot.x + 95, slot.y, 'снять', {
-        fontSize: '13px',
-        color: name ? '#ffe0a0' : '#445566',
-        backgroundColor: name ? '#553322' : '#222a33',
-        padding: 4
+      const rw = 52, rh = 24, rr = 5;
+      const rx = slot.x + 104, ry = slot.y;
+      const rFr = this.add.graphics();
+      if (parent) parent.add(rFr);
+
+      const renderRemove = (hot) => {
+        rFr.clear();
+        if (name) {
+          rFr.fillStyle(hot ? 0x4a2228 : 0x32181d, 1);
+          rFr.fillRoundedRect(rx - rw / 2, ry - rh / 2, rw, rh, rr);
+          rFr.lineStyle(1, hot ? 0xd05555 : 0x6e3238, 1);
+          rFr.strokeRoundedRect(rx - rw / 2, ry - rh / 2, rw, rh, rr);
+        } else {
+          rFr.fillStyle(0x141822, 0.5);
+          rFr.fillRoundedRect(rx - rw / 2, ry - rh / 2, rw, rh, rr);
+          rFr.lineStyle(1, 0x222838, 0.5);
+          rFr.strokeRoundedRect(rx - rw / 2, ry - rh / 2, rw, rh, rr);
+        }
+      };
+      renderRemove(false);
+
+      const removeBtn = this.add.text(rx, ry, 'снять', {
+        fontSize: '12px',
+        color: name ? '#ffb0b0' : '#445566',
+        fontStyle: 'bold'
       }).setOrigin(0.5).setDepth(1);
       if (parent) parent.add(removeBtn);
 
-      removeBtn.setInteractive({ useHandCursor: name != null });
+      removeBtn.setInteractive(new Phaser.Geom.Rectangle(rx - rw / 2, ry - rh / 2, rw, rh), Phaser.Geom.Rectangle.Contains);
+      if (name) removeBtn.input.cursor = 'pointer';
+
       removeBtn.on('pointerdown', () => {
         if (!name) return;
         setEquippedWeapon(this.selectedClass, slot.slot, null);
         this.redraw();
       });
-      removeBtn.on('pointerover', () => removeBtn.setStyle({ color: '#ffffff' }));
-      removeBtn.on('pointerout', () => removeBtn.setStyle({ color: name ? '#ffe0a0' : '#445566' }));
+      removeBtn.on('pointerover', () => {
+        if (name) {
+          renderRemove(true);
+          removeBtn.setStyle({ color: '#ffffff' });
+        }
+      });
+      removeBtn.on('pointerout', () => {
+        if (name) {
+          renderRemove(false);
+          removeBtn.setStyle({ color: '#ffb0b0' });
+        }
+      });
     });
   }
 
@@ -116,10 +150,12 @@ export function drawCompareSlots(panel, parent) {
     COMPARE_SLOTS.forEach((slot) => {
       const rect = { x: slot.x - 55, y: slot.y - 20, w: 110, h: 40 };
       const g = this.add.graphics();
-      g.fillStyle(0x0d0d2a, 1);
-      g.fillRoundedRect(rect.x, rect.y, rect.w, rect.h, 6);
-      g.lineStyle(2, 0x4466aa);
-      g.strokeRoundedRect(rect.x, rect.y, rect.w, rect.h, 6);
+      g.fillStyle(0x101322, 1);
+      g.fillRoundedRect(rect.x, rect.y, rect.w, rect.h, 7);
+      g.fillStyle(0xffffff, 0.04);
+      g.fillRoundedRect(rect.x, rect.y, rect.w, 4, { tl: 7, tr: 7, bl: 0, br: 0 });
+      g.lineStyle(1.5, 0x2e3852);
+      g.strokeRoundedRect(rect.x, rect.y, rect.w, rect.h, 7);
       if (parent) parent.add(g);
       this.compareSlotRects.push({ g, rect, slot });
 
@@ -403,10 +439,12 @@ export function clearDropHighlights() {
 export function redrawSlot(item, color) {
     const rect = item.rect;
     item.g.clear();
-    item.g.fillStyle(0x0d0d2a, 1);
-    item.g.fillRoundedRect(rect.x, rect.y, rect.w, rect.h, 6);
-    item.g.lineStyle(item.highlighted ? 3 : 2, color);
-    item.g.strokeRoundedRect(rect.x, rect.y, rect.w, rect.h, 6);
+    item.g.fillStyle(0x111422, 1);
+    item.g.fillRoundedRect(rect.x, rect.y, rect.w, rect.h, 7);
+    item.g.fillStyle(0xffffff, 0.04);
+    item.g.fillRoundedRect(rect.x, rect.y, rect.w, 4, { tl: 7, tr: 7, bl: 0, br: 0 });
+    item.g.lineStyle(item.highlighted ? 2.5 : 1.5, color);
+    item.g.strokeRoundedRect(rect.x, rect.y, rect.w, rect.h, 7);
     item.highlighted = color === 0x88cc55;
   }
 

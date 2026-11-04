@@ -37,29 +37,76 @@ const COMPARE_SLOTS = [
 ];
 
 export function drawWardrobeClassTabs(panel, parent) {
+    const CLASS_PALETTE = {
+      Assault: 0x3888f0,
+      Tank: 0xd47820,
+      Medic: 0x2eb868,
+      Sniper: 0x9e4fd8
+    };
+    const cw = 174, ch = 34, cr = 7;
+    const cy = panel.y + 28;
+
     classDefinitions.forEach((cd, i) => {
       const x = panel.x + 109 + i * 186;
       const selected = cd.id === this.selectedClass;
       const unlocked = isClassUnlocked(cd.id, gameState.level);
       const tabLabel = unlocked ? cd.label : `${cd.label} (ур. ${classOpenLevel(cd.id)})`;
-      const tab = this.add.text(x, panel.y + 28, tabLabel, {
-        fontSize: '15px',
-        color: selected ? '#ffff55' : unlocked ? '#ffffff' : '#667788',
-        backgroundColor: selected ? '#2a2a5a' : unlocked ? '#2e2e72' : '#14142c',
-        padding: 7,
-        fixedWidth: 174,
-        align: 'center'
+      const clr = CLASS_PALETTE[cd.id] || 0x4466aa;
+
+      const fr = this.add.graphics();
+      if (parent) parent.add(fr);
+
+      const renderTab = (hot) => {
+        fr.clear();
+        if (!unlocked) {
+          fr.fillStyle(0x0c0e18, 0.6);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+          fr.lineStyle(1, 0x1e2230, 0.7);
+          fr.strokeRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+        } else if (selected) {
+          fr.fillStyle(0x181c2e, 0.95);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+          fr.fillStyle(0xffffff, 0.1);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, 5, { tl: cr, tr: cr, bl: 0, br: 0 });
+          fr.lineStyle(2, clr, 1);
+          fr.strokeRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+        } else {
+          fr.fillStyle(hot ? 0x181c2c : 0x111422, 0.9);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+          fr.fillStyle(0xffffff, hot ? 0.08 : 0.03);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, 5, { tl: cr, tr: cr, bl: 0, br: 0 });
+          fr.lineStyle(1, hot ? clr : 0x242a3e, hot ? 0.9 : 0.6);
+          fr.strokeRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+        }
+      };
+      renderTab(false);
+
+      const tab = this.add.text(x, cy, tabLabel, {
+        fontSize: '14px',
+        color: selected ? '#ffffff' : (unlocked ? '#99aacc' : '#556677'),
+        fontStyle: selected ? 'bold' : 'normal'
       }).setOrigin(0.5);
       if (parent) parent.add(tab);
-      tab.setInteractive({ useHandCursor: unlocked });
+
+      tab.setInteractive(new Phaser.Geom.Rectangle(x - cw / 2, cy - ch / 2, cw, ch), Phaser.Geom.Rectangle.Contains);
+      if (unlocked) tab.input.cursor = 'pointer';
+
       tab.on('pointerdown', () => {
         if (!isClassUnlocked(cd.id, gameState.level)) return;
         this.selectedClass = cd.id;
         this.redraw();
       });
-      tab.on('pointerover', () => tab.setStyle({ color: '#ffff55' }));
+      tab.on('pointerover', () => {
+        if (unlocked && cd.id !== this.selectedClass) {
+          renderTab(true);
+          tab.setStyle({ color: '#ffffff' });
+        }
+      });
       tab.on('pointerout', () => {
-        tab.setStyle({ color: cd.id === this.selectedClass ? '#ffff55' : (isClassUnlocked(cd.id, gameState.level) ? '#ffffff' : '#667788') });
+        if (unlocked && cd.id !== this.selectedClass) {
+          renderTab(false);
+          tab.setStyle({ color: '#99aacc' });
+        }
       });
     });
   }
@@ -452,19 +499,25 @@ export function drawPlayerPanel() {
 
     if (this.view === 'skins') {
       this.playerPanelGfx = this.add.graphics();
-      this.playerPanelGfx.fillStyle(0x1a1a3a, 1);
+      this.playerPanelGfx.fillStyle(0x0f1220, 0.98);
       this.playerPanelGfx.fillRoundedRect(panel.x, panel.y, panel.w, panel.h, 10);
-      this.playerPanelGfx.lineStyle(2, 0x444488);
+      this.playerPanelGfx.lineStyle(1, 0xffffff, 0.08);
+      this.playerPanelGfx.lineBetween(panel.x + 14, panel.y + 2, panel.x + panel.w - 14, panel.y + 2);
+      this.playerPanelGfx.lineStyle(2, 0x060812, 1);
       this.playerPanelGfx.strokeRoundedRect(panel.x, panel.y, panel.w, panel.h, 10);
+      this.playerPanelGfx.lineStyle(1, 0x252d42, 1);
+      this.playerPanelGfx.strokeRoundedRect(panel.x + 2, panel.y + 2, panel.w - 4, panel.h - 4, 8);
+      this.playerPanelGfx.fillStyle(0x667799, 0.7);
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
+        this.playerPanelGfx.fillCircle(panel.x + (sx < 0 ? 10 : panel.w - 10), panel.y + (sy < 0 ? 10 : panel.h - 10), 2);
+      });
       c.add(this.playerPanelGfx);
 
       const skinsTitle = this.add.text(panel.x + panel.w / 2, panel.y + 22, 'КОЛЛЕКЦИЯ СКИНОВ', {
-        fontSize: '18px', color: '#dddddd'
+        fontSize: '18px', color: '#ffdd88', fontStyle: 'bold'
       }).setOrigin(0.5);
       c.add(skinsTitle);
 
-      // Манекен из старых PNG-частей убран: в игре давно GEO-риг,
-      // а этот кусок торса с руками висел артефактом.
       const ownedIds = new Set(gameState.weaponSkins || []);
       const owned = weaponSkins.filter(s => ownedIds.has(s.id));
 
@@ -477,8 +530,10 @@ export function drawPlayerPanel() {
       const listH = countEntries.length * 22 + 10;
 
       const statBg = this.add.graphics();
-      statBg.fillStyle(0x0d0d2a, 1);
+      statBg.fillStyle(0x111424, 0.9);
       statBg.fillRoundedRect(panel.x + 30, panel.y + 60, panel.w - 60, Math.min(listH + 50, panel.h - 80), 8);
+      statBg.lineStyle(1, 0x252d42, 1);
+      statBg.strokeRoundedRect(panel.x + 30, panel.y + 60, panel.w - 60, Math.min(listH + 50, panel.h - 80), 8);
       c.add(statBg);
 
       const skinsCount = this.add.text(panel.x + 50, panel.y + 80,
@@ -517,42 +572,79 @@ export function drawPlayerPanel() {
     }
 
     this.playerPanelGfx = this.add.graphics();
-    this.playerPanelGfx.fillStyle(0x1a1a3a, 1);
+    this.playerPanelGfx.fillStyle(0x0f1220, 0.98);
     this.playerPanelGfx.fillRoundedRect(panel.x, panel.y, panel.w, panel.h, 10);
-    this.playerPanelGfx.lineStyle(2, 0x444488);
+    this.playerPanelGfx.lineStyle(1, 0xffffff, 0.08);
+    this.playerPanelGfx.lineBetween(panel.x + 14, panel.y + 2, panel.x + panel.w - 14, panel.y + 2);
+    this.playerPanelGfx.lineStyle(2, 0x060812, 1);
     this.playerPanelGfx.strokeRoundedRect(panel.x, panel.y, panel.w, panel.h, 10);
+    this.playerPanelGfx.lineStyle(1, 0x252d42, 1);
+    this.playerPanelGfx.strokeRoundedRect(panel.x + 2, panel.y + 2, panel.w - 4, panel.h - 4, 8);
+    this.playerPanelGfx.fillStyle(0x667799, 0.7);
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
+      this.playerPanelGfx.fillCircle(panel.x + (sx < 0 ? 10 : panel.w - 10), panel.y + (sy < 0 ? 10 : panel.h - 10), 2);
+    });
     c.add(this.playerPanelGfx);
 
     const cd = classDefinitions.find(cl => cl.id === this.selectedClass);
 
     const classLabel = this.add.text(panel.x + panel.w / 2, panel.y + 13, cd.label, {
-      fontSize: '18px', color: '#dddddd'
+      fontSize: '18px', color: '#ffdd88', fontStyle: 'bold'
     }).setOrigin(0.5);
     c.add(classLabel);
 
     const colors = getCharacterColors();
     const cx = panel.x + panel.w / 2;
 
-    const rankText = this.add.text(panel.x + 30, panel.y + 35,
+    const rankText = this.add.text(panel.x + 30, panel.y + 36,
       `${getRank(gameState.level)}  ·  ур. ${gameState.level} (${gameState.experience} оп.)`, {
         fontSize: '13px', color: '#ffddaa'
       }).setOrigin(0, 0.5);
     c.add(rankText);
 
-    // Кнопка умений справа наверху от персонажа (отдельное окно —
-    // задел под новые умения, список в профиле остаётся).
-    const abilBtn = this.add.text(panel.x + panel.w - 16, panel.y + 40, 'УМЕНИЯ', {
-      fontSize: '14px', color: '#ffffff', backgroundColor: '#334466', padding: 8
-    }).setOrigin(1, 0.5);
-    c.add(abilBtn);
-    abilBtn.setInteractive({ useHandCursor: true });
-    abilBtn.on('pointerdown', () => this._openAbilitiesModal());
-    abilBtn.on('pointerover', () => abilBtn.setStyle({ color: '#ffff55' }));
-    abilBtn.on('pointerout', () => abilBtn.setStyle({ color: '#ffffff' }));
+    // Кнопка УМЕНИЯ в стиле GangScene: скругление 8px, верхний блик, подсветка рамки
+    const abW = 96, abH = 30, abR = 7;
+    const abX = panel.x + panel.w - 18 - abW / 2;
+    const abY = panel.y + 36;
+    const abFr = this.add.graphics();
+    c.add(abFr);
 
-    // Живое превью из редактора персонажа: настоящий риг выбранного класса
-    // с его снаряжением из инвентаря. Приподнято выше к центру свободной полки,
-    // чтобы ноги и оружие не залезали на заголовок «СНАРЯЖЕНИЕ» и слоты экипировки.
+    const renderAbil = (hot) => {
+      abFr.clear();
+      abFr.fillStyle(hot ? 0x1f3655 : 0x142236, 0.95);
+      abFr.fillRoundedRect(abX - abW / 2, abY - abH / 2, abW, abH, abR);
+      abFr.fillStyle(0xffffff, hot ? 0.14 : 0.07);
+      abFr.fillRoundedRect(abX - abW / 2, abY - abH / 2, abW, 4, { tl: abR, tr: abR, bl: 0, br: 0 });
+      abFr.lineStyle(1.5, hot ? 0xffff88 : 0x3d70a8, 1);
+      abFr.strokeRoundedRect(abX - abW / 2, abY - abH / 2, abW, abH, abR);
+    };
+    renderAbil(false);
+
+    const abilBtn = this.add.text(abX, abY, 'УМЕНИЯ', {
+      fontSize: '13px', color: '#ffffff', fontStyle: 'bold'
+    }).setOrigin(0.5);
+    c.add(abilBtn);
+    abilBtn.setInteractive(new Phaser.Geom.Rectangle(abX - abW / 2, abY - abH / 2, abW, abH), Phaser.Geom.Rectangle.Contains);
+    abilBtn.input.cursor = 'pointer';
+    abilBtn.on('pointerdown', () => this._openAbilitiesModal());
+    abilBtn.on('pointerover', () => {
+      renderAbil(true);
+      abilBtn.setStyle({ color: '#ffff55' });
+    });
+    abilBtn.on('pointerout', () => {
+      renderAbil(false);
+      abilBtn.setStyle({ color: '#ffffff' });
+    });
+
+    // Мягкий постамент-подсветка под ногами живого 3D-рига
+    const ped = this.add.graphics();
+    ped.fillStyle(0x000000, 0.45);
+    ped.fillEllipse(panel.x + panel.w / 2, panel.y + 208, 140, 24);
+    ped.fillStyle(0x386098, 0.14);
+    ped.fillEllipse(panel.x + panel.w / 2, panel.y + 208, 180, 34);
+    c.add(ped);
+
+    // Живое превью из редактора персонажа
     this._preview = this._spawnPreview(this.selectedClass, panel.x + panel.w / 2, panel.y + 128, true, 1.5);
 
     this.drawEquipSlots(panel, c);

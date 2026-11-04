@@ -50,30 +50,60 @@ export function drawViewTabs(parent) {
       { id: 'misc', label: 'ДРУГОЕ', x: 920 }
     ];
 
+    const tw = 140, th = 34, tr = 8;
+    const ty = 70;
+
     tabs.forEach(tab => {
       const active = this.view === tab.id;
-      const btn = this.add.text(tab.x, 70, tab.label, {
-        fontSize: '15px',
-        color: active ? '#111111' : '#ffffff',
-        backgroundColor: active ? '#ffee55' : '#252570',
-        padding: 5,
-        fixedWidth: 130,
-        align: 'center'
+      const fr = this.add.graphics().setDepth(9);
+      if (parent) parent.add(fr);
+
+      const renderTab = (hot) => {
+        fr.clear();
+        if (active) {
+          fr.fillStyle(0x282214, 0.98);
+          fr.fillRoundedRect(tab.x - tw / 2, ty - th / 2, tw, th, tr);
+          fr.fillStyle(0xffffff, 0.12);
+          fr.fillRoundedRect(tab.x - tw / 2, ty - th / 2, tw, 5, { tl: tr, tr: tr, bl: 0, br: 0 });
+          fr.lineStyle(1.5, 0xffd24a, 1);
+          fr.strokeRoundedRect(tab.x - tw / 2, ty - th / 2, tw, th, tr);
+        } else {
+          fr.fillStyle(hot ? 0x181c2c : 0x111422, 0.92);
+          fr.fillRoundedRect(tab.x - tw / 2, ty - th / 2, tw, th, tr);
+          fr.fillStyle(0xffffff, hot ? 0.08 : 0.03);
+          fr.fillRoundedRect(tab.x - tw / 2, ty - th / 2, tw, 5, { tl: tr, tr: tr, bl: 0, br: 0 });
+          fr.lineStyle(1, hot ? 0x4a5a80 : 0x242a3e, 1);
+          fr.strokeRoundedRect(tab.x - tw / 2, ty - th / 2, tw, th, tr);
+        }
+      };
+      renderTab(false);
+
+      const btn = this.add.text(tab.x, ty, tab.label, {
+        fontSize: '14px',
+        color: active ? '#ffd24a' : '#8899bb',
+        fontStyle: active ? 'bold' : 'normal'
       }).setOrigin(0.5).setDepth(10);
       if (parent) parent.add(btn);
 
       btn.viewId = tab.id;
-      btn.setInteractive({ useHandCursor: true });
+      btn.setInteractive(new Phaser.Geom.Rectangle(tab.x - tw / 2, ty - th / 2, tw, th), Phaser.Geom.Rectangle.Contains);
+      btn.input.cursor = 'pointer';
       btn.on('pointerdown', () => {
         if (this.view === tab.id) return;
         this.view = tab.id;
         this.redraw();
       });
       btn.on('pointerover', () => {
-        if (this.view !== tab.id) btn.setStyle({ color: '#ffff55' });
+        if (this.view !== tab.id) {
+          renderTab(true);
+          btn.setStyle({ color: '#ffffff' });
+        }
       });
       btn.on('pointerout', () => {
-        if (this.view !== tab.id) btn.setStyle({ color: '#ffffff' });
+        if (this.view !== tab.id) {
+          renderTab(false);
+          btn.setStyle({ color: '#8899bb' });
+        }
       });
 
       this.viewTabs.push(btn);
@@ -85,34 +115,77 @@ export function drawClassTabs() {
     const c = this.add.container(0, 0).setDepth(10);
     this._dynamicContainers.push(c);
 
-    // Фиксированные слоты (панель 15–785): длинные подписи с уровнями
-    // больше не налезают друг на друга. Подложки контрастные к панели
-    // (#151538): иначе сливаются с фоном.
+    const CLASS_PALETTE = {
+      Assault: 0x3888f0,
+      Tank: 0xd47820,
+      Medic: 0x2eb868,
+      Sniper: 0x9e4fd8
+    };
+
+    const cw = 168, ch = 34, cr = 7;
+    const cy = 150;
+
     classDefinitions.forEach((cd, i) => {
       const x = UX(this, 130 + i * 180);
       const selected = cd.id === this.selectedClass;
       const unlocked = isClassUnlocked(cd.id, gameState.level);
       const tabLabel = unlocked ? cd.label : `${cd.label} (ур. ${classOpenLevel(cd.id)})`;
+      const clr = CLASS_PALETTE[cd.id] || 0x4466aa;
 
-      const tab = this.add.text(x, 150, tabLabel, {
-        fontSize: '16px',
-        color: selected ? '#ffff55' : unlocked ? '#ffffff' : '#667788',
-        backgroundColor: selected ? '#2a2a5a' : unlocked ? '#2e2e72' : '#14142c',
-        padding: 8,
-        fixedWidth: 168,
-        align: 'center'
+      const fr = this.add.graphics();
+      c.add(fr);
+
+      const renderClassTab = (hot) => {
+        fr.clear();
+        if (!unlocked) {
+          fr.fillStyle(0x0c0e18, 0.6);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+          fr.lineStyle(1, 0x1e2230, 0.7);
+          fr.strokeRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+        } else if (selected) {
+          fr.fillStyle(0x181c2e, 0.95);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+          fr.fillStyle(0xffffff, 0.1);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, 5, { tl: cr, tr: cr, bl: 0, br: 0 });
+          fr.lineStyle(2, clr, 1);
+          fr.strokeRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+        } else {
+          fr.fillStyle(hot ? 0x181c2c : 0x111422, 0.9);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+          fr.fillStyle(0xffffff, hot ? 0.08 : 0.03);
+          fr.fillRoundedRect(x - cw / 2, cy - ch / 2, cw, 5, { tl: cr, tr: cr, bl: 0, br: 0 });
+          fr.lineStyle(1, hot ? clr : 0x242a3e, hot ? 0.9 : 0.6);
+          fr.strokeRoundedRect(x - cw / 2, cy - ch / 2, cw, ch, cr);
+        }
+      };
+      renderClassTab(false);
+
+      const tab = this.add.text(x, cy, tabLabel, {
+        fontSize: '14px',
+        color: selected ? '#ffffff' : (unlocked ? '#99aacc' : '#556677'),
+        fontStyle: selected ? 'bold' : 'normal'
       }).setOrigin(0.5);
       c.add(tab);
 
-      tab.setInteractive({ useHandCursor: unlocked });
+      tab.setInteractive(new Phaser.Geom.Rectangle(x - cw / 2, cy - ch / 2, cw, ch), Phaser.Geom.Rectangle.Contains);
+      if (unlocked) tab.input.cursor = 'pointer';
+
       tab.on('pointerdown', () => {
         if (!isClassUnlocked(cd.id, gameState.level)) return;
         this.selectedClass = cd.id;
         this.redraw();
       });
-      tab.on('pointerover', () => tab.setStyle({ color: '#ffff55' }));
+      tab.on('pointerover', () => {
+        if (unlocked && cd.id !== this.selectedClass) {
+          renderClassTab(true);
+          tab.setStyle({ color: '#ffffff' });
+        }
+      });
       tab.on('pointerout', () => {
-        tab.setStyle({ color: cd.id === this.selectedClass ? '#ffff55' : (isClassUnlocked(cd.id, gameState.level) ? '#ffffff' : '#667788') });
+        if (unlocked && cd.id !== this.selectedClass) {
+          renderClassTab(false);
+          tab.setStyle({ color: '#99aacc' });
+        }
       });
     });
   }
@@ -143,10 +216,18 @@ export function drawLeftPanel() {
     this._dynamicContainers.push(c);
 
     this.panelGfx = this.add.graphics();
-    this.panelGfx.fillStyle(0x151538, 1);
+    this.panelGfx.fillStyle(0x0f1220, 0.98);
     this.panelGfx.fillRoundedRect(panel.x, panel.y, panel.w, panel.h, 10);
-    this.panelGfx.lineStyle(2, 0x444488);
+    this.panelGfx.lineStyle(1, 0xffffff, 0.08);
+    this.panelGfx.lineBetween(panel.x + 14, panel.y + 2, panel.x + panel.w - 14, panel.y + 2);
+    this.panelGfx.lineStyle(2, 0x060812, 1);
     this.panelGfx.strokeRoundedRect(panel.x, panel.y, panel.w, panel.h, 10);
+    this.panelGfx.lineStyle(1, 0x252d42, 1);
+    this.panelGfx.strokeRoundedRect(panel.x + 2, panel.y + 2, panel.w - 4, panel.h - 4, 8);
+    this.panelGfx.fillStyle(0x667799, 0.7);
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
+      this.panelGfx.fillCircle(panel.x + (sx < 0 ? 10 : panel.w - 10), panel.y + (sy < 0 ? 10 : panel.h - 10), 2);
+    });
     c.add(this.panelGfx);
 
     this.drawViewTabs(c);
@@ -219,22 +300,27 @@ export function drawLeftPanel() {
   // equipped — золото, обычная — navy, наведение — жёлтая рамка 2px.
 export function _drawCardBg(bg, w, h, equipped, hover, ulevel) {
     bg.clear();
-    // Свечение заточки (п.14.4): +4 золотая рамка, +5 ярче и толще.
     const glow = (ulevel | 0) >= 5 ? 3 : ((ulevel | 0) >= 4 ? 2 : 0);
+    const r = 8;
     if (equipped) {
-      bg.fillStyle(hover ? 0x554400 : 0x443300, 0.95);
+      bg.fillStyle(hover ? 0x362c14 : 0x27200e, 0.98);
+      bg.fillRoundedRect(0, 0, w, h, r);
+      bg.fillStyle(0xffffff, hover ? 0.14 : 0.07);
+      bg.fillRoundedRect(0, 0, w, 5, { tl: r, tr: r, bl: 0, br: 0 });
+      bg.lineStyle(hover ? 2 : 1.5, hover ? 0xffff88 : (glow >= 3 ? 0xffe97a : 0xffd24a));
+      bg.strokeRoundedRect(0, 0, w, h, r);
     } else {
-      bg.fillStyle(0x1a1a4a, 0.9);
+      bg.fillStyle(hover ? 0x1b2034 : 0x131625, 0.95);
+      bg.fillRoundedRect(0, 0, w, h, r);
+      bg.fillStyle(0xffffff, hover ? 0.08 : 0.03);
+      bg.fillRoundedRect(0, 0, w, 5, { tl: r, tr: r, bl: 0, br: 0 });
+      if (glow) {
+        bg.lineStyle(glow, glow >= 3 ? 0xffe97a : 0xffd24a);
+      } else {
+        bg.lineStyle(hover ? 1.5 : 1, hover ? 0x66aaff : 0x283046);
+      }
+      bg.strokeRoundedRect(0, 0, w, h, r);
     }
-    bg.fillRoundedRect(0, 0, w, h, 8);
-    if (glow) {
-      bg.lineStyle(glow, glow >= 3 ? 0xffe97a : 0xffd24a);
-    } else if (equipped) {
-      bg.lineStyle(hover ? 2 : 1, hover ? 0xffee55 : 0xaa8800);
-    } else {
-      bg.lineStyle(hover ? 2 : 1, hover ? 0xffee55 : 0x4466aa);
-    }
-    bg.strokeRoundedRect(0, 0, w, h, 8);
   }
 
 export function createWeaponCard(cx, cy, weapon, cardW, cardH, parent) {

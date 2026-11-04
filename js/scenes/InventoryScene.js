@@ -30,11 +30,11 @@ const COMPARE_SLOTS = [
   { x: 500, y: 565, slot: 1 }
 ];
 
-import * as ContractModal from './inventory/contractModal.js';
-import * as EquipDnD from './inventory/equipDnD.js';
-import * as SkinsTab from './inventory/skinsTab.js';
-import * as WardrobeTab from './inventory/wardrobeTab.js?v=398';
-import * as WeaponsTab from './inventory/weaponsTab.js';
+import * as ContractModal from './inventory/contractModal.js?v=2';
+import * as EquipDnD from './inventory/equipDnD.js?v=2';
+import * as SkinsTab from './inventory/skinsTab.js?v=2';
+import * as WardrobeTab from './inventory/wardrobeTab.js?v=399';
+import * as WeaponsTab from './inventory/weaponsTab.js?v=2';
 export default class InventoryScene extends Phaser.Scene {
   constructor() {
     super('InventoryScene');
@@ -42,7 +42,22 @@ export default class InventoryScene extends Phaser.Scene {
 
   create(data) {
     const _cx = gameW(this) / 2;
-    this.cameras.main.setBackgroundColor('#0a0a2a');
+    this.cameras.main.setBackgroundColor('#080914');
+
+    // Глубина фона: атмосферный темный градиент в стиле Новиграда / Банд
+    try {
+      const bgb = this.add.graphics();
+      bgb.fillStyle(0x0f1224, 1);
+      bgb.fillRect(0, 0, gameW(this), 240);
+      bgb.fillStyle(0x0a0c1a, 1);
+      bgb.fillRect(0, 240, gameW(this), 240);
+      bgb.fillStyle(0x060710, 1);
+      bgb.fillRect(0, 480, gameW(this), 240);
+      bgb.lineStyle(1, 0xffd24a, 0.2);
+      bgb.lineBetween(0, 56, gameW(this), 56);
+      bgb.lineBetween(0, 690, gameW(this), 690);
+    } catch (e) {}
+
     this.selectedClass = 'Assault';
     // Прямой вход на вкладку.
     const startView = data && data.view;
@@ -58,21 +73,57 @@ export default class InventoryScene extends Phaser.Scene {
       this.classColors[cd.id] = cd.color;
     });
 
-    this.add.text(_cx, 20, 'ИНВЕНТАРЬ', {
-      fontSize: '34px',
-      color: '#ffffff'
+    this.add.text(_cx, 24, 'ИНВЕНТАРЬ', {
+      fontSize: '28px',
+      color: '#ffffff',
+      fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    this.backBtn = this.add.text(UX(this, 70), 28, '← Назад', {
-      fontSize: '18px',
+    // Золотая черта с ромбом под заголовком
+    try {
+      const fl = this.add.graphics();
+      fl.lineStyle(2, 0xffd24a, 0.75);
+      fl.lineBetween(_cx - 100, 44, _cx + 100, 44);
+      fl.fillStyle(0xffd24a, 0.85);
+      const dd = 5;
+      fl.fillPoints([
+        new Phaser.Geom.Point(_cx, 44 - dd), new Phaser.Geom.Point(_cx + dd, 44),
+        new Phaser.Geom.Point(_cx, 44 + dd), new Phaser.Geom.Point(_cx - dd, 44)
+      ], true);
+    } catch (e) {}
+
+    // Кнопка Назад в стиле меню Банды: скругление, блик, подсветка рамки
+    const backX = UX(this, 70), backY = 28;
+    const backW = 104, backH = 34;
+    const backFr = this.add.graphics().setDepth(59);
+
+    const renderBack = (hot) => {
+      backFr.clear();
+      backFr.fillStyle(0x3a1e24, 1);
+      backFr.fillRoundedRect(backX - backW / 2, backY - backH / 2, backW, backH, 8);
+      backFr.fillStyle(0xffffff, hot ? 0.15 : 0.08);
+      backFr.fillRoundedRect(backX - backW / 2, backY - backH / 2, backW, 5, { tl: 8, tr: 8, bl: 0, br: 0 });
+      backFr.lineStyle(hot ? 2 : 1.5, hot ? 0xffff88 : 0x9e4a5a, 1);
+      backFr.strokeRoundedRect(backX - backW / 2, backY - backH / 2, backW, backH, 8);
+    };
+    renderBack(false);
+
+    this.backBtn = this.add.text(backX, backY, '← Назад', {
+      fontSize: '15px',
       color: '#ffffff',
-      backgroundColor: '#553333',
-      padding: 8
+      fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(60);
-    this.backBtn.setInteractive({ useHandCursor: true });
+    this.backBtn.setInteractive(new Phaser.Geom.Rectangle(backX - backW / 2, backY - backH / 2, backW, backH), Phaser.Geom.Rectangle.Contains);
+    this.backBtn.input.cursor = 'pointer';
     this.backBtn.on('pointerdown', () => this.scene.start('MenuScene'));
-    this.backBtn.on('pointerover', () => this.backBtn.setStyle({ color: '#ffff55' }));
-    this.backBtn.on('pointerout', () => this.backBtn.setStyle({ color: '#ffffff' }));
+    this.backBtn.on('pointerover', () => {
+      renderBack(true);
+      this.backBtn.setStyle({ color: '#ffff55' });
+    });
+    this.backBtn.on('pointerout', () => {
+      renderBack(false);
+      this.backBtn.setStyle({ color: '#ffffff' });
+    });
 
     this.drawTooltip();
     this.bindDrag();
