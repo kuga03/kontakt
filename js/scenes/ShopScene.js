@@ -305,7 +305,7 @@ export default class ShopScene extends Phaser.Scene {
       .sort((a, b) => (a.unlockLevel || 1) - (b.unlockLevel || 1));
     if (secs.length) groups.push({ id: '__sec__', names: secs.map(w => w.name) });
     if (!groups.length) {
-      cont.add(this.add.text(_cx, 360, 'Пока нечего точить — купи первый ствол во вкладке «Оружие».', {
+      cont.add(this.add.text(_cx, 360, 'Пока нет пушек для улучшения', {
         fontSize: '16px', color: '#667788'
       }).setOrigin(0.5));
       return;
