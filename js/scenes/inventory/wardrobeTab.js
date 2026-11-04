@@ -636,16 +636,18 @@ export function drawPlayerPanel() {
       abilBtn.setStyle({ color: '#ffffff' });
     });
 
-    // Мягкий постамент-подсветка под ногами живого 3D-рига
+    // Теневой постамент-подсветка под ногами живого 3D-рига
     const ped = this.add.graphics();
-    ped.fillStyle(0x000000, 0.45);
-    ped.fillEllipse(panel.x + panel.w / 2, panel.y + 208, 140, 24);
-    ped.fillStyle(0x386098, 0.14);
-    ped.fillEllipse(panel.x + panel.w / 2, panel.y + 208, 180, 34);
+    const pedX = panel.x + panel.w / 2;
+    const pedY = panel.y + 210;
+    ped.fillStyle(0x182438, 0.35);
+    ped.fillEllipse(pedX, pedY, 140, 22);
+    ped.fillStyle(0x080c14, 0.7);
+    ped.fillEllipse(pedX, pedY, 96, 14);
     c.add(ped);
 
-    // Живое превью из редактора персонажа
-    this._preview = this._spawnPreview(this.selectedClass, panel.x + panel.w / 2, panel.y + 128, true, 1.5);
+    // Живое превью из редактора персонажа (приподнято над слотами снаряжения)
+    this._preview = this._spawnPreview(this.selectedClass, panel.x + panel.w / 2, panel.y + 96, true, 1.5);
 
     this.drawEquipSlots(panel, c);
 

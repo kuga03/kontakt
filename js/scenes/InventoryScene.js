@@ -33,7 +33,7 @@ const COMPARE_SLOTS = [
 import * as ContractModal from './inventory/contractModal.js?v=2';
 import * as EquipDnD from './inventory/equipDnD.js?v=2';
 import * as SkinsTab from './inventory/skinsTab.js?v=2';
-import * as WardrobeTab from './inventory/wardrobeTab.js?v=399';
+import * as WardrobeTab from './inventory/wardrobeTab.js?v=400';
 import * as WeaponsTab from './inventory/weaponsTab.js?v=2';
 export default class InventoryScene extends Phaser.Scene {
   constructor() {
@@ -44,7 +44,7 @@ export default class InventoryScene extends Phaser.Scene {
     const _cx = gameW(this) / 2;
     this.cameras.main.setBackgroundColor('#080914');
 
-    // Глубина фона: атмосферный темный градиент в стиле Новиграда / Банд
+    // Глубина фона: атмосферный темный градиент
     try {
       const bgb = this.add.graphics();
       bgb.fillStyle(0x0f1224, 1);
@@ -53,9 +53,6 @@ export default class InventoryScene extends Phaser.Scene {
       bgb.fillRect(0, 240, gameW(this), 240);
       bgb.fillStyle(0x060710, 1);
       bgb.fillRect(0, 480, gameW(this), 240);
-      bgb.lineStyle(1, 0xffd24a, 0.2);
-      bgb.lineBetween(0, 56, gameW(this), 56);
-      bgb.lineBetween(0, 690, gameW(this), 690);
     } catch (e) {}
 
     this.selectedClass = 'Assault';
@@ -78,19 +75,6 @@ export default class InventoryScene extends Phaser.Scene {
       color: '#ffffff',
       fontStyle: 'bold'
     }).setOrigin(0.5);
-
-    // Золотая черта с ромбом под заголовком
-    try {
-      const fl = this.add.graphics();
-      fl.lineStyle(2, 0xffd24a, 0.75);
-      fl.lineBetween(_cx - 100, 44, _cx + 100, 44);
-      fl.fillStyle(0xffd24a, 0.85);
-      const dd = 5;
-      fl.fillPoints([
-        new Phaser.Geom.Point(_cx, 44 - dd), new Phaser.Geom.Point(_cx + dd, 44),
-        new Phaser.Geom.Point(_cx, 44 + dd), new Phaser.Geom.Point(_cx - dd, 44)
-      ], true);
-    } catch (e) {}
 
     // Кнопка Назад в стиле меню Банды: скругление, блик, подсветка рамки
     const backX = UX(this, 70), backY = 28;
