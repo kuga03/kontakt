@@ -95,6 +95,14 @@ export default class SkillsScene extends Phaser.Scene {
         fontStyle: 'bold'
       }).setOrigin(0.5);
       const btnFr = this.add.graphics();
+      let coin = null;
+      try {
+        if (this.textures.exists('icon_coins')) {
+          coin = this.add.image(0, 0, 'icon_coins').setOrigin(0.5).setVisible(false);
+          try { coin.setDisplaySize(20, 15); } catch (e) {}
+          this._resetSkillsCoin = coin;
+        }
+      } catch (e) { coin = null; }
       const paint = () => {
         const cost = skillResetCost();
         if (coin) coin.setVisible(false);

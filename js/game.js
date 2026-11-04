@@ -10,7 +10,7 @@ import SettingsScene, { getScreenRes, getFpsCap, getVsync } from './scenes/Setti
 import { getQuality, getCamShake } from './data/gameSettings.js';
 import LevelEditorScene from './scenes/LevelEditorScene.js?v=411';
 import MyLevelsScene from './scenes/MyLevelsScene.js?v=172';
-import SkillsScene from './scenes/SkillsScene.js?v=172';
+import SkillsScene from './scenes/SkillsScene.js?v=173';
 import GenomeScene from './scenes/GenomeScene.js?v=171';
 import AchievementsScene from './scenes/AchievementsScene.js?v=171';
 import FriendsScene from './scenes/FriendsScene.js?v=200';
