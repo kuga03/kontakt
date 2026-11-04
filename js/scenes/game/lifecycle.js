@@ -15,6 +15,7 @@ import * as Koth from '../../modes/koth.js?v=169';
 
 import * as Gang from '../../data/gang.js?v=7';
 import { isMutId, hasMut, stripToKnife, applySpawnStats } from '../../data/mutators.js?v=2';
+import { navGraph as navMeshGraph } from '../../ai/navMesh.js?v=25';
 
 import { gameW } from '../../ui/layout.js?v=3';
 
@@ -495,6 +496,15 @@ export function create(data) {
     // а не с хичом посреди боя на первой мысли бота. Работает на любой
     // карте — читает живые platforms/covers, включая редакторские.
     try { this._navGraph = this._buildNavGraph(); } catch (e) { this._navGraph = null; }
+    // Eager-bake графа перемещений (navMesh) для ботов (small + tall),
+    // если нет сюжетного интро (в кампании фоновый прогрев идёт во время чтения интро).
+    const _hasStory = !!(this.campaignLevel && this.campaignLevel.storyIntro && !gameState.demoMode);
+    if (!_hasStory) {
+      try {
+        navMeshGraph(this, false);
+        navMeshGraph(this, true);
+      } catch (e) {}
+    }
     this.createInput();
     this.createHud();
     this.createPauseMenu();

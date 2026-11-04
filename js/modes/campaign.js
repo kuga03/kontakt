@@ -3,6 +3,7 @@
 // (trackModalElems/hoverSfx/spawnPickup/groundHeightAt), ╤Б╨▓╨╛╨╕╤Е ╨╕╨╝╨┐╨╛╤А╤В╨╛╨▓ ╨╜╨╡╤В.
 import { gameW } from '../ui/layout.js?v=3';
 import Assault from '../entities/Assault.js?v=319';
+import { navGraph as navMeshGraph } from '../ai/navMesh.js?v=25';
 
 
 export function showStory(scene, text, onComplete, btnLabel) {
@@ -61,8 +62,12 @@ export function showStory(scene, text, onComplete, btnLabel) {
 
   let warmTimer = null;
   let animTimer = null;
+  let warmDone = true;
+  let curPct = 0;
+  let targetPct = 0;
 
   if (isIntro) {
+    warmDone = false;
     // ╨б╤В╨╕╨╗╤М╨╜╤Л╨╣ ╨┐╤А╨╛╨│╤А╨╡╤Б╤Б╨▒╨░╤А ╨┐╨╛╨┤╨│╨╛╤В╨╛╨▓╨║╨╕ ╨▒╨╛╤В╨╛╨▓ (╨║╨╕╨▒╨╡╤А╨┐╨░╨╜╨║ / ╨╝╨╕╨╗╨╕╤В╨░╤А╨╕ HUD)
     const barW = 340, barH = 10;
     const barY = 620;
@@ -75,36 +80,36 @@ export function showStory(scene, text, onComplete, btnLabel) {
 
     elements.push(barGfx, barLabel);
 
-    // ╨д╨╛╨╜╨╛╨▓╤Л╨╣ ╨┐╤А╨╛╨│╤А╨╡╨▓ ╨▒╨╛╤В╨╛╨▓ ╨┐╨╛ ╤З╨░╤Б╤В╤П╨╝:
+    // Фоновый прогрев навигации и ботов по шагам:
     const aiBots = (scene.players || []).filter(p => p && p.isAI && p.ai);
-    let warmIdx = 0;
-    let warmDone = false;
-    let curPct = 0;
-    let targetPct = 0;
+    let warmStep = 0;
+    let warmBotIdx = 0;
+    curPct = 0;
+    targetPct = 0;
 
     const redrawBar = (pct) => {
       if (finished) return;
       barGfx.clear();
       const bx = 640 - barW / 2;
-      // ╨в╤С╨╝╨╜╨░╤П ╤А╨░╨╝╨║╨░-╨┐╨╛╨┤╨╗╨╛╨╢╨║╨░
+      // Тёмная рамка-подложка
       barGfx.fillStyle(0x070c18, 0.9);
       barGfx.fillRoundedRect(bx - 3, barY - barH / 2 - 3, barW + 6, barH + 6, 6);
       barGfx.lineStyle(1.5, 0x1f3b5c, 0.9);
       barGfx.strokeRoundedRect(bx - 3, barY - barH / 2 - 3, barW + 6, barH + 6, 6);
 
-      // ╨Ч╨░╨┐╨╛╨╗╨╜╨╡╨╜╨╕╨╡ ╤Б ╨╜╨╡╨╛╨╜╨╛╨▓╤Л╨╝ ╨│╤А╨░╨┤╨╕╨╡╨╜╤В╨╛╨╝
+      // Заполнение с неоновым градиентом
       const fillW = Math.max(0, barW * pct);
       if (fillW > 0) {
         if (pct >= 1) {
-          // ╨Я╨╛╨╗╨╜╨░╤П ╨│╨╛╤В╨╛╨▓╨╜╨╛╤Б╤В╤М тАФ ╨╕╨╖╤Г╨╝╤А╤Г╨┤╨╜╨╛-╨╖╨╡╨╗╤С╨╜╤Л╨╣ ╨╜╨╡╨╛╨╜
+          // Полная готовность — изумрудно-зелёный неон
           barGfx.fillGradientStyle(0x00ff88, 0x00ff88, 0x00aa55, 0x00aa55, 1);
         } else {
-          // ╨Ч╨░╨│╤А╤Г╨╖╨║╨░ тАФ ╨║╨╕╨▒╨╡╤А╨┐╨░╨╜╨║ ╤Ж╨╕╨░╨╜/╨╗╨░╨╖╤Г╤А╤М
+          // Загрузка — киберпанк циан/лазурь
           barGfx.fillGradientStyle(0x00e5ff, 0x00e5ff, 0x0077cc, 0x0077cc, 1);
         }
         barGfx.fillRoundedRect(bx, barY - barH / 2, fillW, barH, 4);
 
-        // ╨б╨║╨╛╨╗╤М╨╖╤П╤Й╨╕╨╣ ╨▒╨╗╨╕╨║-╨┐╨╛╨┤╤Б╨▓╨╡╤В╨║╨░
+        // Скользящий блик-подсветка
         barGfx.fillStyle(0xffffff, 0.35);
         barGfx.fillRoundedRect(bx + 1, barY - barH / 2 + 1, Math.max(0, fillW - 2), Math.floor(barH / 2) - 1, 2);
       }
@@ -112,14 +117,14 @@ export function showStory(scene, text, onComplete, btnLabel) {
 
     redrawBar(0);
 
-    // ╨Я╨╗╨░╨▓╨╜╨░╤П ╨░╨╜╨╕╨╝╨░╤Ж╨╕╤П ╨┐╤А╨╛╤Ж╨╡╨╜╤В╨╛╨▓
+    // Плавная анимация процентов
     animTimer = scene.time.addEvent({
       delay: 30,
       loop: true,
       callback: () => {
         if (finished) return;
         if (curPct < targetPct) {
-          curPct = Math.min(targetPct, curPct + 0.04);
+          curPct = Math.min(targetPct, curPct + 0.05);
           redrawBar(curPct);
           const p100 = Math.round(curPct * 100);
           if (curPct >= 1) {
@@ -132,29 +137,39 @@ export function showStory(scene, text, onComplete, btnLabel) {
       }
     });
 
-    // ╨Я╨╛╤И╨░╨│╨╛╨▓╤Л╨╣ ╨┐╤А╨╛╨│╤А╨╡╨▓ ╨Ш╨Ш ╨▒╨╛╤В╨╛╨▓ (╨┐╨╛ 1 ╨▒╨╛╤В╤Г ╨▓ ╤В╨╕╨║ ╨┤╨╗╤П ╨╜╤Г╨╗╨╡╨▓╨╛╨╣ ╨╜╨░╨│╤А╤Г╨╖╨║╨╕)
+    // Пошаговый прогрев геометрии, навигации и ИИ ботов (до нажатия «В БОЙ!»)
     warmTimer = scene.time.addEvent({
-      delay: 70,
+      delay: 50,
       loop: true,
       callback: () => {
         if (finished || warmDone) return;
-        if (aiBots.length === 0) {
-          warmDone = true;
-          targetPct = 1;
-          if (warmTimer) { warmTimer.remove(); warmTimer = null; }
-          return;
-        }
-        const bot = aiBots[warmIdx];
-        if (bot && bot.ai) {
-          try {
-            const now = scene.time ? scene.time.now : 0;
-            // Прогрев ИИ: разовый проход update для предварительной инициализации
-            bot.ai.update(now, 33);
-          } catch (eWarm) {}
-        }
-        warmIdx++;
-        targetPct = Math.min(1, warmIdx / aiBots.length);
-        if (warmIdx >= aiBots.length) {
+        try {
+          if (warmStep === 0) {
+            // Шаг 1: построение графа навигации для обычных бойцов (H_SMALL)
+            navMeshGraph(scene, false);
+            warmStep = 1;
+            targetPct = 0.45;
+          } else if (warmStep === 1) {
+            // Шаг 2: построение графа навигации для тяжелых бойцов (H_TALL)
+            navMeshGraph(scene, true);
+            warmStep = 2;
+            targetPct = 0.80;
+          } else {
+            // Шаг 3: прогрев логики ИИ ботов (по 1-2 бота за такт)
+            if (aiBots.length > 0 && warmBotIdx < aiBots.length) {
+              const b = aiBots[warmBotIdx];
+              if (b && b.ai) {
+                try { b.ai.update(scene.time ? scene.time.now : 0, 33); } catch (e) {}
+              }
+              warmBotIdx++;
+              targetPct = 0.80 + 0.20 * Math.min(1, warmBotIdx / aiBots.length);
+            } else {
+              warmDone = true;
+              targetPct = 1;
+              if (warmTimer) { warmTimer.remove(); warmTimer = null; }
+            }
+          }
+        } catch (eWarm) {
           warmDone = true;
           targetPct = 1;
           if (warmTimer) { warmTimer.remove(); warmTimer = null; }
@@ -197,6 +212,19 @@ export function showStory(scene, text, onComplete, btnLabel) {
 
   const finish = () => {
     if (finished) return;
+    // Если игрок нажал «В БОЙ!» раньше завершения прогрева — завершаем прогрев ДО старта матча
+    if (!warmDone) {
+      try {
+        navMeshGraph(scene, false);
+        navMeshGraph(scene, true);
+        (scene.players || []).forEach(p => {
+          if (p && p.isAI && p.ai) {
+            try { p.ai.update(scene.time ? scene.time.now : 0, 33); } catch (e) {}
+          }
+        });
+      } catch (eWarm) {}
+      warmDone = true;
+    }
     finished = true;
     try { scene.input.off('pointerdown', onDown); } catch (e) {}
     try { scene.input.keyboard.off('keydown', onKey); } catch (e) {}
