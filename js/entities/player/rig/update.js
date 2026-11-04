@@ -754,7 +754,10 @@ export function previewScale(player, k) {
       try {
         const ccfg = partCfg(player, 'cap');
         if (player.capImg) {
-          const cs = Math.max(0.7, (ccfg.s || 11) / (player._geoCapH || 14));
+          // Тот же коэффициент, что в конструкторе Player: стоковые кепки
+          // чуть крупнее покупных уборов.
+          const stockCap = typeof player._geoCapKey === 'string' && player._geoCapKey.startsWith('__geo_cap');
+          const cs = Math.max(0.7, (ccfg.s || 11) / (player._geoCapH || 14)) * (stockCap ? 1.12 : 1);
           player.capImg.setScale(cs, cs);
         }
       } catch (e) {}

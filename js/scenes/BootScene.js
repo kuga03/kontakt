@@ -1,5 +1,5 @@
 import { applyVolumePatch } from '../data/audio.js?v=170';
-import { bakeGearTextures } from '../entities/Player.js?v=383';
+import { bakeGearTextures } from '../entities/Player.js?v=384';
 import { MAP_VER } from '../data/modeMaps.js?v=172';
 import { gameW } from '../ui/layout.js?v=3';
 import { GAME_VERSION } from './menu/showcase.js';
@@ -85,7 +85,7 @@ export default class BootScene extends Phaser.Scene {
     this._barFillFill = (w, h) => { this._barFill.clear(); this._barFill.fillGradientStyle(0x00d4aa, 0x66ccff, 0xffd166, 1); this._barFill.fillRect(barX + 1, barY - h/2 + 1, Math.max(0, w), h-2); };
     this._jokeIdx = Math.floor(Math.random() * FUNNY_LOADS.length);
     this._barPct = 0;
-    this._barText = this.add.text(W / 2, barY + 24, FUNNY_LOADS[this._jokeIdx] + ' 0%', {
+    this._barText = this.add.text(W / 2, barY + 24, FUNNY_LOADS[this._jokeIdx], {
       fontSize: '26px', color: '#8899bb'
     }).setOrigin(0.5);
     this._barPctLabel = this.add.text(barX + barW + 14, barY, '0%', {
@@ -501,7 +501,7 @@ export default class BootScene extends Phaser.Scene {
     if (!this._barText) return;
     const p = this._barPct || 0;
     const pct = Math.round(p * 100) + '%';
-    this._barText.setText(FUNNY_LOADS[this._jokeIdx % FUNNY_LOADS.length] + ' ' + pct);
+    this._barText.setText(FUNNY_LOADS[this._jokeIdx % FUNNY_LOADS.length]);
     if (this._barPctLabel) this._barPctLabel.setText(pct);
   }
 

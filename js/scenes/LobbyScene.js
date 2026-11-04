@@ -117,7 +117,7 @@ export default class LobbyScene extends Phaser.Scene {
     };
   }
 
-  create(data) {
+  create(data = {}) {
     const _cx = gameW(this) / 2;
     // Режим и персонаж переживают перезагрузку: режим — localStorage
     // (как разрешение в настройках), персонаж — lastClass в сейве.

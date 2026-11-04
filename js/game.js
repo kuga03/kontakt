@@ -1,6 +1,6 @@
 import BootScene from './scenes/BootScene.js?v=412';
 import MenuScene from './scenes/MenuScene2.js?v=379';
-import LobbyScene from './scenes/LobbyScene.js?v=206';
+import LobbyScene from './scenes/LobbyScene.js?v=207';
 import GameScene from './scenes/GameScene.js?v=414';
 import ShopScene from './scenes/ShopScene.js?v=180';
 import DonateScene from './scenes/DonateScene.js?v=3';

@@ -6,10 +6,10 @@ import * as Damage from './player/damage.js?v=318';
 import * as Shoot from './player/shoot.js?v=175';
 import * as Move from './player/move.js?v=170';
 import * as Abilities from './player/abilities.js?v=169';
-import * as Hud from './player/hud.js?v=394';
+import * as Hud from './player/hud.js?v=395';
 import * as Guns from './player/guns.js?v=175';
 import * as Aim from './player/aim.js?v=169';
-import * as Rig from './player/rig.js?v=395';
+import * as Rig from './player/rig.js?v=396';
 
 // ГЕОМЕТРИЧЕСКИЙ персонаж: вместо собранных PNG-скелетов тело рисуется
 // кодом (круг-голова с глазами, торс-эллипс, руки/ноги-палки, кисти и
@@ -338,7 +338,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       try {
         const _ch = scene.textures.get(_capKey).getSourceImage().height || 14;
         this._geoCapH = _ch;
-        const _cs = Math.max(0.7, (this._partCfg('cap').s || 11) / _ch);
+        // Стоковые (классовые) кепки чуть крупнее покупных уборов — иначе
+        // на голове они читаются мельче шлемов/фуражек при том же cap.s.
+        const _stockCap = _capKey.startsWith('__geo_cap');
+        const _cs = Math.max(0.7, (this._partCfg('cap').s || 11) / _ch) * (_stockCap ? 1.12 : 1);
         this.capImg.setScale(_cs, _cs);
       } catch (e) { this._geoCapH = 14; }
       this._allParts.push(this.capImg);

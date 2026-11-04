@@ -162,9 +162,13 @@ export function updateBars(player) {
         const cc = player._partCfg('cap');
         const tkey = (player.capImg.texture && player.capImg.texture.key) || '';
         const tw = (player.capImg.frame && player.capImg.frame.realWidth) || player.capImg.displayWidth || 30;
-        const fit = (GEAR_FIT[tkey] ?? (tkey.startsWith('__geo_cap') ? 1.1 : 1.2));
+        const stockCap = tkey.startsWith('__geo_cap');
+        const fit = (GEAR_FIT[tkey] ?? (stockCap ? 1.1 : 1.2));
         const headD = (player.head && player.head.displayWidth) || hr * 2;
-        const cs = (headD * fit / Math.max(1, tw)) * ((cc.s || 11) / 11 / (player._previewK || 1));
+        // Стоковые (классовые) кепки чуть крупнее покупных уборов — тот же
+        // коэффициент, что в Player/previewScale. updateBars пересчитывает
+        // масштаб каждый кадр и перекрывает значения конструктора.
+        const cs = (headD * fit / Math.max(1, tw)) * ((cc.s || 11) / 11 / (player._previewK || 1)) * (stockCap ? 1.12 : 1);
         player.capImg.setScale(cs * fside, cs);
       } catch (e) {}
       player.capImg.setPosition(headX, headY - hr * 0.82);

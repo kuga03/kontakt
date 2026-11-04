@@ -5,4 +5,4 @@ export * from './rig/gear.js?v=395';
 export * from './rig/legs.js?v=383';
 export * from './rig/arms.js?v=396';
 export * from './rig/shoes.js';
-export * from './rig/update.js?v=395';
+export * from './rig/update.js?v=396';
