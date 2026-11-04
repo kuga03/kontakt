@@ -1,4 +1,5 @@
 import { gameW, UX } from '../ui/layout.js?v=3';
+import { syncGameState } from '../data/gameState.js?v=175';
 
 import { classDefinitions } from '../data/weapons.js?v=170';
 
@@ -41,6 +42,7 @@ export default class InventoryScene extends Phaser.Scene {
   }
 
   create(data) {
+    syncGameState();
     const _cx = gameW(this) / 2;
     this.cameras.main.setBackgroundColor('#080914');
 

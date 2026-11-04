@@ -1,5 +1,5 @@
 import { gameW, UX } from '../ui/layout.js?v=3';
-import { resetProgress, resetCampaign, addCoins, addExperience, saveGameState, gameState, renamePlayer, unlockHead, unlockShoes, unlockTorso, unlockPants } from '../data/gameState.js?v=175';
+import { resetProgress, resetCampaign, addCoins, addExperience, saveGameState, syncGameState, gameState, renamePlayer, unlockHead, unlockShoes, unlockTorso, unlockPants } from '../data/gameState.js?v=175';
 import { campaignLevels } from '../data/levels.js?v=172';
 import { GEAR_ITEMS } from '../data/wardrobe.js?v=172';
 import { musicVol, sfxVol, volLabel, refreshLiveVolumes } from '../data/audio.js?v=170';
@@ -112,6 +112,7 @@ export default class SettingsScene extends Phaser.Scene {
   }
 
   create() {
+    syncGameState();
     const _cx = gameW(this) / 2;
     this.cameras.main.setBackgroundColor('#0a0a2a');
     this.resetPending = false;
@@ -496,8 +497,8 @@ export default class SettingsScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(302));
 
     const rowY = [190, 250, 310, 370, 430];
-    const labelX = [240, 700];
-    const btnX = [560, 1000];
+    const labelX = [cx - 400, cx + 60];
+    const btnX = [cx - 80, cx + 360];
     const keyBtns = [];
     KEY_ACTIONS.forEach((a, i) => {
       const col = i < 5 ? 0 : 1;

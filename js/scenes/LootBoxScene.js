@@ -5,6 +5,7 @@ import {
   unlockSkin,
   addCoins,
   saveGameState,
+  syncGameState,
   getPass,
   recordPassProgress
 } from '../data/gameState.js?v=175';
@@ -99,6 +100,7 @@ export default class LootBoxScene extends Phaser.Scene {
   }
 
   create() {
+    syncGameState();
     const _cx = gameW(this) / 2;
     this.cameras.main.setBackgroundColor('#0a0a2a');
     this.activeButton = null;

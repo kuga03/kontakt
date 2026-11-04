@@ -5,7 +5,7 @@ import { weaponIcon, weaponImage, weaponHudScale, getWeaponLabel, weaponHasMag, 
 import { getClassAbility, ultUnlocked } from '../../data/abilities.js?v=169';
 import { getRank } from '../../data/ranks.js?v=169';
 
-import { getShowFps } from '../SettingsScene.js?v=176';
+import { getShowFps } from '../SettingsScene.js?v=182';
 
 import Assault from '../../entities/Assault.js?v=380';
 import Tank from '../../entities/Tank.js?v=380';

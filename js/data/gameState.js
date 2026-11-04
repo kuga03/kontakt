@@ -720,6 +720,11 @@ export function syncGameState() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
+        Object.keys(defaultState).forEach(k => {
+          if (parsed[k] !== undefined) {
+            gameState[k] = parsed[k];
+          }
+        });
         if (Number.isFinite(+parsed.campaignLevel)) {
           gameState.campaignLevel = Math.max(1, Math.floor(+parsed.campaignLevel));
         }

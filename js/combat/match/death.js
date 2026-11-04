@@ -7,8 +7,16 @@ import { gameW } from '../../ui/layout.js?v=3';
 import { bumpObj } from '../score.js';
 import { flushPlayTime, recordPlayerKill, killXP, rewardObjectiveEvent } from './activity.js';
 import { recordMatch } from './endGame.js';
-// База своей команды (игрок в одиночке всегда за синих).
-function _teamBaseX(scene) {
+// База своей команды (игрок в одиночке обычно за синих, но в кастомных матчах/командах может быть за красных).
+function _teamBaseX(scene, victim) {
+  const isRed = victim && victim.team === 'red';
+  const W = scene.mapWidth || 3000;
+  if (isRed) {
+    return scene.mode === 'CTF' ? (W - 220)
+      : scene.mode === 'TDM' ? (W - 180)
+      : scene.mode === 'BOMB' ? (W - 220)
+      : scene.mode === 'KOTH' ? (W - 220) : (W - 260);
+  }
   return scene.mode === 'CTF' ? 220
     : scene.mode === 'TDM' ? 180
     : scene.mode === 'BOMB' ? 220
@@ -17,7 +25,7 @@ function _teamBaseX(scene) {
 
 // Кандидаты точки возрождения игрока. Место смерти в них не входит:
 // берём спавны карты/базы (командные режимы) или разброс по арене (FFA).
-function _playerRespawnCandidates(scene) {
+function _playerRespawnCandidates(scene, victim) {
   const out = [];
   const seen = new Set();
   const push = (x, y) => {
@@ -44,12 +52,20 @@ function _playerRespawnCandidates(scene) {
       }
     } else {
       // Командные режимы: точки карты (team/player) — они и есть своя база.
-      (cs.team || []).forEach(s => { if (s) push(s.x, s.y); });
-      if (cs.player) push(cs.player.x, cs.player.y);
-      const baseX = _teamBaseX(scene);
+      const isRed = victim && victim.team === 'red';
+      const teamSpawns = isRed ? cs.enemy : cs.team;
+      (teamSpawns || []).forEach(s => { if (s) push(s.x, s.y); });
+      if (!isRed && cs.player) push(cs.player.x, cs.player.y);
+      const baseX = _teamBaseX(scene, victim);
+      const W = scene.mapWidth || 3000;
       // Запас по своей стороне: даже если умер на базе — встанем рядом,
       // но не в ту же точку. ±80 — тот же разброс, что был у старой базы.
-      [-80, 0, 80, 140, 280, 420].forEach(dx => push(baseX + dx, null));
+      [-80, 0, 80, 140, 280, 420].forEach(dx => {
+        const cx = isRed
+          ? Math.max(80, Math.min(W - 80, baseX - dx))
+          : Math.max(80, Math.min(W - 80, baseX + dx));
+        push(cx, null);
+      });
     }
   } catch (e) {}
   return out;
@@ -59,7 +75,7 @@ function _playerRespawnCandidates(scene) {
 // от живых врагов (анти-спавн-килл). Возвращает {x,y}.
 function _pickPlayerRespawn(scene, victim, deathX, deathY) {
   const valid = [];
-  for (const c of _playerRespawnCandidates(scene)) {
+  for (const c of _playerRespawnCandidates(scene, victim)) {
     let x = c.x, y = c.y;
     try {
       if (!Number.isFinite(y)) y = scene._groundSpawnY(x);
@@ -71,7 +87,7 @@ function _pickPlayerRespawn(scene, victim, deathX, deathY) {
     valid.push({ x, y });
   }
   if (!valid.length) {
-    const bx = _teamBaseX(scene);
+    const bx = _teamBaseX(scene, victim);
     const by = scene._groundSpawnY ? scene._groundSpawnY(bx) : (scene.mapHeight ? scene.mapHeight - 120 : 750);
     return { x: bx, y: by };
   }
@@ -88,7 +104,7 @@ function _pickPlayerRespawn(scene, victim, deathX, deathY) {
   );
   // В командных режимах база — дом: из подходящих точек берём ближайшую
   // к своей базе (но не место смерти). В FFA базы нет — уходим от смерти.
-  const anchorX = _teamBaseX(scene);
+  const anchorX = _teamBaseX(scene, victim);
   if (scene.mode !== 'FFA') {
     // В командных режимах база — главный приоритет.
     // Сначала ищем точки кандидатов у базы (|x - anchorX| <= 100).
@@ -292,20 +308,40 @@ export function handleDeath(scene, victim, killer, src) {
     // а респаун должен знать, откуда выбирать точку подальше.
     const deathX = victim.x, deathY = victim.y;
     scene._respawnAt = (Number.isFinite(scene._loopNow) ? scene._loopNow : scene.time.now) + rdl;
+
+    // Заранее выбираем точку возрождения, чтобы плавно перевести камеру к ней
+    const rp = _pickPlayerRespawn(scene, victim, deathX, deathY);
+
+    // Пауза перед полётом: ~450мс игрок видит место смерти и убийцу,
+    // затем камера плавно панорамирует к точке будущего спавна.
+    const pauseBeforePan = Math.min(450, Math.floor(rdl * 0.2));
+    const panDur = Math.max(600, Math.min(2600, rdl - pauseBeforePan - 100));
+
+    scene.time.delayedCall(pauseBeforePan, () => {
+      if (!victim.dead || scene.gameOver) return;
+      try {
+        if (scene.cameras && scene.cameras.main) {
+          scene.cameras.main.stopFollow();
+          scene.cameras.main.pan(rp.x, rp.y, panDur, 'Cubic.easeInOut', true);
+        }
+      } catch (e) {}
+    });
+
     scene.time.delayedCall(rdl, () => {
       // Пока тикал таймер — могли реснуть, закончить матч или встать на паузу:
       // второй ревайв живого посреди боя / ревайв за модалкой запрещены.
       if (!victim.dead || scene.gameOver) return;
-      // Точка — спавн своей стороны, подальше от места смерти. Раньше
-      // в командных режимах брали фиксированную базу, а в FFA — случайный
-      // x: и в том, и в другом боёвка у спавна давала вставание ровно
-      // там, где убили. Теперь место смерти исключено, если есть альтернатива.
-      const rp = _pickPlayerRespawn(scene, victim, deathX, deathY);
       victim.revive(rp.x, rp.y);
       // Стекло: revive сбрасывает damageMult игрока — вернуть ×2.
       try { reapplyGlassOnRevive(victim, scene.mutators); } catch (e) {}
-      // Камера не должна ползти к базе с места смерти: снимок сразу.
-      try { scene.cameras.main.centerOn(rp.x, rp.y); } catch (e) {}
+      // Возвращаем следование камеры за ожившим игроком
+      try {
+        if (scene.cameras && scene.cameras.main) {
+          try { if (scene.cameras.main.panEffect) scene.cameras.main.panEffect.reset(); } catch (ePan) {}
+          scene.cameras.main.centerOn(rp.x, rp.y);
+          scene.cameras.main.startFollow(victim, true, 0.1, 0.1);
+        }
+      } catch (e) {}
       // Якорь патруля/лиша ИИ — на новый спавн (иначе вокруг старой точки).
       try {
         if (victim.ai) {

@@ -1,5 +1,5 @@
 import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState } from '../data/gameState.js?v=175';
+import { gameState, syncGameState } from '../data/gameState.js?v=175';
 import {
   skillDefinitions,
   SKILL_ORDER,
@@ -43,6 +43,7 @@ export default class SkillsScene extends Phaser.Scene {
   }
 
   create() {
+    syncGameState();
     this.cameras.main.setBackgroundColor('#080914');
 
     // Атмосферный темный градиент фона (в стиле Инвентаря / Банд)

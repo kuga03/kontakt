@@ -1,6 +1,6 @@
 
 import { ensureClassBadgeTextures } from '../../data/weapons.js?v=170';
-import { getShowFps } from '../../scenes/SettingsScene.js?v=176';
+import { getShowFps } from '../../scenes/SettingsScene.js?v=182';
 
 import { gameState } from '../../data/gameState.js?v=175';
 

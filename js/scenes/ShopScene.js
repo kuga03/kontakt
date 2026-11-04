@@ -1,5 +1,5 @@
 import { gameW, UX } from '../ui/layout.js?v=3';
-import { gameState, hasWeapon, unlockWeapon, saveGameState, hasHead, getEquippedHead, hasShoes, getEquippedShoes, hasTorso, getEquippedTorso, hasPants, getEquippedPants } from '../data/gameState.js?v=175';
+import { gameState, hasWeapon, unlockWeapon, saveGameState, syncGameState, hasHead, getEquippedHead, hasShoes, getEquippedShoes, hasTorso, getEquippedTorso, hasPants, getEquippedPants } from '../data/gameState.js?v=175';
 import {
   weaponsList,
   classDefinitions,
@@ -43,6 +43,7 @@ export default class ShopScene extends Phaser.Scene {
   }
 
   create(data) {
+    syncGameState();
     const _cx = gameW(this) / 2;
     this.cameras.main.setBackgroundColor('#0a0a2a');
     this.activeButton = null;

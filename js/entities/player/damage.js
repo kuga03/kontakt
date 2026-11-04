@@ -144,6 +144,26 @@ export function die(player, killer) {
   player.setVelocity(0, 0);
   player.setActive(false);
   player.setVisible(false);
+  // Отключаем физические тела на время смерти: чтобы тело не собирало
+  // пули/коллизии и не накапливало фантомные смещения на таймере респауна.
+  try {
+    if (player.body) {
+      player.body.enable = false;
+      player.body.stop();
+    }
+  } catch (e) {}
+  try {
+    if (player.head && player.head.body) {
+      player.head.body.enable = false;
+      player.head.body.stop();
+    }
+  } catch (e) {}
+  try {
+    if (player.neck && player.neck.body) {
+      player.neck.body.enable = false;
+      player.neck.body.stop();
+    }
+  } catch (e) {}
   // Сброшенная перезарядка не должна «добивать» таймером после смерти.
   try {
     player.inventory.forEach(w => w && w.cancelReload && w.cancelReload());
@@ -408,8 +428,29 @@ export function revive(player, x, y) {
       if (sc._inSolid(nx, ny, 30)) { nx = x; ny = y; }
     }
   } catch (e) {}
-  player.setPosition(nx, ny);
+  // ВАЖНО для Arcade Physics: обычный setPosition оставляет body.prev
+  // на месте смерти. В следующем кадре SeparateX/SeparateY видит дельту
+  // через полкарты (_dx = nx - deathX) и вышвыривает тело назад к месту
+  // смерти или в текстуры. body.reset сбрасывает prev/prevFrame в новую точку.
+  if (player.body) {
+    player.body.enable = true;
+    player.body.reset(nx, ny);
+  } else {
+    player.setPosition(nx, ny);
+  }
   player.setVelocity(0, 0);
+  try {
+    if (player.head && player.head.body) {
+      player.head.body.enable = true;
+      player.head.body.reset(nx, ny - 44);
+    }
+  } catch (e) {}
+  try {
+    if (player.neck && player.neck.body) {
+      player.neck.body.enable = true;
+      player.neck.body.reset(nx, ny - 32);
+    }
+  } catch (e) {}
   // k290: точка возрождения в журнал спавнов (карманы на спавне).
   try {
     if (player.scene && typeof player.scene._logSpawn === 'function') player.scene._logSpawn(player, nx, ny);
