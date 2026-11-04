@@ -2,7 +2,7 @@ import Assault from '../../entities/Assault.js?v=319';
 import Tank from '../../entities/Tank.js?v=319';
 import Medic from '../../entities/Medic.js?v=319';
 import Sniper from '../../entities/Sniper.js?v=320';
-import Flag from '../../entities/Flag.js?v=170';
+import Flag from '../../entities/Flag.js?v=172';
 import Bomb from '../../entities/Bomb.js?v=169';
 
 

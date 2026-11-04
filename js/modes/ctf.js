@@ -1,7 +1,7 @@
 // ctf.js — режим «Захват флага» + общие баннеры/звуки объективов
 // (было в GameScene). _rewardObjective и _playFlagSfx общие с BOMB —
 // bomb.js зовёт их через сцену.
-import Flag from '../entities/Flag.js?v=171';
+import Flag from '../entities/Flag.js?v=172';
 import { gameState, addCoins, addExperience } from '../data/gameState.js?v=175';
 import { bumpObj } from '../combat/match.js?v=350';
 
@@ -57,7 +57,7 @@ export function startCtfSuddenDeath(scene) {
       if (typeof scene._escapeSolid === 'function') {
         const p = scene._escapeSolid(gf.x, gf.y, 30);
         gf.setPosition(p.x, p.y);
-        gf.body.reset(p.x, p.y);
+        if (gf.body) gf.body.updateFromGameObject();
       }
     } catch (e) {}
   } catch (e) { scene.ctfSuddenFlag = null; }
@@ -213,16 +213,22 @@ export function ctfFlagReturnedBanner(scene, f) {
 
 // k404: флаг на платформе брался прыжком ПОД ней (окно 40×90 без
 // проверки преграды — боты «возвращали» не залезая). Гейт: между
-// центрами не должно быть солида (середины отрезка пробником 6).
-// Прыжок над лежащим флагом и подход по той же плите — чистят,
-// подкоп через плиту/ящик — нет. Только чтения, fail-open
-// (без _inSolid — как раньше). Дешёвый: 3 точки на пару.
+// центрами не должно быть твердой преграды.
+// Точная проверка тел платформ и укрытий (без раздутой 30px navGrid-сетки,
+// которая блокировала подбор лежащего на краю флага).
 function flagReachable(scene, p, f) {
   try {
-    if (!scene || typeof scene._inSolid !== 'function') return true;
-    for (const t of [0.3, 0.55, 0.8]) {
-      const x = p.x + (f.x - p.x) * t, y = p.y + (f.y - p.y) * t;
-      if (scene._inSolid(x, y, 6)) return false;
+    if (!scene) return true;
+    const fx = f.x, fy = f.y - 10;
+    const px = p.x, py = p.y;
+    const checkSolid = (x, y) => {
+      if (typeof scene._inSolidExact === 'function') return scene._inSolidExact(x, y, 0);
+      if (typeof scene._inSolid === 'function') return scene._inSolid(x, y, -2);
+      return false;
+    };
+    for (const t of [0.25, 0.5, 0.75]) {
+      const x = px + (fx - px) * t, y = py + (fy - py) * t;
+      if (checkSolid(x, y)) return false;
     }
     return true;
   } catch (e) { return true; }

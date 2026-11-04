@@ -22,7 +22,7 @@ import * as NavGraph from '../world/navGraph.js?v=172';
 import * as Hud from '../ui/hud.js?v=371';
 import * as Trial from '../modes/trial.js?v=206';
 import * as Koth from '../modes/koth.js?v=169';
-import * as Ctf from '../modes/ctf.js?v=350';
+import * as Ctf from '../modes/ctf.js?v=351';
 import * as BombMode from '../modes/bomb.js?v=350';
 import * as Campaign from '../modes/campaign.js?v=175';
 import * as Match from '../combat/match.js?v=349';
@@ -54,7 +54,7 @@ const MAP_THEMES = {
 
 import * as Lifecycle from './game/lifecycle.js';
 import * as MapBuilder from './game/mapBuilder.js?v=411';
-import * as ModeObjects from './game/modeObjects.js?v=411';
+import * as ModeObjects from './game/modeObjects.js?v=412';
 import * as MatchTick from './game/matchTick.js?v=6';
 import * as Spawns from './game/spawns.js?v=305';
 

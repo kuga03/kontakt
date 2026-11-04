@@ -26,36 +26,41 @@ export default class Flag extends Phaser.GameObjects.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Если флаг застрял внутри солида (часто на платформах при сбросе/спавне) —
-    // сдвигаем его чуть выше, чтобы не проваливался в текстуру.
-    try {
-      if (this.scene && typeof this.scene._inSolid === 'function' && this.scene._inSolid(this.x, this.y, 6)) {
-        const spot = this._escapeBody(this.x, this.y, true);
-        if (spot) {
-          this.setPosition(spot.x, spot.y);
-          if (this.body) this.body.reset(spot.x, spot.y);
-        }
-      }
-    } catch (e) {}
-    this.body.setAllowGravity(false);
-    // Маленькое тело у основания древка, а НЕ весь кадр (265x566):
-    // большое тело цепляло платформы/землю в радиусе 100+px, физика
-    // каждый шаг вышвыривала флаг с базы, стоявший рядом защитник
-    // своей команды касался его — возврат срабатывал заново:
-    // бесконечный спам «ФЛАГ ВОЗВРАЩЁН НА БАЗУ» (4-й уровень).
-    // Подбор/возврат идут по дистанции (40x90), не по телу.
+    // Компактное физическое тело у основания древка (ширина 24px, высота 32px в мировых координатах):
+    // достаточная толщина, чтобы гарантированно не проваливаться сквозь 16px платформы
+    // и швы между блоками при падении.
     try {
       const fw = (this.frame && this.frame.width) || 36;
       const fh = (this.frame && this.frame.height) || 77;
-      const bw = Math.max(20, fw * 0.25), bh = Math.max(20, fh * 0.22);
+      const sx = this.scaleX || 1, sy = this.scaleY || 1;
+      const bw = Math.min(fw, Math.max(16, 24 / sx));
+      const bh = Math.min(fh, Math.max(20, 32 / sy));
       this.body.setSize(bw, bh);
       this.body.setOffset((fw - bw) / 2, fh - bh - 2);
     } catch (e) { try { this.body.setSize(this.width, this.height); } catch (e2) {} }
-    // Потерянный флаг падает на землю: отскок + трение + границы мира.
-    // Коллайдеры с платформами/ящиками вешает сцена (createModeObjects).
-    try { this.body.setBounce(0.3); } catch (e) {}
-    try { this.body.setDragX(300); } catch (e) {}
+    // Потерянный флаг падает на землю: минимальный отскок (без заклиниваний в потолках),
+    // быстрое гашение горизонтальной скорости.
+    try { this.body.setBounce(0.05); } catch (e) {}
+    try { this.body.setDragX(350); } catch (e) {}
     try { this.body.setCollideWorldBounds(true); } catch (e) {}
+    this.body.setAllowGravity(false);
+
+    // Если флаг застрял внутри солида при спавне — сдвигаем его на поверхность
+    try {
+      if (this.body) this.body.updateFromGameObject();
+      const cx = this.body ? this.body.x + this.body.width / 2 : this.x;
+      const cy = this.body ? this.body.y + this.body.height / 2 : this.y;
+      const isSolid = typeof scene._inSolidExact === 'function'
+        ? scene._inSolidExact(cx, cy, 0)
+        : (typeof scene._inSolid === 'function' ? scene._inSolid(cx, cy, -2) : false);
+      if (isSolid) {
+        const spot = this._escapeBody(cx, cy, true);
+        if (spot) {
+          this.setPosition(this.x + (spot.x - cx), this.y + (spot.y - cy));
+          if (this.body) this.body.updateFromGameObject();
+        }
+      }
+    } catch (e) {}
   }
 
   pickUp(player) {
@@ -74,41 +79,15 @@ export default class Flag extends Phaser.GameObjects.Sprite {
     }
   }
 
-drop() {
+  drop() {
     if (!this.carrier) {
       return;
     }
 
-    // Выталкиваем по РЕАЛЬНОМУ телу флага (маленький бокс у основания древка),
-    // а НЕ по центру носильщика. Центр игрока у стены попадает в раздутую
-    // клетку сетки твёрдости, и escapeSolid (ходит только ВВЕРХ) уводил флаг
-    // наверх — он оказывался на платформе над головой вместо того, чтобы
-    // лечь у ног. После броска на F флаг «подбрасывался» у стене и улетал
-    // туда же. Флаг падает там, где был за спиной, в своё реальное тело.
-    try { if (this.body) { this.body.enable = true; this.body.reset(this.x, this.y); } } catch (e) {}
-    try {
-      if (this.scene && this.body && typeof this.scene._inSolid === 'function') {
-        const cx = this.body.x + this.body.width / 2;
-        const cy = this.body.y + this.body.height / 2;
-        if (this.scene._inSolid(cx, cy, 6)) {
-          const spot = this._escapeBody(cx, cy, false);
-          if (spot) {
-            // Двигаем флаг так, чтобы свободной стала именно точка его тела.
-            this.setPosition(this.x + (spot.x - cx), this.y + (spot.y - cy));
-            try { this.body.reset(this.x, this.y); } catch (e2) {}
-          } else {
-            // Свободного места рядом нет — на базу, иначе флаг залипнет в текстуре.
-            this.returnToBase();
-            try { this._noPickupUntil = this.scene.time.now + 1000; } catch (e3) {}
-            return;
-          }
-        }
-      }
-    } catch (e) {}
     try { this.carrier.isCarrier = false; this.carrier.isFlagCarrier = false; } catch (e) {}
     this.carrier = null;
-    // Потерянный флаг падает на землю, а не висит в воздухе.
-    // Тело включаем обратно (на носке было выключено от выталкиваний).
+
+    // Включаем тело и гравитацию — потерянный флаг падает на землю
     try { if (!this.body.enable) this.body.enable = true; } catch (e) {}
     try { this.body.setAllowGravity(true); } catch (e) {}
     try { this.body.setVelocity(0, 0); } catch (e) {}
@@ -116,31 +95,65 @@ drop() {
     // Секунда без подбора (как у бомбы): иначе сброс на F подбирается
     // обратно мгновенно, не отходя.
     try { this._noPickupUntil = (this.scene ? this.scene.time.now : 0) + 1000; } catch (e) {}
+
+    // Если основание флага при сбросе попало в плиту или стену — выталкиваем на поверхность
+    try {
+      if (this.scene && this.body) {
+        this.body.updateFromGameObject();
+        const cx = this.body.x + this.body.width / 2;
+        const cy = this.body.y + this.body.height / 2;
+        const isSolid = typeof this.scene._inSolidExact === 'function'
+          ? this.scene._inSolidExact(cx, cy, 0)
+          : (typeof this.scene._inSolid === 'function' ? this.scene._inSolid(cx, cy, -2) : false);
+
+        if (isSolid) {
+          const spot = this._escapeBody(cx, cy, true);
+          if (spot) {
+            this.setPosition(this.x + (spot.x - cx), this.y + (spot.y - cy));
+            this.body.updateFromGameObject();
+            this.body.setVelocity(0, 0);
+          }
+        }
+      }
+    } catch (e) {}
   }
 
-  // Ищем свободную точку для тела флага. k464: порядок — ВНИЗ, затем бока,
-  // затем ВВЕРХ не выше 54px (малый подъём, чтобы выйти из плиты, на которой
-  // стоим). Раньше начиналось с «вверх до 216px» — флаг, выпавший под
-  // платформой, перекидывался на неё («кинул вверх — перелетел через плиту»).
-  // Перенос флага к ногам при сбросе пробовал — дал стоянки по 200с, откачен.
+  // Ищем свободную точку для тела флага при попадании в геометрию.
+  // 1. ВВЕРХ (на поверхность платформы/пола) с шагом 4..44px — флаг при падении
+  //    касается верхней грани платформы. Выход вверх возвращает его ровно на поверхность,
+  //    не давая провалиться сквозь тонкие (16px) плиты.
+  // 2. В стороны (если застрял в вертикальном укрытии или ящике).
+  // 3. Вниз (только если сверху глухой потолок).
   _escapeBody(cx, cy, allowUp = true) {
     const scene = this.scene;
-    const free = (x, y) => {
-      try { return !scene._inSolid(x, y, 6); } catch (e) { return false; }
+    const isSolid = (x, y) => {
+      try {
+        if (typeof scene._inSolidExact === 'function') return scene._inSolidExact(x, y, 0);
+        if (typeof scene._inSolid === 'function') return scene._inSolid(x, y, -2);
+        return false;
+      } catch (e) { return false; }
     };
-    if (free(cx, cy)) return { x: cx, y: cy };
-    for (let dy = 18; dy <= 216; dy += 18) {
-      if (free(cx, cy + dy)) return { x: cx, y: cy + dy };
-    }
-    for (const dx of [-30, 30, -60, 60, -90, 90, -120, 120, -160, 160]) {
-      for (const dy of [0, 18, 36]) {
-        if (free(cx + dx, cy + dy)) return { x: cx + dx, y: cy + dy };
+    if (!isSolid(cx, cy)) return { x: cx, y: cy };
+
+    // 1. ВВЕРХ на поверхность платформы/пола (малые шаги)
+    if (allowUp) {
+      for (const dy of [-4, -8, -12, -16, -20, -28, -36, -44]) {
+        if (!isSolid(cx, cy + dy)) return { x: cx, y: cy + dy };
       }
     }
-    if (!allowUp) return null;
-    for (let dy = -18; dy >= -54; dy -= 18) {
-      if (free(cx, cy + dy)) return { x: cx, y: cy + dy };
+
+    // 2. В стороны (вертикальные укрытия/ящики)
+    for (const dx of [-16, 16, -32, 32, -48, 48, -64, 64]) {
+      for (const dy of [0, -8, -16, 8]) {
+        if (!isSolid(cx + dx, cy + dy)) return { x: cx + dx, y: cy + dy };
+      }
     }
+
+    // 3. Вниз (если сверху потолок)
+    for (const dy of [12, 24, 36, 48]) {
+      if (!isSolid(cx, cy + dy)) return { x: cx, y: cy + dy };
+    }
+
     return null;
   }
 
@@ -161,7 +174,6 @@ drop() {
     try { this.droppedAt = this.scene ? this.scene.time.now : 0; } catch (e) {}
     // Точка базы внутри геометрии — вытолкнуть наверх: иначе коллайдер
     // вышвырнет флаг и начнётся цикл «возврат-касание-возврат».
-    // baseX/baseY не двигаем (это дом флага), правим только позу.
     try {
       if (this.scene && typeof this.scene._escapeSolid === 'function' &&
           typeof this.scene._inSolid === 'function' &&
@@ -170,6 +182,7 @@ drop() {
         this.setPosition(p.x, p.y);
       }
     } catch (e) {}
+    try { if (this.body) this.body.updateFromGameObject(); } catch (e2) {}
   }
 
   update() {
@@ -212,37 +225,48 @@ drop() {
       } catch (e) {}
     } else if (!this.carrier) {
       try { if (this.alpha !== 1) this.alpha = 1; } catch (e) {}
-      // kXXX: флаг в свободном состоянии не должен висеть в пропасти,
-      // падать сквозь геометрию или застревать у ящика — оттуда подбрать
-      // его невозможно. Срочно перемещаем на свободную точку рядом
-      // (откуда флаг достижим); если свободной точки рядом нет —
-      // возвращаем на базу.
+      // Флаг в свободном состоянии не должен висеть в пропасти под картой или застревать в платформе.
+      // Если тело застряло — выталкиваем на ближайшую поверхность;
+      // если улетел в бездну ниже карты — возвращаем на базу.
       if (this._flagStuck()) {
         try {
-          const cx = this.body ? this.body.x + this.body.width / 2 : this.x;
-          const cy = this.body ? this.body.y + this.body.height / 2 : this.y;
-          const spot = this._escapeBody(cx, cy, false);
-          if (spot) {
-            this.setPosition(this.x + (spot.x - cx), this.y + (spot.y - cy));
-            try { if (this.body) this.body.reset(this.x, this.y); } catch (e2) {}
-          } else {
+          const mh = this.scene ? (this.scene.mapHeight || 3000) : 3000;
+          if (this.y > mh - 40) {
             this.returnToBase();
+          } else {
+            const cx = this.body ? this.body.x + this.body.width / 2 : this.x;
+            const cy = this.body ? this.body.y + this.body.height / 2 : this.y;
+            const spot = this._escapeBody(cx, cy, true);
+            if (spot) {
+              this.setPosition(this.x + (spot.x - cx), this.y + (spot.y - cy));
+              if (this.body) {
+                this.body.updateFromGameObject();
+                this.body.setVelocity(0, 0);
+              }
+            } else {
+              this.returnToBase();
+            }
           }
         } catch (e) { this.carrier = null; }
       }
     }
   }
 
-  // Флаг свободен, но его позиция недостижима для подбора: внутри солида,
-  // ниже уровня мира (пропасть после броска/падения) — «застрял».
-  // Возвращает true — нужно срочно переместить флаг.
+  // Флаг свободен, но его тело глубоко застряло в солиде или провалилось в бездну под картой.
   _flagStuck() {
     const scene = this.scene;
     try {
       if (!this.body || this.body.enable === false) return false;
-      if (typeof scene._inSolid === 'function' && scene._inSolid(this.x, this.y, 8)) return true;
       const mh = scene.mapHeight || 3000;
       if (this.y > mh - 40) return true;
+      const cx = this.body.x + this.body.width / 2;
+      const cy = this.body.y + this.body.height / 2;
+      if (typeof scene._inSolidExact === 'function') {
+        return scene._inSolidExact(cx, cy, 0);
+      }
+      if (typeof scene._inSolid === 'function') {
+        return scene._inSolid(cx, cy, -2);
+      }
       return false;
     } catch (e) { return false; }
   }
