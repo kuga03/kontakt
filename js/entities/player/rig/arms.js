@@ -1,37 +1,123 @@
 ﻿import { weaponImage } from '../../../data/weapons.js?v=170';
 
 import { RIG_DEFAULTS } from '../../../data/rigConfig.js?v=169';
-import { getCharacterColors } from '../../../data/gameState.js?v=175';
+import { getCharacterColors, getEquippedTorso } from '../../../data/gameState.js?v=175';
 
-import { ensureGeoTextures } from './gear.js';
+import { ensureGeoTextures } from './gear.js?v=395';
 import { artTex, cropH, cropInfo, cropW, elbowCache, GEO_HUMAN, jointsCache, partCfg } from './config.js';
+
+// Средний цвет текстуры торса: рукав должен совпадать с надетым торсом,
+// а не с абстрактным «цветом тела». Кэш на ключ текстуры.
+const torsoColorCache = new Map();
+function texAvgColor(scene, key) {
+  if (!key) return null;
+  if (torsoColorCache.has(key)) return torsoColorCache.get(key);
+  let out = null;
+  try {
+    if (!scene || !scene.textures || !scene.textures.exists(key)) return null;
+    const src = scene.textures.get(key).getSourceImage();
+    const w = (src && src.width) | 0, h = (src && src.height) | 0;
+    if (!w || !h) return null;
+    let ctx = src.getContext ? src.getContext('2d') : null;
+    let data;
+    if (ctx) {
+      data = ctx.getImageData(0, 0, w, h).data;
+    } else {
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      ctx = cv.getContext('2d');
+      ctx.drawImage(src, 0, 0);
+      data = ctx.getImageData(0, 0, w, h).data;
+    }
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const a = data[i + 3];
+      if (a < 24) continue;
+      r += data[i] * a; g += data[i + 1] * a; b += data[i + 2] * a; n += a;
+    }
+    if (n > 0) out = (Math.round(r / n) << 16) | (Math.round(g / n) << 8) | Math.round(b / n);
+  } catch (e) { out = null; }
+  torsoColorCache.set(key, out);
+  return out;
+}
+
+function mulColor(a, b) {
+  const r = Math.round(((a >> 16) & 255) * ((b >> 16) & 255) / 255);
+  const g = Math.round(((a >> 8) & 255) * ((b >> 8) & 255) / 255);
+  const bl = Math.round((a & 255) * (b & 255) / 255);
+  return (r << 16) | (g << 8) | bl;
+}
+
+function lightenColor(c, k) {
+  const r = Math.min(255, Math.round(((c >> 16) & 255) * k));
+  const g = Math.min(255, Math.round(((c >> 8) & 255) * k));
+  const b = Math.min(255, Math.round((c & 255) * k));
+  return (r << 16) | (g << 8) | b;
+}
+
+function tintPart(p, c) {
+  try { if (p && typeof p.setTint === 'function') p.setTint(c); } catch (e) {}
+}
+
+// Рукав = средний цвет надетого торса (торс красится цветом тела, поэтому
+// умножаем на него же). Кисть/предплечье = выбранный цвет кожи.
+function armColors(player) {
+  let bodyC = 0x888888;
+  let skinC = 0xd49a6a;
+  try {
+    const cc = getCharacterColors() || {};
+    if (Number.isFinite(cc.body)) bodyC = cc.body;
+    if (Number.isFinite(cc.head)) skinC = cc.head;
+  } catch (e) {}
+  if (Number.isFinite(player._bodyColor)) bodyC = player._bodyColor;
+  if (Number.isFinite(player._skinColor)) skinC = player._skinColor;
+  let sleeveC = bodyC;
+  try {
+    let tex = null;
+    if (player._botGear && player._botGear.torso) {
+      tex = player._botGear.torso;
+    } else if (!player._netForeign) {
+      const cls = (player.constructor && player.constructor.name) || undefined;
+      tex = getEquippedTorso(cls);
+    }
+    const avg = texAvgColor(player.scene, tex);
+    if (avg != null) sleeveC = mulColor(avg, bodyC);
+  } catch (e) {}
+  return { sleeveC: lightenColor(sleeveC, 1.12), skinC };
+}
+
+function applyArmColors(player, sleeveC, skinC) {
+  const sleeves = [player._armUpRear, player._armUpFront].filter(Boolean);
+  const skins = [player._armForeRear, player._armForeFront, player._handRear, player._handFront].filter(Boolean);
+  player._sleeveParts = sleeves;
+  player._skinParts = skins;
+  player._sleeveColor = sleeveC;
+  player._skinColor = skinC;
+  sleeves.forEach(p => tintPart(p, sleeveC));
+  skins.forEach(p => tintPart(p, skinC));
+  // Тинт тела/команды вешаем только на рукав. Кисти — всегда кожа.
+  sleeves.forEach(p => {
+    player._tintParts = player._tintParts || [];
+    if (!player._tintParts.includes(p)) player._tintParts.push(p);
+  });
+}
+
 export function buildArmsSkeleton(player) {
   const scene = player.scene;
   player._gunArt = true;
   const ac = partCfg(player, 'arms');
-
-  // Цвет рукавов = цвет тела гардероба чуть светлее (под торсом).
-  let sleeveC = 0x4488aa;
-  try {
-    const base = (typeof getCharacterColors === 'function' && getCharacterColors() && getCharacterColors().body) ? getCharacterColors().body : 0x4488aa;
-    const r = (base >> 16) & 0xFF, g = (base >> 8) & 0xFF, b = base & 0xFF;
-    sleeveC = ((Math.min(255, Math.round(r * 1.15)) << 16) | (Math.min(255, Math.round(g * 1.15)) << 8) | Math.min(255, Math.round(b * 1.15)));
-  } catch (e) {}
+  const { sleeveC, skinC } = armColors(player);
 
   // задняя (гриф/рукоятка) — ПРАВАЯ рука. Контейнер НАД автоматом (4.6>4.2):
   // рукав поверх футболки, перчатка поверх рукоятки — пальцы обхватывают,
   // а не приклеены под стволом.
   player.armGun = scene.add.container(player.x, player.y).setDepth(4.6);
-  const cc = sleeveC;
-  const handC = (typeof getCharacterColors === 'function' && getCharacterColors() && getCharacterColors().body) ? getCharacterColors().body : sleeveC;
   if (!buildArmSide(player, 'r', player.armGun, ac)) {
-    player._armUpRear = armPart(player, 'chr_arm_up', cc);
-    player._armForeRear = armSlots(player, 'chr_arm_fore', cc, '_r');
-    player._handRear = armSlots(player, 'chr_hand', handC, '_r');
+    player._armUpRear = armPart(player, 'chr_arm_up', sleeveC);
+    player._armForeRear = armSlots(player, 'chr_arm_fore', skinC, '_r');
+    player._handRear = armSlots(player, 'chr_hand', skinC, '_r');
     player.armGun.add([player._armUpRear, player._armForeRear, player._handRear]);
   }
-  // Рукава должны перекрашиваться вместе с торсом (tint гардероба).
-  try { [player._armUpRear, player._armForeRear, player._handRear].forEach(p => { if (p) player._tintParts = player._tintParts || []; if (p && !player._tintParts.includes(p)) player._tintParts.push(p); }); } catch(e){}
   player._allParts.push(player.armGun);
 
   // передняя (цевьё) — ЛЕВАЯ рука. Контейнер ЗА торсом (3.6<4): дальняя рука
@@ -39,13 +125,14 @@ export function buildArmsSkeleton(player) {
   // на другом слое с правой (4.6), не на одном.
   player.armFront = scene.add.container(player.x, player.y).setDepth(3.6);
   if (!buildArmSide(player, 'l', player.armFront, ac)) {
-    player._armUpFront = armPart(player, 'chr_arm_up', cc);
-    player._armForeFront = armSlots(player, 'chr_arm_fore', cc, '_l');
-    player._handFront = armSlots(player, 'chr_hand', handC, '_l');
+    player._armUpFront = armPart(player, 'chr_arm_up', sleeveC);
+    player._armForeFront = armSlots(player, 'chr_arm_fore', skinC, '_l');
+    player._handFront = armSlots(player, 'chr_hand', skinC, '_l');
     player.armFront.add([player._armUpFront, player._armForeFront, player._handFront]);
   }
-  try { [player._armUpFront, player._armForeFront, player._handFront].forEach(p => { if (p) { player._tintParts = player._tintParts || []; if (!player._tintParts.includes(p)) player._tintParts.push(p); } }); } catch(e){}
   player._allParts.push(player.armFront);
+
+  applyArmColors(player, sleeveC, skinC);
 
   const realT = k => !!(k && scene.textures.exists(k));
   console.info('[RIG] skeleton arms (2 руки):', JSON.stringify({
@@ -77,10 +164,8 @@ function buildArmSide(player, sac, container, ac) {
   const hand = hiddenHand(player, 0xffcc99);
   if (sac === 'r') {
     player._armUpRear = up; player._armForeRear = fore; player._handRear = hand;
-    try { [up, fore, hand].forEach(p => { if (p) { player._tintParts = player._tintParts || []; if (!player._tintParts.includes(p)) player._tintParts.push(p); } }); } catch(e){}
   } else {
     player._armUpFront = up; player._armForeFront = fore; player._handFront = hand;
-    try { [up, fore, hand].forEach(p => { if (p) { player._tintParts = player._tintParts || []; if (!player._tintParts.includes(p)) player._tintParts.push(p); } }); } catch(e){}
   }
   container.add([up, fore, hand]);
   player._armsSliced = player._armsSliced || [];

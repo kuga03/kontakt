@@ -1,7 +1,7 @@
 
 
 import { RIG_DEFAULTS } from '../../../data/rigConfig.js?v=169';
-import { poseArm } from './arms.js?v=395';
+import { poseArm } from './arms.js?v=396';
 import { anchorFor, flipX } from './shoes.js';
 import { GEO_HUMAN, partCfg, targetH } from './config.js';
 import { legIK, playStep, setBone } from './legs.js';

@@ -1,4 +1,4 @@
-import { currentSeasonId } from './pass.js?v=170';
+import { currentSeasonId, initTierProgress, recordPassProgress as recordPassProgressPass } from './pass.js?v=175';
 
 // Версия формата сейва: сейвы без версии считаются v1.
 const SAVE_VER = 2;
@@ -441,6 +441,7 @@ if (!gameState.pass || typeof gameState.pass !== 'object') {
 if (!gameState.pass.claimed || typeof gameState.pass.claimed !== 'object') gameState.pass.claimed = { n: {}, p: {} };
 if (!gameState.pass.claimed.n || typeof gameState.pass.claimed.n !== 'object') gameState.pass.claimed.n = {};
 if (!gameState.pass.claimed.p || typeof gameState.pass.claimed.p !== 'object') gameState.pass.claimed.p = {};
+if (!gameState.pass.tierProgress || typeof gameState.pass.tierProgress !== 'object') gameState.pass.tierProgress = {};
 ['kills', 'wins', 'damage', 'matches', 'cases'].forEach(k => {
   if (typeof gameState.pass[k] !== 'number') gameState.pass[k] = 0;
 });
@@ -454,10 +455,20 @@ if (typeof gameState.pass.premium !== 'boolean') gameState.pass.premium = false;
 export function getPass() {
   const sid = 'S' + currentSeasonId();
   if (!gameState.pass || gameState.pass.seasonId !== sid) {
-    gameState.pass = { seasonId: sid, premium: false, kills: 0, wins: 0, damage: 0, matches: 0, cases: 0, claimed: { n: {}, p: {} } };
+    gameState.pass = { seasonId: sid, premium: false, kills: 0, wins: 0, damage: 0, matches: 0, cases: 0, tierProgress: {}, claimed: { n: {}, p: {} } };
     saveGameState();
   }
+  if (!gameState.pass.tierProgress || typeof gameState.pass.tierProgress !== 'object') {
+    gameState.pass.tierProgress = {};
+  }
+  initTierProgress(gameState.pass);
   return gameState.pass;
+}
+
+export function recordPassProgress(type, amount = 1) {
+  const ps = getPass();
+  recordPassProgressPass(ps, type, amount);
+  saveGameState();
 }
 
 export function mostPlayedClass() {

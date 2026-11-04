@@ -1,5 +1,5 @@
 import { applyVolumePatch } from '../data/audio.js?v=170';
-import { bakeGearTextures } from '../entities/Player.js?v=382';
+import { bakeGearTextures } from '../entities/Player.js?v=383';
 import { MAP_VER } from '../data/modeMaps.js?v=172';
 import { gameW } from '../ui/layout.js?v=3';
 import { GAME_VERSION } from './menu/showcase.js';

@@ -175,7 +175,6 @@ export default class MenuScene extends Phaser.Scene {
       ? `ИВЕНТ: ${evDef.name.toUpperCase()}`
       : `${evDef.name.toUpperCase()} · ${fmtCountdown((nextWeekendStart() || new Date()).getTime() - Date.now())}`;
     const rightBtns = [
-      { label: 'ПЕРСОНАЖ', icon: 'person', cb: () => this.scene.start('RigEditorScene') },
       {
         label: evLabel, icon: 'event', glow: evWeekend && gameState.level >= 3, pulse: evWeekend && gameState.level >= 3,
         // Текст блокировки только про уровень; «ждём пятницу» убрали —
@@ -244,7 +243,7 @@ export default class MenuScene extends Phaser.Scene {
     const leftFont = 19;
     const leftH = 5 * leftGap + 40;
     // Низ профиля не упирается в ряд контрактов (низ 630): кламп.
-    const rightPanelH = Math.min(4 * GAP + 54 + 128, 618 - PANEL_TOP);
+    const rightPanelH = Math.min(rightBtns.length * GAP + 54 + 128, 618 - PANEL_TOP);
     this._panel(COL_LEFT, PANEL_TOP, panelW, leftH, 'АРСЕНАЛ');
     this._panel(COL_RIGHT, PANEL_TOP, panelW, rightPanelH, 'ПРОФИЛЬ');
     this._openSection = openSection;

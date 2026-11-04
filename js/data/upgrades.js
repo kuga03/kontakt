@@ -7,8 +7,19 @@ import { gameState, saveGameState, addCoins } from './gameState.js?v=175';
 import { weaponsList } from './weapons.js?v=170';
 
 export const UPGRADE_MAX = 5;
-// Цена перехода (N-1) → N.
-const UPGRADE_COSTS = [1000, 2500, 6000, 15000, 40000];
+
+// Цена следующего уровня (N-1 → N) = процент от цены оружия с минимумом.
+// Вариант А: пропорционально цене оружия.
+export function upgradeCostFor(name, level) {
+  try {
+    const w = weaponsList.find(v => v && v.name === name);
+    const base = (w && Number.isFinite(w.price)) ? w.price : 1000;
+    const pct = [0.25, 0.35, 0.5, 0.7, 1.0][level] || 1.0;
+    const min = [500, 800, 1200, 2000, 3500][level] || 3500;
+    return Math.max(min, Math.round(base * pct));
+  } catch (e) { return [500, 800, 1200, 2000, 3500][level] || 3500; }
+}
+
 // Что даёт каждый уровень (текст для окна подтверждения).
 export const UPGRADE_BONUS = [
   'перезарядка −6%',
@@ -48,7 +59,9 @@ export function nextUpgradeCost(name) {
   try {
     const lv = getWeaponLevel(name);
     if (lv >= UPGRADE_MAX) return null;
-    return UPGRADE_COSTS[lv];
+    // Теперь считается через upgradeCostFor(name, lv).
+    // old: return UPGRADE_COSTS[lv];
+    return upgradeCostFor(name, lv);
   } catch (e) { return null; }
 }
 
@@ -57,7 +70,7 @@ export function upgradeWeapon(name) {
     if (!isUpgradeable(name)) return { ok: false, reason: 'melee' };
     const lv = getWeaponLevel(name);
     if (lv >= UPGRADE_MAX) return { ok: false, reason: 'max' };
-    const price = UPGRADE_COSTS[lv];
+    const price = upgradeCostFor(name, lv);
     if ((Number(gameState.coins) || 0) < price) return { ok: false, reason: 'coins' };
     addCoins(-price);
     levels()[name] = lv + 1;

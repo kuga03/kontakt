@@ -1,16 +1,15 @@
-import BootScene from './scenes/BootScene.js?v=411';
+import BootScene from './scenes/BootScene.js?v=412';
 import MenuScene from './scenes/MenuScene2.js?v=379';
 import LobbyScene from './scenes/LobbyScene.js?v=206';
 import GameScene from './scenes/GameScene.js?v=414';
 import ShopScene from './scenes/ShopScene.js?v=180';
 import DonateScene from './scenes/DonateScene.js?v=3';
 import LootBoxScene from './scenes/LootBoxScene.js?v=175';
-import InventoryScene from './scenes/InventoryScene.js?v=191';
+import InventoryScene from './scenes/InventoryScene.js?v=192';
 import SettingsScene, { getScreenRes, getFpsCap, getVsync } from './scenes/SettingsScene.js?v=181';
 import { getQuality, getCamShake } from './data/gameSettings.js';
 import LevelEditorScene from './scenes/LevelEditorScene.js?v=411';
 import MyLevelsScene from './scenes/MyLevelsScene.js?v=172';
-import RigEditorScene from './scenes/RigEditorScene.js?v=380';
 import SkillsScene from './scenes/SkillsScene.js?v=171';
 import GenomeScene from './scenes/GenomeScene.js?v=171';
 import AchievementsScene from './scenes/AchievementsScene.js?v=171';
@@ -117,7 +116,6 @@ const config = {
     SettingsScene,
     LevelEditorScene,
     MyLevelsScene,
-    RigEditorScene,
     SkillsScene,
     GenomeScene,
     AchievementsScene,

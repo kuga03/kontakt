@@ -79,7 +79,7 @@ export function drawProfilePanel(panel, parent) {
     const bodyHex = `#${activeBody}`;
 
     // Квадратики вдвое меньше (17px) и впритык к надписи.
-    this.drawSwatches(panel, 'ЦВЕТ ГОЛОВЫ', HEAD_COLORS, headHex, 'head', panel.y + 78, panel.y + 96, parent, 17);
+    this.drawSwatches(panel, 'ЦВЕТ КОЖИ', HEAD_COLORS, headHex, 'head', panel.y + 78, panel.y + 96, parent, 17);
 
     // Гардероб: купленные уборы (кроме сетовых — они надеваются в сетах
     // ниже) и обувь — клик надевает. Ряды впритык к заголовкам.
@@ -93,7 +93,7 @@ export function drawProfilePanel(panel, parent) {
       fontSize: '13px', color: '#ffdd88'
     }).setOrigin(0, 0.5);
     if (parent) parent.add(wardNote);
-    // Рядов уборов/обуви больше нет: только ник, цвет головы и сеты.
+    // Рядов уборов/обуви больше нет: только ник, цвет кожи и сеты.
     // Отдельные вещи надеваются кликом по иконкам сетов ниже.
     // Сеты одежды: имя + бонус двумя строками (в одну не влезали —
     // соседние колонки сливались), ниже — 4 предмета.

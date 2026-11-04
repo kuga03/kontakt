@@ -1,4 +1,4 @@
-import { gameState, addCoins, addExperience, advanceCampaignLevel, saveGameState, getPass } from '../../data/gameState.js?v=175';
+import { gameState, addCoins, addExperience, advanceCampaignLevel, saveGameState, recordPassProgress } from '../../data/gameState.js?v=175';
 import { campaignLevels } from '../../data/levels.js?v=172';
 
 import { checkBattleMedals, awardMedals } from '../../data/medals.js?v=176';
@@ -64,8 +64,7 @@ export function endGame(scene, message, playerWon = false) {
       if (st) {
         if (playerWon) {
           st.wins = (st.wins | 0) + 1;
-          const ps = getPass();
-          ps.wins = (ps.wins | 0) + 1;
+          recordPassProgress('wins');
         } else {
           st.losses = (st.losses | 0) + 1;
         }
@@ -556,8 +555,7 @@ export function recordMatch(scene, playerWon) {
     try {
       // Недельный контракт «бои»: любой доигранный матч (кроме демо).
       if (!(scene.player && scene.player._demoPuppet)) {
-        const ps = getPass();
-        ps.matches = (ps.matches | 0) + 1;
+        recordPassProgress('matches');
       }
     } catch (e) {}
     // Процент побед — только матчи на Бывалом и выше (кроме испытания:

@@ -289,9 +289,7 @@ export default class ShopScene extends Phaser.Scene {
     this.columnContainers = [];
     const cont = this.add.container(0, 0);
     this._upCont = cont;
-    cont.add(this.add.text(_cx, 95, 'Только стволы · урон и темп не меняются · боты воюют стоком', {
-      fontSize: '13px', color: '#99aacc', align: 'center'
-    }).setOrigin(0.5));
+
     // Группы в порядке магазинных колонок + второе оружие отдельно.
     // Внутри группы — порядок weaponByClass (как в магазине).
     let ownedSet = null;
@@ -496,12 +494,10 @@ export default class ShopScene extends Phaser.Scene {
     const bg = this.add.rectangle(cx, cy, W, H, 0x14142e, 1).setDepth(301)
       .setStrokeStyle(2, 0xffd24a, 1);
     elems.push(overlay, bg);
-    elems.push(this.add.text(cx, cy - H / 2 + 28, `ЗАТОЧКА · ${label}`, {
+    elems.push(this.add.text(cx, cy - H / 2 + 28, `УЛУЧШЕНИЕ · ${label}`, {
       fontSize: '19px', color: '#ffdd88', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(302));
-    elems.push(this.add.text(cx, cy - H / 2 + 56, `Уровень +${lv} из +${UPGRADE_MAX} · урон и темп не меняются`, {
-      fontSize: '13px', color: '#99aacc'
-    }).setOrigin(0.5).setDepth(302));
+
     UPGRADE_BONUS.forEach((b, i) => {
       const done = i < lv, next = i === lv;
       const mark = done ? '✓' : (next ? '→' : '·');

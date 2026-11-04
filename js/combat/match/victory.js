@@ -1,4 +1,4 @@
-import { gameState, addCoins, addExperience, advanceCampaignLevel, getPass, unlockWeapon, hasWeapon } from '../../data/gameState.js?v=175';
+import { gameState, addCoins, addExperience, advanceCampaignLevel, recordPassProgress, unlockWeapon, hasWeapon } from '../../data/gameState.js?v=175';
 import { campaignLevels } from '../../data/levels.js?v=172';
 
 import { gameW } from '../../ui/layout.js?v=3';
@@ -110,8 +110,7 @@ export function completeCampaignLevel(scene) {
     if (st) {
       st.campaignWins = (st.campaignWins | 0) + 1;
       st.wins = (st.wins | 0) + 1;
-      const ps = getPass();
-      ps.wins = (ps.wins | 0) + 1;
+      recordPassProgress('wins');
     }
   } catch (e) {}
   recordMatch(scene, true);

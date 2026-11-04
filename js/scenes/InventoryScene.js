@@ -33,7 +33,7 @@ const COMPARE_SLOTS = [
 import * as ContractModal from './inventory/contractModal.js';
 import * as EquipDnD from './inventory/equipDnD.js';
 import * as SkinsTab from './inventory/skinsTab.js';
-import * as WardrobeTab from './inventory/wardrobeTab.js';
+import * as WardrobeTab from './inventory/wardrobeTab.js?v=398';
 import * as WeaponsTab from './inventory/weaponsTab.js';
 export default class InventoryScene extends Phaser.Scene {
   constructor() {

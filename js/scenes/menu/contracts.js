@@ -1,5 +1,5 @@
 import { gameState, addCoins, saveGameState, getPass } from '../../data/gameState.js?v=175';
-import { PASS_TIERS, PASS_QUESTS, PASS_PREMIUM_PRICE, passDaysLeft, passEndDate, passQuestProgress, passTierUnlocked, passClaimedCount, passHasUnclaimed, passActiveTier } from '../../data/pass.js?v=170';
+import { PASS_TIERS, PASS_QUESTS, PASS_PREMIUM_PRICE, passDaysLeft, passEndDate, passQuestProgress, passTierUnlocked, passTierDone, passQuestUnlocked, passClaimedCount, passHasUnclaimed, passActiveTier } from '../../data/pass.js?v=175';
 
 import Assault from '../../entities/Assault.js?v=319';
 import Tank from '../../entities/Tank.js?v=319';
@@ -131,8 +131,9 @@ export function _closeContracts() {
       for (let i = 1; i <= PASS_TIERS; i++) {
         if (cl[i]) continue;
         if (!passTierUnlocked(ps, track, i)) continue;
+        if (!passTierDone(ps, i)) continue;
         const q = PASS_QUESTS[i - 1];
-        if (!q || passQuestProgress(ps, q) < q.need) continue;
+        if (!q) continue;
         if (track === 'p' && !ps.premium) continue;
         cl[i] = true;
         gained += track === 'n' ? q.reward : q.rewardP;
@@ -453,8 +454,7 @@ export function _passCellArt(gr, ps, track, i, cx, rowY, CW, CH) {
     const q = PASS_QUESTS[i - 1];
     if (!q) return;
     const unlocked = passTierUnlocked(ps, track, i);
-    const cur = passQuestProgress(ps, q);
-    const done = cur >= q.need;
+    const done = passTierDone(ps, i);
     const claimed = !!((ps.claimed[track] || {})[i]);
     const isP = track === 'p';
     const canClaim = unlocked && done && !claimed && (!isP || ps.premium);
@@ -506,7 +506,7 @@ export function _passMissionArt(gr, ps, i, cx, midY, CW, midH) {
     if (!q) return;
     const unlocked = passTierUnlocked(ps, 'n', i);
     const cur = passQuestProgress(ps, q);
-    const done = cur >= q.need;
+    const done = passTierDone(ps, i);
 
     // Фон карточки задания
     gr.fillStyle(unlocked ? (done ? 0x131f18 : 0x131626) : 0x0c0d16, 0.96);
@@ -546,8 +546,7 @@ export function _passCellLive(strip, ps, track, i, cx, rowY, CW, CH, viewL, view
     const q = PASS_QUESTS[i - 1];
     if (!q) return;
     const unlocked = passTierUnlocked(ps, track, i);
-    const cur = passQuestProgress(ps, q);
-    const done = cur >= q.need;
+    const done = passTierDone(ps, i);
     const claimed = !!((ps.claimed[track] || {})[i]);
     const isP = track === 'p';
     const canClaim = unlocked && done && !claimed && (!isP || ps.premium);
@@ -616,7 +615,7 @@ export function _passMissionLive(strip, ps, i, cx, midY, CW, midH) {
     if (!q) return;
     const unlocked = passTierUnlocked(ps, 'n', i);
     const cur = passQuestProgress(ps, q);
-    const done = cur >= q.need;
+    const done = passTierDone(ps, i);
 
     // Номер яруса
     const pillY = midY - midH / 2 + 13;

@@ -1,4 +1,4 @@
-import { gameState, addCoins, addExperience, saveGameState, getPass } from '../../data/gameState.js?v=175';
+import { gameState, addCoins, addExperience, saveGameState, recordPassProgress } from '../../data/gameState.js?v=175';
 
 import * as Gang from '../../data/gang.js?v=7';
 import { reapplyGlassOnRevive } from '../../data/mutators.js?v=2';
@@ -25,8 +25,7 @@ export function recordPlayerKill(scene, killer) {
     st.kills = (st.kills | 0) + 1;
     const cls = (killer && killer.constructor && killer.constructor.name) || scene.selectedClass || 'Assault';
     st.killsByClass[cls] = (st.killsByClass[cls] | 0) + 1;
-    const ps = getPass();
-    ps.kills = (ps.kills | 0) + 1;
+    recordPassProgress('kills');
     // Фраги по стволам за матч (калибровка медалей/баланса пушек).
     try {
       scene._wstats = scene._wstats || {};

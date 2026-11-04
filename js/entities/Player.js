@@ -9,7 +9,7 @@ import * as Abilities from './player/abilities.js?v=169';
 import * as Hud from './player/hud.js?v=394';
 import * as Guns from './player/guns.js?v=175';
 import * as Aim from './player/aim.js?v=169';
-import * as Rig from './player/rig.js?v=394';
+import * as Rig from './player/rig.js?v=395';
 
 // ГЕОМЕТРИЧЕСКИЙ персонаж: вместо собранных PNG-скелетов тело рисуется
 // кодом (круг-голова с глазами, торс-эллипс, руки/ноги-палки, кисти и
@@ -207,16 +207,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this._buildLegsRun();
     }
 
-    this._buildArmsSkeleton();
-    // GEO: рукава красятся цветом тела вместе с футболкой.
-    if (typeof GEO_HUMAN !== 'undefined' && GEO_HUMAN) {
-      [this._armUpRear, this._armUpFront].forEach(img => {
-        if (img && !img._boneRect && !img._hiddenBySlice) this._tintParts.push(img);
-      });
-    }
-    this.gun.setVisible(true);
-    this.setAlpha(0);
-
+    // Цвета нужны ДО сборки рук: рукав красится под надетый торс,
+    // кисть — под выбранную кожу.
     const charColors = getCharacterColors();
     // Сетевой чужак: кожа владельца (иначе все чужие с лицом хоста).
     try {
@@ -224,6 +216,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       if (Number.isFinite(gb) && gb >= 0 && gb <= 0xffffff) charColors.head = gb;
       else if (this.isAI) charColors.head = BOT_SKIN[(Math.random() * BOT_SKIN.length) | 0];
     } catch (e) {}
+    this._skinColor = charColors.head;
+    this._bodyColor = charColors.body;
+
+    this._buildArmsSkeleton();
+    this.gun.setVisible(true);
+    this.setAlpha(0);
+
     const _geoHeadR = (typeof GEO_HUMAN !== 'undefined' && GEO_HUMAN)
       ? Math.max(6, (this._partCfg('head').s || 16) * 0.5)
       : 11;
@@ -481,13 +480,31 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   refreshBodyColor() {
     if (this.isAI) return;
-    this.setTint(getCharacterColors().body);
+    const c = getCharacterColors();
+    this._bodyColor = c.body;
+    this._skinColor = c.head;
+    this.setTint(c.body);
   }
 
   setTint(color) {
     super.setTint(color);
     this._partsTint = color;
     (this._tintParts || []).forEach(p => p && p.setTint(color));
+    // Рукав в одиночной игре совпадает с торсом; командный/ульт-тинт
+    // (цвет != цвет тела) красит его как весь остальной корпус.
+    const isBody = this._bodyColor != null && color === this._bodyColor;
+    const sleeveC = isBody && this._sleeveColor != null ? this._sleeveColor : color;
+    (this._sleeveParts || []).forEach(p => {
+      try { if (p && typeof p.setTint === 'function') p.setTint(sleeveC); } catch (e) {}
+    });
+    // Кисти/предплечья всегда остаются выбранным цветом кожи.
+    (this._skinParts || []).forEach(p => {
+      try {
+        if (p && typeof p.setTint === 'function') {
+          p.setTint(this._skinColor != null ? this._skinColor : color);
+        }
+      } catch (e) {}
+    });
     return this;
   }
 

@@ -1,4 +1,4 @@
-import Player from './Player.js?v=382';
+import Player from './Player.js?v=383';
 import { classAbilities } from '../data/abilities.js?v=169';
 
 export default class Tank extends Player {

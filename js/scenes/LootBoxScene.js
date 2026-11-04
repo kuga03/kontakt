@@ -5,7 +5,8 @@ import {
   unlockSkin,
   addCoins,
   saveGameState,
-  getPass
+  getPass,
+  recordPassProgress
 } from '../data/gameState.js?v=175';
 
 import { weaponsList, getWeaponLabel, weaponImage } from '../data/weapons.js?v=170';
@@ -794,8 +795,7 @@ export default class LootBoxScene extends Phaser.Scene {
     gameState.coins -= total;
     try {
       if (gameState.stats) gameState.stats.cases = (gameState.stats.cases | 0) + this.openCount;
-      const _ps = getPass();
-      _ps.cases = (_ps.cases | 0) + this.openCount;
+      recordPassProgress('cases', this.openCount);
     } catch (e) {}
     try { saveGameState(); } catch (e) {}
 

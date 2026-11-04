@@ -291,17 +291,18 @@ export function ensureGeoTextures(player, scene) {
       // тенью локтевого сгиба и тактическими часами/манжетой у запястья.
       const g5 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W5 = 10, H5 = 22;
-      // Основной тон кожи
-      g5.fillStyle(0xe6bc94, 1);
+      // Основной тон кожи — БЕЛЫЙ: кисть/предплечье тонируются выбранным
+      // цветом кожи (setTint), поэтому база должна быть нейтральной.
+      g5.fillStyle(0xffffff, 1);
       g5.fillRoundedRect(1, 0, 8, 21, 4);
       // Тень по локтевой стороне
-      g5.fillStyle(0xc49066, 1);
+      g5.fillStyle(0xc0c0c0, 1);
       g5.fillRoundedRect(1, 1, 3, 16, 2);
       // Рельеф мышцы-разгибателя (светлый блик)
-      g5.fillStyle(0xf7dbb8, 1);
+      g5.fillStyle(0xffffff, 1);
       g5.fillRoundedRect(3.8, 1.5, 4.2, 13, 2);
       // Локтевая складка и сухожилие
-      g5.lineStyle(0.9, 0xad7850, 0.85);
+      g5.lineStyle(0.9, 0x9a9a9a, 0.85);
       g5.lineBetween(2.5, 2, 7.5, 2.5);
       g5.lineBetween(4, 6, 4.5, 15);
       // Тактический ремешок / часы и манжета перчатки у запястья
@@ -323,10 +324,10 @@ export function ensureGeoTextures(player, scene) {
       // обхватывающими рукоятку/цевьё (12x8, смотрит вправо вдоль кости).
       const g6 = (scene || player.scene).make.graphics({ x: 0, y: 0, add: false });
       const W6 = 12, H6 = 8;
-      // Пальцы (телесный тон спереди)
-      g6.fillStyle(0xe6bc94, 1);
+      // Пальцы (телесный тон задаётся тинтом кожи — база белая)
+      g6.fillStyle(0xffffff, 1);
       g6.fillRoundedRect(0, 0, 12, 8, 3);
-      g6.fillStyle(0xf7dbb8, 1);
+      g6.fillStyle(0xffffff, 1);
       g6.fillRoundedRect(6, 1, 5.2, 6, 2);
       // Беспалая тактическая перчатка на тыльной стороне ладони
       g6.fillStyle(0x262d3d, 1);
@@ -339,12 +340,12 @@ export function ensureGeoTextures(player, scene) {
       g6.fillCircle(5.2, 4.0, 0.6);
       g6.fillCircle(5.2, 5.7, 0.6);
       // Фаланги пальцев и борозды хвата
-      g6.lineStyle(1, 0x9e6b43, 1);
+      g6.lineStyle(1, 0x9a9a9a, 1);
       g6.lineBetween(8.2, 0.8, 8.2, 7.2);
       g6.lineBetween(10.0, 1.2, 10.0, 6.8);
       g6.lineBetween(7.2, 3.8, 11.4, 3.8);
       // Большой палец снизу в обхвате
-      g6.fillStyle(0xdba97e, 1);
+      g6.fillStyle(0xd8d8d8, 1);
       g6.fillRoundedRect(2.2, 5.2, 5.2, 2.8, 1.4);
       g6.lineStyle(0.9, 0x1c2438, 1);
       g6.strokeRoundedRect(2.2, 5.2, 5.2, 2.8, 1.4);

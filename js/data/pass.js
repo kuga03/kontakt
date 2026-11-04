@@ -10,14 +10,14 @@ export const PASS_PREMIUM_PRICE = 150000;
 
 const DAY_MS = 86400000;
 
-// Пороги по типам (8 квестов каждого на 40 ярусов, темп ~ старого
-// недельного: ~8000 фрагов / ~90 боёв за сезон активной игры).
+// Облегчённые пороги по типам (8 квестов каждого на 40 ярусов).
+// Задания выполняются последовательно: 1-2 катки на квест, плавный рост.
 const NEEDS = {
-  kills:   [100, 250, 450, 700, 1000, 1350, 1750, 2200],
-  damage:  [3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000],
-  matches: [2, 4, 6, 9, 12, 15, 19, 23],
-  wins:    [1, 2, 3, 4, 6, 8, 10, 13],
-  cases:   [1, 1, 1, 2, 2, 2, 3, 3]
+  kills:   [10, 15, 20, 25, 30, 35, 40, 50],
+  damage:  [1500, 2500, 3500, 5000, 6500, 8000, 10000, 12000],
+  matches: [1, 2, 2, 3, 3, 4, 4, 5],
+  wins:    [1, 1, 2, 2, 2, 3, 3, 4],
+  cases:   [1, 1, 1, 1, 1, 2, 2, 2]
 };
 
 const ORDER = ['kills', 'damage', 'matches', 'wins', 'cases'];
@@ -31,13 +31,11 @@ const NAMES = {
 };
 
 // Обычная награда яруса i (1..40): 300 → 7900, всего ~164к за сезон
-// (старые недельки давали ~134к/мес — темп сохранён).
 function passRewardNormal(i) {
   return Math.round((100 + 195 * i) / 50) * 50;
 }
 
 // Premium-награда: ~1.5x обычной, всего ~246к за сезон.
-// Выше нельзя — иначе premium печатает деньги (было 2.5x).
 function passRewardPremium(i) {
   return Math.round((150 + 293 * i) / 50) * 50;
 }
@@ -82,10 +80,89 @@ export function passEndDate(nowMs) {
   }
 }
 
+// Инициализация пошагового прогресса ярусов в gameState.pass
+export function initTierProgress(ps) {
+  if (!ps) return;
+  if (!ps.tierProgress || typeof ps.tierProgress !== 'object') {
+    ps.tierProgress = {};
+  }
+  const cl = (ps.claimed && ps.claimed.n) || {};
+  for (let i = 1; i <= PASS_TIERS; i++) {
+    if (cl[i]) {
+      ps.tierProgress[i] = PASS_QUESTS[i - 1].need;
+    }
+  }
+  for (let i = 1; i <= PASS_TIERS; i++) {
+    if (!passTierDone(ps, i)) {
+      if (ps.tierProgress[i] === undefined) {
+        const q = PASS_QUESTS[i - 1];
+        if (i === 1 && q) {
+          ps.tierProgress[i] = Math.min(q.need, Math.max(0, (ps[q.type] | 0)));
+        } else {
+          ps.tierProgress[i] = 0;
+        }
+      }
+      break;
+    }
+  }
+}
+
+// Выполнен ли ярус: строго последовательно (предыдущий ОБЯЗАН быть выполнен).
+export function passTierDone(ps, i) {
+  if (!ps || i < 1 || i > PASS_TIERS) return false;
+  const cl = (ps.claimed && ps.claimed.n) || {};
+  if (cl[i]) return true;
+  if (i > 1 && !passTierDone(ps, i - 1)) return false;
+  const q = PASS_QUESTS[i - 1];
+  if (!q) return false;
+  const cur = (ps.tierProgress && typeof ps.tierProgress[i] === 'number')
+    ? ps.tierProgress[i]
+    : (i === 1 ? Math.min(q.need, Math.max(0, (ps[q.type] | 0))) : 0);
+  return cur >= q.need;
+}
+
+// Задание яруса открыто для выполнения (ярус 1 всегда, остальные — после завершения предыдущего).
+export function passQuestUnlocked(ps, i) {
+  if (i <= 1) return true;
+  return passTierDone(ps, i - 1);
+}
+
+// Текущий активный ярус задания (первый не выполненный)
+export function passActiveQuestTier(ps) {
+  if (!ps) return 1;
+  initTierProgress(ps);
+  for (let i = 1; i <= PASS_TIERS; i++) {
+    if (!passTierDone(ps, i)) return i;
+  }
+  return PASS_TIERS + 1;
+}
+
 // Прогресс квеста по счётчикам пасса.
 export function passQuestProgress(ps, q) {
-  if (!q) return 0;
-  return Math.min(q.need, ((ps && ps[q.type]) | 0));
+  if (!ps || !q) return 0;
+  if (!ps.tierProgress || typeof ps.tierProgress !== 'object') {
+    initTierProgress(ps);
+  }
+  const tp = ps.tierProgress && ps.tierProgress[q.tier];
+  if (typeof tp === 'number') {
+    return Math.min(q.need, Math.max(0, tp));
+  }
+  return 0;
+}
+
+// Запись прогресса в текущее активное задание
+export function recordPassProgress(ps, type, amount = 1) {
+  if (!ps || !type) return;
+  ps[type] = (ps[type] | 0) + amount;
+  initTierProgress(ps);
+  const act = passActiveQuestTier(ps);
+  if (act <= PASS_TIERS) {
+    const q = PASS_QUESTS[act - 1];
+    if (q && q.type === type) {
+      const cur = (ps.tierProgress[act] | 0);
+      ps.tierProgress[act] = Math.min(q.need, cur + amount);
+    }
+  }
 }
 
 // Ярус открыт, если все предыдущие ЗАБРАНЫ (строгая поочерёдность).
@@ -97,11 +174,6 @@ export function passTierUnlocked(ps, track, i) {
     if (!cl[k]) return false;
   }
   return true;
-}
-
-function passTierDone(ps, i) {
-  const q = PASS_QUESTS[i - 1];
-  return !!q && passQuestProgress(ps, q) >= q.need;
 }
 
 // Сколько обычных наград забрано (счётчик для меню: n/40).

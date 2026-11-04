@@ -3,7 +3,7 @@
 // обёртки с теми же именами (наследники Assault/Tank/Medic/Sniper зовут
 // super.die/super.destroy — работает как раньше). Внутри модуля зовём
 // друг друга напрямую, методы класса — через player.*.
-import { getPass, saveGameState } from '../../data/gameState.js?v=175';
+import { saveGameState, recordPassProgress } from '../../data/gameState.js?v=175';
 import { fragMax, smokeMax } from '../../data/skills.js?v=169';
 
 
@@ -59,8 +59,7 @@ export function receiveDamage(player, amount, attacker, src, zone) {
     // Недельный контракт «урон»: только живому человеку (не бот, не демо).
     try {
       if (!attacker.isAI && !attacker._demoPuppet && !attacker.dead) {
-        const ps = getPass();
-        ps.damage = (ps.damage | 0) + Math.max(0, Math.round(amount));
+        recordPassProgress('damage', Math.max(0, Math.round(amount)));
         attacker._wDmgTick = ((attacker._wDmgTick | 0) + 1) % 50;
         if (attacker._wDmgTick === 0) saveGameState();
       }
