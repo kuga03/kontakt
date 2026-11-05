@@ -117,6 +117,10 @@ export function onShutdown() {
     } catch (e) {}
     this._touch = null;
     this._storyOpen = false;
+    this._weatherParticles = null;
+    this._bgSkyImg = null;
+    this._bgFar = null;
+    this._bgNear = null;
   }
 
 export function create(data) {

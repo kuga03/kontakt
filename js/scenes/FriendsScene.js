@@ -56,8 +56,8 @@ export default class FriendsScene extends Phaser.Scene {
 
     if (!Array.isArray(gameState.friends)) gameState.friends = [];
 
-    this._panel(250, 100, 440, 470, 'ДРУЗЬЯ');
-    this._panel(830, 100, 620, 470, 'КЛАН');
+    this._panel(UX(this, 250), 100, 440, 470, 'ДРУЗЬЯ');
+    this._panel(UX(this, 830), 100, 620, 470, 'КЛАН');
     this._friendsBox = this.add.container(0, 0);
     this._renderFriends();
 
@@ -174,7 +174,7 @@ export default class FriendsScene extends Phaser.Scene {
       // Точка статуса.
       const dot = this.add.graphics();
       dot.fillStyle(prof.online ? 0x44dd44 : 0x667788, 1);
-      dot.fillCircle(56, fy, 5);
+      dot.fillCircle(UX(this, 56), fy, 5);
       this._friendsBox.add(dot);
       const nm = this.add.text(UX(this, 70), fy, (f.fromPlatform ? '🌐 ' : '') + prof.name, {
         fontSize: '16px', color: '#ffffff'

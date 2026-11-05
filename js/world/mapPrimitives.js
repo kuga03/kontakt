@@ -126,9 +126,11 @@ export function addGroundSkirts(scene) {
   } catch (e) {}
 }
 
-export function createPlatform(scene, x, y, width, height, alpha = 1) {
-  let ptex = 'platform';
-  try { ptex = resolvePlatformTex(scene) || 'platform'; } catch (e) {}
+export function createPlatform(scene, x, y, width, height, alpha = 1, texKey = null) {
+  let ptex = texKey;
+  if (!ptex || !scene.textures.exists(ptex)) {
+    try { ptex = resolvePlatformTex(scene) || 'platform'; } catch (e) { ptex = 'platform'; }
+  }
   const platform = scene.textures.exists(ptex)
     ? scene.add.tileSprite(x, y, width, height, ptex)
     : scene.add.rectangle(x, y, width, height, 0x333366);
@@ -169,61 +171,93 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
   // (старый кеш, смена списка артов), рисуем прямо здесь.
   try {
     if (!scene.textures.exists(texKey)) {
-      if (/^map_(crate|barrel)/.test(texKey)) ArtEnv.generateMapArt.call(scene, texKey);
+      if (/^map_(crate|barrel|generator|pipes|dune_rock|sand_barrier|vent_unit|concrete_block|stalagmite|shield|office_desk|server_rack|support_pillar|interior_wall)/.test(texKey)) ArtEnv.generateMapArt.call(scene, texKey);
       else if (/^map_(bags|wreck)/.test(texKey)) ArtBuildings.generateMapBuilding.call(scene, texKey);
     }
   } catch (e) {}
 
-  // Для ступенчатых укрытий (машина / мешки) разбиваем физику на sub-rectangles,
+  // Для ступенчатых укрытий разбиваем физику на sub-rectangles,
   // чтобы форма коллайдера соответствовала силуэту и боты/игроки могли перепрыгивать
-  // и стрелять через низкие края (капот/багажник/плечи мешков).
+  // и стрелять через низкие края (капот/багажник/плечи мешков/боковые секции блоков).
+  const STEPPED_COVERS = {
+    map_wreck: [
+      { rw: 0.29, rh: 0.58 },
+      { rw: 0.35, rh: 0.72 },
+      { rw: 0.36, rh: 0.56 },
+    ],
+    map_bags: [
+      { rw: 0.24, rh: 0.46 },
+      { rw: 0.52, rh: 0.62 },
+      { rw: 0.24, rh: 0.46 },
+    ],
+    map_generator: [
+      { rw: 0.32, rh: 0.78 },
+      { rw: 0.36, rh: 0.52 },
+      { rw: 0.32, rh: 0.68 },
+    ],
+    map_pipes: [
+      { rw: 0.25, rh: 0.45 },
+      { rw: 0.50, rh: 0.78 },
+      { rw: 0.25, rh: 0.45 },
+    ],
+    map_dune_rock: [
+      { rw: 0.28, rh: 0.48 },
+      { rw: 0.44, rh: 0.82 },
+      { rw: 0.28, rh: 0.52 },
+    ],
+    map_sand_barrier: [
+      { rw: 0.25, rh: 0.42 },
+      { rw: 0.50, rh: 0.75 },
+      { rw: 0.25, rh: 0.42 },
+    ],
+    map_vent_unit: [
+      { rw: 0.34, rh: 0.58 },
+      { rw: 0.38, rh: 0.84 },
+      { rw: 0.28, rh: 0.64 },
+    ],
+    map_concrete_block: [
+      { rw: 0.24, rh: 0.48 },
+      { rw: 0.52, rh: 0.74 },
+      { rw: 0.24, rh: 0.48 },
+    ],
+    map_stalagmite: [
+      { rw: 0.30, rh: 0.52 },
+      { rw: 0.40, rh: 0.84 },
+      { rw: 0.30, rh: 0.56 },
+    ],
+    map_shield: [
+      { rw: 0.25, rh: 0.54 },
+      { rw: 0.50, rh: 0.82 },
+      { rw: 0.25, rh: 0.54 },
+    ],
+    map_office_desk: [
+      { rw: 0.35, rh: 0.82 },
+      { rw: 0.65, rh: 0.64 },
+    ],
+    map_server_rack: [
+      { rw: 1.0, rh: 0.95 },
+    ],
+  };
+
   const subBodies = [];
   const baseBotY = y + height / 2;
   const leftX = x - width / 2;
 
-  if (texKey === 'map_wreck') {
-    // Вектор кузова map_wreck (200x120):
-    // Капот (лево): w: 29%, h: 58%
-    // Кабина (центр): w: 35%, h: 72%
-    // Багажник (право): w: 36%, h: 56%
-    const parts = [
-      { rw: width * 0.29, rh: height * 0.58 },
-      { rw: width * 0.35, rh: height * 0.72 },
-      { rw: width * 0.36, rh: height * 0.56 },
-    ];
+  const stepDef = STEPPED_COVERS[texKey];
+  if (stepDef) {
     let curX = leftX;
-    for (const p of parts) {
-      const px = curX + p.rw / 2;
-      const py = baseBotY - p.rh / 2;
-      const sb = scene.add.rectangle(px, py, p.rw, p.rh, 0xffffff, 0);
+    for (const p of stepDef) {
+      const rw = width * p.rw;
+      const rh = height * p.rh;
+      const px = curX + rw / 2;
+      const py = baseBotY - rh / 2;
+      const sb = scene.add.rectangle(px, py, rw, rh, 0xffffff, 0);
       scene.physics.add.existing(sb, true);
       sb.setVisible(false);
       if (alpha < 1) sb.setAlpha(alpha);
       scene.covers.add(sb);
       subBodies.push(sb);
-      curX += p.rw;
-    }
-  } else if (texKey === 'map_bags') {
-    // Пирамида мешков map_bags (240x120):
-    // Левое плечо: w: 24%, h: 46%
-    // Гребень (центр): w: 52%, h: 62%
-    // Правое плечо: w: 24%, h: 46%
-    const parts = [
-      { rw: width * 0.24, rh: height * 0.46 },
-      { rw: width * 0.52, rh: height * 0.62 },
-      { rw: width * 0.24, rh: height * 0.46 },
-    ];
-    let curX = leftX;
-    for (const p of parts) {
-      const px = curX + p.rw / 2;
-      const py = baseBotY - p.rh / 2;
-      const sb = scene.add.rectangle(px, py, p.rw, p.rh, 0xffffff, 0);
-      scene.physics.add.existing(sb, true);
-      sb.setVisible(false);
-      if (alpha < 1) sb.setAlpha(alpha);
-      scene.covers.add(sb);
-      subBodies.push(sb);
-      curX += p.rw;
+      curX += rw;
     }
   }
 
@@ -277,6 +311,32 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
   return body;
 }
 
+export function createDecor(scene, x, y, width, height, texKey, alpha = 1, depth = -2) {
+  texKey = resolveBuildingTex(texKey);
+  if (!texKey) return null;
+  if (!scene.textures.exists(texKey)) {
+    try {
+      if (/^map_(crate|barrel|generator|pipes|dune_rock|sand_barrier|vent_unit|concrete_block|stalagmite|shield|office_desk|server_rack|support_pillar|interior_wall|int_|wall_brick|wall_concrete|wall_partition|lamp_post|ladder_truss)/.test(texKey)) {
+        ArtEnv.generateMapArt.call(scene, texKey);
+      } else if (/^map_/.test(texKey)) {
+        ArtBuildings.generateMapBuilding.call(scene, texKey);
+      }
+    } catch (e) {}
+  }
+  if (!scene.textures.exists(texKey)) {
+    if (/^map_(interior_wall|int_)/.test(texKey)) {
+      const fb = scene.add.rectangle(x, y, width, height, 0x181c24).setStrokeStyle(1, 0x10131a).setDepth(depth != null ? depth : -2.8);
+      if (alpha < 1) fb.setAlpha(alpha);
+      return fb;
+    }
+    return null;
+  }
+  const img = scene.add.image(x, y, texKey).setDepth(depth != null ? depth : -2);
+  img.setDisplaySize(width, height);
+  if (alpha < 1) img.setAlpha(alpha);
+  return img;
+}
+
 export function createBuilding(scene, x, y, width, height, texKey, alpha = 1) {
   texKey = resolveBuildingTex(texKey);
   if (!texKey || !scene.textures.exists(texKey)) {
@@ -300,9 +360,10 @@ export function createBuilding(scene, x, y, width, height, texKey, alpha = 1) {
   try { scene._losRects = []; } catch (e) {}
 }
 
-export function createWall(scene, x, y, width, height, alpha = 1) {
-  const wall = scene.textures.exists('wall')
-    ? scene.add.tileSprite(x, y, width, height, 'wall')
+export function createWall(scene, x, y, width, height, alpha = 1, texKey = null) {
+  const wt = texKey || 'wall';
+  const wall = scene.textures.exists(wt)
+    ? scene.add.tileSprite(x, y, width, height, wt)
     : scene.add.rectangle(x, y, width, height, 0x6b5a4a)
         .setStrokeStyle(2, 0x9a8a6a);
   if (alpha < 1) wall.setAlpha(alpha);

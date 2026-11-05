@@ -1,4 +1,4 @@
-import { gameW } from '../../ui/layout.js';
+import { gameW, UX } from '../../ui/layout.js';
 import { gameState, setCharacterColor, getCharacterColors, equipHead, equipShoes, equipTorso, equipPants, hasHead, hasShoes, hasTorso, hasPants, getEquippedHead, getEquippedTorso, getEquippedPants, getEquippedShoes } from '../../data/gameState.js';
 import { classDefinitions, getWeaponLabel, isClassUnlocked, classOpenLevel } from '../../data/weapons.js';
 import { weaponSkins } from '../../data/skins.js';
@@ -496,7 +496,7 @@ export function drawMiscPanel(panel, parent) {
   }
 
 export function drawPlayerPanel() {
-    const panel = { x: 795, y: 105, w: 475, h: 570 };
+    const panel = { x: UX(this, 795), y: 105, w: 475, h: 570 };
     const c = this.add.container(0, 0);
     this._dynamicContainers.push(c);
 

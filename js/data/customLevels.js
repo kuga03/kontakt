@@ -1,4 +1,4 @@
-import { generateLevel } from './levelGen.js?v=170';
+import { generateLevel, CURRENT_GEN_VERSION } from './levelGen.js?v=174';
 
 const KEY = 'sideShooterCustomLevels';
 const OLD_KEY = 'customCampaignLevel';
@@ -8,16 +8,17 @@ const OLD_KEY = 'customCampaignLevel';
 function _loadRaw() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) return { exists: true, data: parsed };
     }
   } catch (e) { /* ignore */ }
-  return [];
+  return { exists: false, data: [] };
 }
 
 export function loadCustomLevels() {
-  let arr = _loadRaw();
+  const rawInfo = _loadRaw();
+  let arr = rawInfo.data;
   let migrated = false;
 
   // Миграция старого одиночного уровня — ДО любых nextId/load,
@@ -42,12 +43,32 @@ export function loadCustomLevels() {
     }
   } catch (e) { /* ignore */ }
 
-  if (!arr.length) {
+  // Миграция старых процедурных карт на актуальный генератор с новыми укрытиями и разноуровневыми спавнами
+  arr.forEach((l, i) => {
+    if (l && (!l.genVersion || l.genVersion < CURRENT_GEN_VERSION)) {
+      const isGen = l.isGenerated || /^(Аванпост|Каньон|Квартал|Бункер)/.test(l.name);
+      if (isGen) {
+        const updated = generateLevel(i);
+        updated.id = l.id;
+        updated.savedAt = Date.now();
+        arr[i] = updated;
+        migrated = true;
+      }
+    }
+  });
+
+  // Создаем дефолтные уровни ТОЛЬКО при самом первом запуске игры,
+  // когда ключа в localStorage вообще не существовало (!rawInfo.exists).
+  // Если пользователь сам удалил все уровни (rawInfo.exists === true),
+  // мы не навязываем дефолтные уровни снова.
+  if (!rawInfo.exists && !arr.length) {
     try {
-      const def = generateLevel(0);
-      def.id = 1001;
-      def.savedAt = Date.now();
-      arr = [def];
+      arr = [0, 1, 2, 3].map(idx => {
+        const def = generateLevel(idx);
+        def.id = 1001 + idx;
+        def.savedAt = Date.now();
+        return def;
+      });
       migrated = true;
     } catch (e) { /* ignore */ }
   }
@@ -76,7 +97,7 @@ function saveCustomLevels(arr) {
 }
 
 function nextId() {
-  const arr = _loadRaw();
+  const arr = _loadRaw().data;
   let max = 1000;
   arr.forEach(l => {
     if (typeof l.id === 'number' && l.id > max) max = l.id;

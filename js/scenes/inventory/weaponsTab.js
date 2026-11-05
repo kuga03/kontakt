@@ -44,10 +44,10 @@ export function isWeaponEquipped(name) {
 export function drawViewTabs(parent) {
     this.viewTabs = [];
     const tabs = [
-      { id: 'weapons', label: 'ОРУЖИЕ', x: 140 },
-      { id: 'skins', label: 'СКИНЫ', x: 400 },
-      { id: 'profile', label: 'ГАРДЕРОБ', x: 660 },
-      { id: 'misc', label: 'ДРУГОЕ', x: 920 }
+      { id: 'weapons', label: 'ОРУЖИЕ', x: UX(this, 140) },
+      { id: 'skins', label: 'СКИНЫ', x: UX(this, 400) },
+      { id: 'profile', label: 'ГАРДЕРОБ', x: UX(this, 660) },
+      { id: 'misc', label: 'ДРУГОЕ', x: UX(this, 920) }
     ];
 
     const tw = 140, th = 34, tr = 8;
@@ -216,7 +216,7 @@ export function ownedWeaponsForClass() {
   }
 
 export function drawLeftPanel() {
-    const panel = { x: 15, y: 105, w: 770, h: 570 };
+    const panel = { x: UX(this, 15), y: 105, w: 770, h: 570 };
     const c = this.add.container(0, 0);
     this._dynamicContainers.push(c);
 

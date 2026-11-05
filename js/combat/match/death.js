@@ -286,7 +286,7 @@ export function handleDeath(scene, victim, killer, src) {
         time: timeStr, newBest: !!newBest
       };
       scene.endGame(
-        `ИСПЫТАНИЕ — ВОЛНА ${scene.trialWave}\n` +
+        `ВЫЖИВАНИЕ — ВОЛНА ${scene.trialWave}\n` +
         `Фраги: ${scene.trialKills}\nВремя: ${timeStr}\n${newBest ? 'НОВЫЙ РЕКОРД!' : ''}`,
         false
       );
@@ -401,6 +401,16 @@ export function handleDeath(scene, victim, killer, src) {
   if (scene.mode === 'TRIAL') {
     if (victim !== scene.player && victim.team === 'red' && (killer?.team === 'blue')) {
       scene.trialKills++;
+      // Вампиризм (перк выживания)
+      if (scene._survivalPerks && scene._survivalPerks.vampirism && scene.player && !scene.player.dead) {
+        scene.player.hp = Math.min(scene.player.maxHp, scene.player.hp + 20);
+        try {
+          const t = scene.add.text(scene.player.x, scene.player.y - 40, '+20 HP', {
+            fontSize: '16px', color: '#55ff55', fontStyle: 'bold'
+          }).setOrigin(0.5);
+          scene.tweens.add({ targets: t, y: t.y - 30, alpha: 0, duration: 800, onComplete: () => t.destroy() });
+        } catch (e) {}
+      }
       if (Math.random() < 0.85) {
         scene.spawnPickup(Math.random() < 0.5 ? 'medkit' : 'armor', victim.x, victim.y - 20);
       }

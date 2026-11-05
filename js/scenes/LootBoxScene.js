@@ -15,7 +15,7 @@ import { weaponSkins } from '../data/skins.js';
 import { GEAR_ITEMS, gearOwned, gearUnlockBuy, gearPreviewTex, GEAR_RARITY_WEIGHT } from '../data/wardrobe.js';
 import { GEAR_SETS } from '../data/gearSets.js';
 
-const REEL_DURATION = 7000;
+const REEL_DURATION = 4200;
 
 // Три кейса по содержимому (прозрачно: хочешь геном — крути скины,
 // хочешь пушку — крути оружие, хочешь шмот — гардероб). Ящика рядового
@@ -80,11 +80,69 @@ const CASES = [
   }
 ];
 
-// Редкость рамки/названия — строго по системе редкостей:
-// 0 ширпотреб (серый), 1 обычный (синий), 2 редкий (зелёный),
-// 3 эпический (фиолет), 4 легендарный (золото). Монеты: золото у джекпота,
-// синь — сумма больше цены кейса, серое — мелочь.
 const TIER_COLORS = [0x9aa0a8, 0x3b9dff, 0x35d07f, 0xb44dff, 0xffd24a];
+const TIER_NAMES = ['ШИРПОТРЕБ', 'ОБЫЧНЫЙ', 'РЕДКИЙ', 'ЭПИЧЕСКИЙ', 'ЛЕГЕНДАРНЫЙ'];
+
+const CASE_SHOWCASE_INFO = {
+  wardrobe: {
+    tag: 'ЭКИПИРОВКА',
+    tagColor: 0x66d9e8,
+    chips: [
+      { text: '🧢 Головные уборы', color: '#66d9e8' },
+      { text: '🦺 Броня и одежда', color: '#66d9e8' },
+      { text: '⚡ Добивка сетов 3%', color: '#ffd24a' },
+      { text: '🪙 Монеты & Пыль', color: '#ffee88' }
+    ]
+  },
+  weapons: {
+    tag: 'АРСЕНАЛ ОРУЖИЯ',
+    tagColor: 0xb44dff,
+    chips: [
+      { text: '⚔ Все классы оружия', color: '#b44dff' },
+      { text: '🗡 Ножи, мачете, катана', color: '#ffd24a' },
+      { text: '💥 Джекпот до 50%', color: '#ffd24a' },
+      { text: '🪙 Монеты при повторе', color: '#ffee88' }
+    ]
+  },
+  skins: {
+    tag: 'КОЛЛЕКЦИЯ СКИНОВ',
+    tagColor: 0xffd24a,
+    chips: [
+      { text: '🎨 Скины любой редкости', color: '#ffd24a' },
+      { text: '🧬 Эпики для генома', color: '#b44dff' },
+      { text: '⭐ Легендарные скины', color: '#ffd24a' },
+      { text: '🪙 Пыль за повторы', color: '#ffee88' }
+    ]
+  },
+  case_rare: {
+    tag: 'ГАРАНТИЯ: РЕДКИЙ',
+    tagColor: 0x35d07f,
+    chips: [
+      { text: '★ Редкий скин Tier II', color: '#35d07f' },
+      { text: '🛡 100% новый скин', color: '#35d07f' },
+      { text: '💰 Пыль 25% если всё собрано', color: '#ffee88' }
+    ]
+  },
+  case_epic: {
+    tag: 'ГАРАНТИЯ: ЭПИЧЕСКИЙ',
+    tagColor: 0xb44dff,
+    chips: [
+      { text: '★ Эпический скин Tier III', color: '#b44dff' },
+      { text: '🧬 Подходит для контрактов', color: '#b44dff' },
+      { text: '🛡 100% новый скин в коллекцию', color: '#ffd24a' }
+    ]
+  },
+  case_leg: {
+    tag: 'ГАРАНТИЯ: ЛЕГЕНДАРНЫЙ',
+    tagColor: 0xffd24a,
+    chips: [
+      { text: '★ Легендарный скин Tier IV', color: '#ffd24a' },
+      { text: '🗡 Включая ножи и топоры', color: '#ffd24a' },
+      { text: '👑 Топовый статус', color: '#ffea70' }
+    ]
+  }
+};
+
 function weaponTier(weapon) {
   if (!weapon) return 0;
   if (weapon.category === 'melee') return 4;
@@ -99,101 +157,635 @@ export default class LootBoxScene extends Phaser.Scene {
     super('LootBoxScene');
   }
 
-  create() {
+  create(data) {
     syncGameState();
     const _cx = gameW(this) / 2;
-    this.cameras.main.setBackgroundColor('#0a0a2a');
     this.activeButton = null;
     this.opening = false;
-    // Дефолт — Оружейный (как раньше, когда он был первым в ряду).
-    this.caseId = 'weapons';
+    this.caseId = (data && data.caseId) || 'weapons';
 
-    this.add.text(_cx, 30, 'КЕЙСЫ', {
-      fontSize: '38px',
-      color: '#ffffff'
-    }).setOrigin(0.5);
-
-    this.add.image(UX(this, 140), 40, 'icon_coins').setOrigin(0, 0.5).setDisplaySize(24, 18);
-    this.coinsText = this.add.text(UX(this, 170), 30, '', {
-      fontSize: '20px',
-      color: '#ffee88'
-    });
-
+    this._initBackground();
+    this._initParticles();
+    this._initHeader();
     this._drawCaseCards();
+    this._initShowcase();
+    this._initControls();
 
-    this.result = this.add.text(_cx, 540, '', {
-      fontSize: '22px',
-      color: '#ffee55',
-      align: 'center'
-    }).setOrigin(0.5);
+    this.refreshCase();
+    this.refreshCoins();
+    try { localStorage.removeItem('pendingLootSpin'); } catch (e) {}
 
-    // Сколько кейсов открывать: x1/x2/x3. При x2/x3 — три крутки сразу
-    // мелкими ячейками.
-    this.openCount = 1;
-    this.countChips = [];
-    [1, 2, 3].forEach((n, i) => {
-      // Чипы выше кнопки открытия с зазором (текст не впритык к интерактиву).
-      const chip = this.add.text(UX(this, 580 + i * 60), 584, `×${n}`, {
-        fontSize: '16px',
-        color: '#ffffff',
-        backgroundColor: '#252560',
-        padding: 8
-      }).setOrigin(0.5);
-      chip.setInteractive({ useHandCursor: true });
-      chip.on('pointerdown', () => {
+    // Поддержка ESC для возврата в меню
+    try {
+      this.input.keyboard.on('keydown-ESC', () => {
         if (this.opening) return;
-        this.openCount = n;
-        this.refreshOpen();
+        this.scene.start('MenuScene');
       });
-      chip.on('pointerover', () => chip.setStyle({ color: '#ffff55' }));
-      chip.on('pointerout', () => chip.setStyle({ color: '#ffffff' }));
-      this.countChips.push(chip);
-    });
+    } catch (e) {}
 
-    this.open = this.add.text(_cx, 640, '', {
+    this.events.once('shutdown', () => {
+      this._particles = [];
+      if (this._heroTween) {
+        try { this._heroTween.stop(); } catch (e) {}
+        this._heroTween = null;
+      }
+    });
+  }
+
+  update(time, delta) {
+    this._updateParticles(time, delta);
+  }
+
+  // Трёхступенчатый градиент фона как в Инвентаре и Бандах + золотые разделители
+  _initBackground() {
+    const W = gameW(this);
+    this.cameras.main.setBackgroundColor('#080916');
+
+    const bgb = this.add.graphics().setDepth(-10);
+    bgb.fillStyle(0x0f1226, 1);
+    bgb.fillRect(0, 0, W, 240);
+    bgb.fillStyle(0x090b1c, 1);
+    bgb.fillRect(0, 240, W, 240);
+    bgb.fillStyle(0x050610, 1);
+    bgb.fillRect(0, 480, W, 240);
+
+    // Золотые акцентные разделители сверху и снизу
+    bgb.lineStyle(1, 0xffd24a, 0.22);
+    bgb.lineBetween(0, 56, W, 56);
+    bgb.lineBetween(0, 692, W, 692);
+  }
+
+  // Мягкие парящие световые частицы на фоне
+  _initParticles() {
+    this._particles = [];
+    const W = gameW(this);
+    const count = 18;
+    for (let i = 0; i < count; i++) {
+      const g = this.add.graphics().setDepth(-8);
+      const r = Phaser.Math.FloatBetween(1.2, 2.6);
+      g.fillStyle(0xffd24a, 1);
+      g.fillCircle(0, 0, r);
+      const p = {
+        gfx: g,
+        x: Phaser.Math.Between(40, W - 40),
+        y: Phaser.Math.Between(70, 680),
+        speed: Phaser.Math.FloatBetween(10, 28),
+        baseAlpha: Phaser.Math.FloatBetween(0.10, 0.35),
+        seed: Math.random() * 100,
+        radius: r
+      };
+      g.setPosition(p.x, p.y);
+      g.setAlpha(p.baseAlpha);
+      this._particles.push(p);
+    }
+  }
+
+  _updateParticles(time, delta) {
+    if (!this._particles || !this._particles.length) return;
+    const dt = (delta || 16.6) / 1000;
+    const W = gameW(this);
+    for (let i = 0; i < this._particles.length; i++) {
+      const p = this._particles[i];
+      p.y -= p.speed * dt;
+      p.x += Math.sin(time * 0.0012 + p.seed) * 0.35;
+      if (p.y < 65) {
+        p.y = 685;
+        p.x = Phaser.Math.Between(40, W - 40);
+      }
+      p.gfx.setPosition(p.x, p.y);
+    }
+  }
+
+  // Верхняя шапка: Кнопка Назад, Заголовок с золотым ромбом, Баланс монет в плашке
+  _initHeader() {
+    const _cx = gameW(this) / 2;
+
+    // Заголовок сцены
+    this.add.text(_cx, 22, 'КЕЙСЫ', {
       fontSize: '24px',
       color: '#ffffff',
-      backgroundColor: '#633c76',
-      padding: 14
-    }).setOrigin(0.5);
-    this.openCoin = this.add.image(0, 0, 'icon_coins').setDisplaySize(20, 15);
+      fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(50);
 
-    this.open.setInteractive({ useHandCursor: true });
-    this.open.on('pointerdown', () => {
-      if (this.opening) return;
-      if (this.activeButton && this.activeButton !== this.open) {
-        this.activeButton.setStyle({ color: '#ffffff' });
-      }
-      this.activeButton = this.open;
-      this.open.setStyle({ color: '#ffff55' });
-      this.openCase();
-    });
-    this.open.on('pointerover', () => this.open.setStyle({ color: '#ffff55' }));
-    this.open.on('pointerout', () => {
-      if (this.activeButton !== this.open) {
-        this.open.setStyle({ color: '#ffffff' });
-      }
-    });
+    // Золотая черта с ромбом под заголовком
+    const fl = this.add.graphics().setDepth(50);
+    fl.lineStyle(2, 0xffd24a, 0.8);
+    fl.lineBetween(_cx - 130, 42, _cx + 130, 42);
+    fl.fillStyle(0xffd24a, 0.9);
+    const dd = 5;
+    fl.fillPoints([
+      new Phaser.Geom.Point(_cx, 42 - dd), new Phaser.Geom.Point(_cx + dd, 42),
+      new Phaser.Geom.Point(_cx, 42 + dd), new Phaser.Geom.Point(_cx - dd, 42)
+    ], true);
 
-    const back = this.add.text(UX(this, 70), 28, '← Назад', {
-      fontSize: '18px',
+    // Кнопка Назад в стиле меню Банды и Инвентаря
+    const backX = UX(this, 70), backY = 27;
+    const backW = 104, backH = 34;
+    const backFr = this.add.graphics().setDepth(59);
+
+    const renderBack = (hot) => {
+      backFr.clear();
+      backFr.fillStyle(0x3a1e24, 1);
+      backFr.fillRoundedRect(backX - backW / 2, backY - backH / 2, backW, backH, 8);
+      backFr.fillStyle(0xffffff, hot ? 0.15 : 0.08);
+      backFr.fillRoundedRect(backX - backW / 2, backY - backH / 2, backW, 5, { tl: 8, tr: 8, bl: 0, br: 0 });
+      backFr.lineStyle(hot ? 2 : 1.5, hot ? 0xffff88 : 0x9e4a5a, 1);
+      backFr.strokeRoundedRect(backX - backW / 2, backY - backH / 2, backW, backH, 8);
+    };
+    renderBack(false);
+
+    const back = this.add.text(backX, backY, '← Назад', {
+      fontSize: '15px',
       color: '#ffffff',
-      backgroundColor: '#553333',
-      padding: 8
-    }).setOrigin(0.5);
-
+      fontStyle: 'bold',
+      fixedWidth: backW,
+      padding: { top: 7, bottom: 7 },
+      align: 'center'
+    }).setOrigin(0.5).setDepth(60);
     this._backBtn = back;
+    this._renderBack = renderBack;
     back.setInteractive({ useHandCursor: true });
     back.on('pointerdown', () => {
       if (this.opening) return;
       this.scene.start('MenuScene');
     });
-    back.on('pointerover', () => back.setStyle({ color: '#ffff55' }));
-    back.on('pointerout', () => back.setStyle({ color: '#ffffff' }));
+    back.on('pointerover', () => {
+      if (this.opening) return;
+      renderBack(true);
+      back.setStyle({ color: '#ffff55' });
+      try {
+        if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+          this.sound.play('sfx_hover', { volume: 0.2 });
+        }
+      } catch (e) {}
+    });
+    back.on('pointerout', () => {
+      renderBack(false);
+      back.setStyle({ color: '#ffffff' });
+    });
 
-    this.refreshCase();
-    this.refreshCoins();
-    try { localStorage.removeItem('pendingLootSpin'); } catch (e) {}
+    // Плашка баланса монет (справа сверху)
+    const coinPillX = gameW(this) - UX(this, 95);
+    const coinPillY = 27;
+    const pillW = 144, pillH = 34;
+    const pillBg = this.add.graphics().setDepth(59);
+    pillBg.fillStyle(0x131526, 0.95);
+    pillBg.fillRoundedRect(coinPillX - pillW / 2, coinPillY - pillH / 2, pillW, pillH, 8);
+    pillBg.lineStyle(1.5, 0xffd24a, 0.45);
+    pillBg.strokeRoundedRect(coinPillX - pillW / 2, coinPillY - pillH / 2, pillW, pillH, 8);
+    pillBg.fillStyle(0xffffff, 0.08);
+    pillBg.fillRoundedRect(coinPillX - pillW / 2, coinPillY - pillH / 2, pillW, 4, { tl: 8, tr: 8, bl: 0, br: 0 });
+
+    this.add.image(coinPillX - pillW / 2 + 18, coinPillY, 'icon_coins')
+      .setOrigin(0.5).setDisplaySize(20, 15).setDepth(60);
+    this.coinsText = this.add.text(coinPillX - pillW / 2 + 34, coinPillY, '', {
+      fontSize: '15px',
+      color: '#ffee88',
+      fontStyle: 'bold'
+    }).setOrigin(0, 0.5).setDepth(60);
+  }
+
+  // Карточки кейсов: аккуратная лента вверху с категориями, артом, подсветкой выбора
+  _drawCaseCards() {
+    if (this.caseCards) this.caseCards.forEach(c => c.container.destroy());
+    this.caseCards = [];
+
+    const _cx = gameW(this) / 2;
+    const W = 196;
+    const H = 98;
+    const step = 208;
+    const startX = _cx - (5 * step) / 2;
+    const cy = 114;
+
+    CASES.forEach((c, i) => {
+      const cx = startX + i * step;
+      const container = this.add.container(cx, cy).setDepth(30);
+      const frame = this.add.graphics();
+      const pointerMarker = this.add.graphics();
+
+      const paintCard = (selected, hovered) => {
+        frame.clear();
+        pointerMarker.clear();
+
+        const bgCol = selected ? 0x181a33 : (hovered ? 0x16182c : 0x111324);
+        frame.fillStyle(bgCol, 0.98);
+        frame.fillRoundedRect(-W / 2, -H / 2, W, H, 10);
+
+        // Верхняя акцентная полоска цвета кейса (3px толщиной)
+        frame.fillStyle(c.line, selected ? 1 : 0.7);
+        frame.fillRoundedRect(-W / 2 + 3, -H / 2 + 2, W - 6, 3, { tl: 8, tr: 8, bl: 0, br: 0 });
+
+        // Внутренний блик
+        frame.lineStyle(1, 0xffffff, selected ? 0.16 : 0.06);
+        frame.strokeRoundedRect(-W / 2 + 2, -H / 2 + 2, W - 4, H - 4, 8);
+
+        if (selected) {
+          // Двойная золотая рамка с внешним свечением
+          frame.lineStyle(2.5, 0xffe066, 1);
+          frame.strokeRoundedRect(-W / 2, -H / 2, W, H, 10);
+          frame.lineStyle(2, 0xffe066, 0.28);
+          frame.strokeRoundedRect(-W / 2 - 4, -H / 2 - 4, W + 8, H + 8, 13);
+
+          // Стрелочка-указатель вниз к витрине
+          pointerMarker.fillStyle(0xffe066, 1);
+          pointerMarker.fillPoints([
+            new Phaser.Geom.Point(0, H / 2 + 8),
+            new Phaser.Geom.Point(-7, H / 2 + 1),
+            new Phaser.Geom.Point(7, H / 2 + 1)
+          ], true);
+        } else {
+          frame.lineStyle(hovered ? 1.5 : 1, c.line, hovered ? 0.9 : 0.45);
+          frame.strokeRoundedRect(-W / 2, -H / 2, W, H, 10);
+        }
+      };
+
+      container.add(frame);
+      container.add(pointerMarker);
+
+      // Название кейса вверху карточки с просторным отступом от цветной полосы (не впритык!)
+      const name = this.add.text(0, -27, c.name, {
+        fontSize: '13px',
+        color: '#ffffff',
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 0.5);
+      container.add(name);
+
+      // Иконка кейса в центре
+      const texKey = c.id.startsWith('case_') ? c.id : 'case_' + c.id;
+      const hasArt = this.textures.exists(texKey);
+      if (hasArt) {
+        const img = this.add.image(0, 3, texKey);
+        const src = this.textures.get(texKey).getSourceImage();
+        if (src && src.width && src.height) {
+          img.setScale(Math.min(130 / src.width, 32 / src.height));
+        }
+        container.add(img);
+      } else {
+        const ph = this.add.graphics();
+        ph.fillStyle(c.color, 1);
+        ph.fillCircle(0, 3, 14);
+        ph.lineStyle(2, c.line, 1);
+        ph.strokeCircle(0, 3, 14);
+        container.add(ph);
+      }
+
+      // Плашка цены внизу карточки (отдельная чёткая зона)
+      const priceCapsule = this.add.graphics();
+      const pw = 88, ph = 18;
+      priceCapsule.fillStyle(0x0a0c18, 0.85);
+      priceCapsule.fillRoundedRect(-pw / 2, 28, pw, ph, 5);
+      priceCapsule.lineStyle(1, 0xffd24a, 0.35);
+      priceCapsule.strokeRoundedRect(-pw / 2, 28, pw, ph, 5);
+      container.add(priceCapsule);
+
+      const coinIcon = this.add.image(-pw / 2 + 12, 37, 'icon_coins').setDisplaySize(13, 10);
+      const priceText = this.add.text(2, 37, `${c.price.toLocaleString('ru-RU')}`, {
+        fontSize: '11px',
+        color: '#ffee88',
+        fontStyle: 'bold'
+      }).setOrigin(0, 0.5);
+      container.add([coinIcon, priceText]);
+
+      paintCard(c.id === this.caseId, false);
+
+      container.setSize(W, H);
+      container.setInteractive({ useHandCursor: true });
+      container.on('pointerover', () => {
+        paintCard(c.id === this.caseId, true);
+        container.y = cy - 2;
+        try {
+          if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+            this.sound.play('sfx_hover', { volume: 0.15 });
+          }
+        } catch (e) {}
+      });
+      container.on('pointerout', () => {
+        paintCard(c.id === this.caseId, false);
+        container.y = cy;
+      });
+      container.on('pointerdown', () => {
+        if (this.opening) return;
+        this.caseId = c.id;
+        this.refreshCase();
+      });
+
+      this.caseCards.push({ id: c.id, container, paintCard });
+    });
+  }
+
+  // Центральный постамент и витрина выбранного кейса (когда не идёт крутка)
+  _initShowcase() {
+    const _cx = gameW(this) / 2;
+    const stageY = 368;
+
+    this._showcaseCont = this.add.container(_cx, stageY).setDepth(20);
+
+    // Фоновое мягкое свечение постамента
+    this._stageGlow = this.add.graphics();
+    this._showcaseCont.add(this._stageGlow);
+
+    // Постамент (концентрические эллипсы)
+    this._stageDais = this.add.graphics();
+    this._showcaseCont.add(this._stageDais);
+
+    // Тень под парящим кейсом
+    this._heroShadow = this.add.graphics();
+    this._heroShadow.y = 80;
+    this._showcaseCont.add(this._heroShadow);
+
+    // Парящий арт выбранного кейса
+    this._heroImg = this.add.image(0, -22, 'case_weapons').setOrigin(0.5);
+    this._showcaseCont.add(this._heroImg);
+
+    // Анимация парения кейса
+    this._heroTween = this.tweens.add({
+      targets: this._heroImg,
+      y: -36,
+      duration: 1800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    // Шапка витрины: категория и крупное название
+    this._showcaseCategory = this.add.text(0, -120, '', {
+      fontSize: '12px',
+      fontStyle: 'bold',
+      align: 'center'
+    }).setOrigin(0.5);
+
+    this._showcaseTitle = this.add.text(0, -98, '', {
+      fontSize: '24px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      align: 'center',
+      stroke: '#080a14',
+      strokeThickness: 4
+    }).setOrigin(0.5);
+
+    // Описание содержимого в тёмной плашке
+    this._showcaseDescBg = this.add.graphics();
+    this._showcaseDesc = this.add.text(0, 96, '', {
+      fontSize: '13px',
+      color: '#c2cee0',
+      align: 'center'
+    }).setOrigin(0.5);
+
+    // Контейнер чипов наград (фичи кейса)
+    this._showcaseChipsCont = this.add.container(0, 124);
+
+    this._showcaseCont.add([
+      this._showcaseCategory,
+      this._showcaseTitle,
+      this._showcaseDescBg,
+      this._showcaseDesc,
+      this._showcaseChipsCont
+    ]);
+  }
+
+  // Обновление витрины при выборе другого кейса
+  _updateShowcase(c) {
+    if (!this._showcaseCont) return;
+
+    const info = CASE_SHOWCASE_INFO[c.id] || { tag: 'КЕЙС', chips: [] };
+    const colorHex = '#' + c.line.toString(16).padStart(6, '0');
+
+    // 1. Свечение
+    this._stageGlow.clear();
+    this._stageGlow.fillStyle(c.line, 0.07);
+    this._stageGlow.fillCircle(0, 20, 140);
+    this._stageGlow.fillStyle(c.line, 0.12);
+    this._stageGlow.fillCircle(0, 30, 80);
+
+    // 2. Постамент
+    this._stageDais.clear();
+    // Внешний эллипс
+    this._stageDais.fillStyle(0x0a0c18, 0.9);
+    this._stageDais.fillEllipse(0, 80, 270, 56);
+    this._stageDais.lineStyle(2, c.line, 0.55);
+    this._stageDais.strokeEllipse(0, 80, 270, 56);
+    // Внутренний светящийся эллипс
+    this._stageDais.fillStyle(c.line, 0.15);
+    this._stageDais.fillEllipse(0, 80, 190, 38);
+    this._stageDais.lineStyle(1.5, 0xffffff, 0.4);
+    this._stageDais.strokeEllipse(0, 80, 190, 38);
+
+    // 3. Тень под кейсом
+    this._heroShadow.clear();
+    this._heroShadow.fillStyle(0x000000, 0.45);
+    this._heroShadow.fillEllipse(0, 0, 140, 28);
+
+    // 4. Текстура кейса
+    const texKey = c.id.startsWith('case_') ? c.id : 'case_' + c.id;
+    if (this.textures.exists(texKey)) {
+      this._heroImg.setTexture(texKey);
+      const src = this.textures.get(texKey).getSourceImage();
+      if (src && src.width && src.height) {
+        this._heroImg.setScale(Math.min(220 / src.width, 96 / src.height));
+      }
+      this._heroImg.setVisible(true);
+    } else {
+      this._heroImg.setVisible(false);
+    }
+
+    // 5. Заголовки
+    this._showcaseCategory.setText(`[ ${info.tag} ]`);
+    this._showcaseCategory.setColor(colorHex);
+
+    this._showcaseTitle.setText(c.name.toUpperCase());
+
+    // 6. Описание
+    this._showcaseDesc.setText(c.desc);
+    const tw = Math.max(340, this._showcaseDesc.displayWidth + 32);
+    this._showcaseDescBg.clear();
+    this._showcaseDescBg.fillStyle(0x0e1022, 0.85);
+    this._showcaseDescBg.fillRoundedRect(-tw / 2, 83, tw, 26, 6);
+    this._showcaseDescBg.lineStyle(1, 0xffffff, 0.1);
+    this._showcaseDescBg.strokeRoundedRect(-tw / 2, 83, tw, 26, 6);
+
+    // 7. Фиче-чипы (лут-превью)
+    this._showcaseChipsCont.removeAll(true);
+    const chips = info.chips || [];
+    let chipTotalW = 0;
+    const chipItems = [];
+
+    chips.forEach(ch => {
+      const txt = this.add.text(0, 0, ch.text, {
+        fontSize: '12px',
+        color: ch.color || '#ffffff',
+        fontStyle: 'bold'
+      }).setOrigin(0.5);
+
+      const cw = txt.displayWidth + 20;
+      const chH = 22;
+      const bg = this.add.graphics();
+      bg.fillStyle(0x13162b, 0.9);
+      bg.fillRoundedRect(-cw / 2, -chH / 2, cw, chH, 5);
+      bg.lineStyle(1, Phaser.Display.Color.HexStringToColor(ch.color || '#ffffff').color, 0.35);
+      bg.strokeRoundedRect(-cw / 2, -chH / 2, cw, chH, 5);
+
+      const cont = this.add.container(0, 0, [bg, txt]);
+      chipItems.push({ cont, w: cw });
+      chipTotalW += cw + 10;
+    });
+
+    chipTotalW -= 10;
+    let curX = -chipTotalW / 2;
+    chipItems.forEach(item => {
+      item.cont.x = curX + item.w / 2;
+      this._showcaseChipsCont.add(item.cont);
+      curX += item.w + 10;
+    });
+  }
+
+  // Нижняя панель управления: Мульти-чипы (x1/x2/x3) и Сочная кнопка открытия
+  _initControls() {
+    const _cx = gameW(this) / 2;
+
+    this.result = this.add.text(_cx, 532, '', {
+      fontSize: '17px',
+      color: '#ff6666',
+      fontStyle: 'bold',
+      align: 'center'
+    }).setOrigin(0.5).setDepth(45);
+
+    // Мультипликатор открытия: x1 / x2 / x3
+    this.openCount = 1;
+    this.countChips = [];
+    const chipSteps = [-70, 0, 70];
+    [1, 2, 3].forEach((n, i) => {
+      const chipX = _cx + chipSteps[i];
+      const chipY = 566;
+      const chipW = 58, chipH = 30;
+
+      const cont = this.add.container(chipX, chipY).setDepth(45);
+      const bg = this.add.graphics();
+      const txt = this.add.text(0, 0, `×${n}`, {
+        fontSize: '15px',
+        color: '#ffffff',
+        fontStyle: 'bold'
+      }).setOrigin(0.5);
+
+      cont.add([bg, txt]);
+      cont.setSize(chipW, chipH);
+      cont.setInteractive({ useHandCursor: true });
+
+      const paintChip = (active, hovered) => {
+        bg.clear();
+        if (active) {
+          bg.fillStyle(0x4a2468, 1);
+          bg.fillRoundedRect(-chipW / 2, -chipH / 2, chipW, chipH, 7);
+          bg.fillStyle(0xffffff, 0.15);
+          bg.fillRoundedRect(-chipW / 2, -chipH / 2, chipW, 4, { tl: 7, tr: 7, bl: 0, br: 0 });
+          bg.lineStyle(2, 0xffd24a, 1);
+          bg.strokeRoundedRect(-chipW / 2, -chipH / 2, chipW, chipH, 7);
+          txt.setStyle({ color: '#ffff55' });
+        } else {
+          bg.fillStyle(hovered ? 0x222642 : 0x16182c, 0.95);
+          bg.fillRoundedRect(-chipW / 2, -chipH / 2, chipW, chipH, 7);
+          bg.lineStyle(1, hovered ? 0x667799 : 0x303550, 1);
+          bg.strokeRoundedRect(-chipW / 2, -chipH / 2, chipW, chipH, 7);
+          txt.setStyle({ color: hovered ? '#ffffff' : '#8899aa' });
+        }
+      };
+
+      cont.on('pointerdown', () => {
+        if (this.opening) return;
+        this.openCount = n;
+        this.refreshOpen();
+        try {
+          if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+            this.sound.play('sfx_hover', { volume: 0.2 });
+          }
+        } catch (e) {}
+      });
+      cont.on('pointerover', () => {
+        if (!this.opening) paintChip(this.openCount === n, true);
+      });
+      cont.on('pointerout', () => {
+        paintChip(this.openCount === n, false);
+      });
+
+      this.countChips.push({ n, cont, paintChip });
+    });
+
+    // Главная кнопка ОТКРЫТЬ (сочная, выпуклая, с золотой каймой и монеткой)
+    const btnW = 340, btnH = 52;
+    const btnY = 632;
+    this._openBtnCont = this.add.container(_cx, btnY).setDepth(45);
+    this._openBtnGfx = this.add.graphics();
+    this._openBtnCont.add(this._openBtnGfx);
+
+    this.open = this.add.text(0, 0, '', {
+      fontSize: '20px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    this.openCoin = this.add.image(0, 0, 'icon_coins').setDisplaySize(20, 15);
+    this._openBtnCont.add([this.open, this.openCoin]);
+
+    this._openBtnCont.setSize(btnW, btnH);
+    this._openBtnCont.setInteractive({ useHandCursor: true });
+
+    this._openBtnCont.on('pointerdown', () => {
+      if (this.opening) return;
+      this._openBtnCont.setScale(0.97);
+      this.openCase();
+    });
+    this._openBtnCont.on('pointerup', () => {
+      this._openBtnCont.setScale(1);
+    });
+    this._openBtnCont.on('pointerover', () => {
+      if (this.opening) return;
+      this._openBtnCont.setScale(1.02);
+      this._paintOpenBtn(true);
+      try {
+        if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+          this.sound.play('sfx_hover', { volume: 0.2 });
+        }
+      } catch (e) {}
+    });
+    this._openBtnCont.on('pointerout', () => {
+      this._openBtnCont.setScale(1);
+      this._paintOpenBtn(false);
+    });
+  }
+
+  // Отрисовка сочной кнопки открытия
+  _paintOpenBtn(hovered) {
+    if (!this._openBtnGfx) return;
+    const c = this._caseDef();
+    const total = c.price * this.openCount;
+    const canAfford = gameState.coins >= total;
+    const btnW = 340, btnH = 52;
+
+    this._openBtnGfx.clear();
+
+    if (this.opening) {
+      this._openBtnGfx.fillStyle(0x1a1e28, 0.85);
+      this._openBtnGfx.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
+      this._openBtnGfx.lineStyle(1.5, 0x333b4d, 1);
+      this._openBtnGfx.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
+    } else if (!canAfford) {
+      // Не хватает монет: приглушённо-бордовый
+      this._openBtnGfx.fillStyle(0x301a22, 0.95);
+      this._openBtnGfx.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
+      this._openBtnGfx.lineStyle(1.5, 0x8a3a4a, 0.8);
+      this._openBtnGfx.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
+    } else {
+      // Изумрудно-зелёный градиент с золотым бликом и кантом
+      this._openBtnGfx.fillStyle(hovered ? 0x278749 : 0x1d6c3a, 1);
+      this._openBtnGfx.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
+
+      // Верхний глянцевый блик
+      this._openBtnGfx.fillStyle(0xffffff, hovered ? 0.22 : 0.12);
+      this._openBtnGfx.fillRoundedRect(-btnW / 2 + 2, -btnH / 2 + 2, btnW - 4, 14, { tl: 10, tr: 10, bl: 0, br: 0 });
+
+      // Золотая кайма
+      this._openBtnGfx.lineStyle(hovered ? 2.5 : 2, 0xffd24a, 1);
+      this._openBtnGfx.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
+    }
   }
 
   _savePendingSpin(rewards) {
@@ -256,131 +848,78 @@ export default class LootBoxScene extends Phaser.Scene {
     this._showOkButton();
     this.refreshCoins();
     this.opening = false;
-    this.open.setStyle({ color: '#ffffff' });
+    this.refreshOpen();
     if (this._backBtn) this._backBtn.setStyle({ color: '#ffffff' });
   }
-
-  // Тултипы кейсов убраны по просьбе автора (описаний нет вообще).
 
   _caseDef() {
     return CASES.find(c => c.id === this.caseId) || CASES[0];
   }
 
-  // Карточки кейсов: всегда непрозрачный фон-панель + арт поверх.
-  // Прозрачные PNG больше не дают «стеклянный» вид; выбор — яркой рамкой.
-  _drawCaseCards() {
-    if (this.caseCards) this.caseCards.forEach(c => c.container.destroy());
-    this.caseCards = [];
-    CASES.forEach((c, i) => {
-      // Шесть кейсов в ряд (было три): карточки уже, всё влезает без скролла.
-      const cx = UX(this, 107 + i * 213);
-      const cy = 150;
-      const W = 200;
-      const H = 110;
-      const container = this.add.container(cx, cy);
-      const frame = this.add.graphics();
-      // Выбор виден на любом цвете рамки: толстая золотая + внешнее
-      // свечение + галочка. (У кейса «Скины» своя рамка золотая 2px —
-      // тонкую подсветку с ней было не отличить.)
-      const paintCard = (selected) => {
-        frame.clear();
-        frame.fillStyle(0x14142e, 1);
-        frame.fillRoundedRect(-W / 2, -H / 2, W, H, 10);
-        frame.lineStyle(2, c.line, 1);
-        frame.strokeRoundedRect(-W / 2, -H / 2, W, H, 10);
-        if (selected) {
-          frame.lineStyle(5, 0xffe066, 1);
-          frame.strokeRoundedRect(-W / 2, -H / 2, W, H, 10);
-          frame.lineStyle(2, 0xffe066, 0.35);
-          frame.strokeRoundedRect(-W / 2 - 6, -H / 2 - 6, W + 12, H + 12, 14);
-        }
-      };
-      paintCard(c.id === this.caseId);
-      container.add(frame);
-      const texKey = c.id.startsWith('case_') ? c.id : 'case_' + c.id;
-      const hasArt = this.textures.exists(texKey);
-      if (hasArt) {
-        const img = this.add.image(0, -18, texKey);
-        const src = this.textures.get(texKey).getSourceImage();
-        if (src && src.width && src.height) {
-          img.setScale(Math.min(200 / src.width, 52 / src.height));
-        }
-        container.add(img);
-      } else {
-        // Заглушка-эмблема в цвете кейса.
-        const ph = this.add.graphics();
-        ph.fillStyle(c.color, 1);
-        ph.fillCircle(0, -18, 20);
-        ph.lineStyle(3, c.line, 1);
-        ph.strokeCircle(0, -18, 20);
-        container.add(ph);
-      }
-      const name = this.add.text(0, 12, c.name, {
-        fontSize: '17px', color: '#ffffff', fontStyle: 'bold'
-      }).setOrigin(0.5, 0);
-      const price = this.add.text(14, H / 2 - 6, `${c.price}`, {
-        fontSize: '16px', color: '#ffee88'
-      }).setOrigin(0.5, 1);
-      const coin = this.add.image(0, 0, 'icon_coins').setDisplaySize(15, 12);
-      coin.setPosition(14 - price.displayWidth / 2 - 12, H / 2 - 14);
-      container.add([name, price, coin]);
-      container.setSize(W, H);
-      container.setInteractive({ useHandCursor: true });
-      container.on('pointerover', () => {
-        try {
-          if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
-            this.sound.play('sfx_hover', { volume: 0.2 });
-          }
-        } catch (e) { /* noop */ }
-      });
-      container.on('pointerdown', () => {
-        if (this.opening) return;
-        this.caseId = c.id;
-        this.refreshCase();
-      });
-      this.caseCards.push({ id: c.id, container, paintCard });
-    });
-  }
-
   refreshCase() {
     const c = this._caseDef();
     this._hideRewards();
-    // Смена кейса — старые ленты и призы не должны висеть фоном.
     if (!this.opening) {
       this._clearReels();
       this._hideRewards();
     }
     (this.caseCards || []).forEach(card => {
       const on = card.id === c.id;
-      if (card.paintCard) card.paintCard(on);
+      if (card.paintCard) card.paintCard(on, false);
     });
-    this.open.setText(`Открыть за ${c.price}`);
-    this.openCoin.setPosition(this.open.x - this.open.displayWidth / 2 - 20, this.open.y);
+
+    this._updateShowcase(c);
     this.result.setText('');
     this.refreshOpen();
   }
 
-  // Цена с учётом количества + подсветка выбранного чипа.
   refreshOpen() {
     const c = this._caseDef();
-    this.open.setText(`Открыть за ${c.price * this.openCount}`);
-    this.openCoin.setPosition(this.open.x - this.open.displayWidth / 2 - 20, this.open.y);
-    (this.countChips || []).forEach((chip, i) => {
-      const on = (i + 1) === this.openCount;
-      chip.setStyle({
-        color: on ? '#ffff55' : '#ffffff',
-        backgroundColor: on ? '#633c76' : '#252560'
-      });
+    const total = c.price * this.openCount;
+    const canAfford = gameState.coins >= total;
+
+    (this.countChips || []).forEach(chip => {
+      chip.paintChip(chip.n === this.openCount, false);
     });
+
+    if (this.opening) {
+      this.open.setText('ОТКРЫВАЕТСЯ...').setFontSize('18px').setColor('#888888');
+      this.openCoin.setVisible(false);
+      this.open.setPosition(0, 0).setOrigin(0.5, 0.5);
+    } else if (!canAfford) {
+      this.open.setFontSize('14px');
+      this.open.setText(`НЕДОСТАТОЧНО МОНЕТ (${total.toLocaleString('ru-RU')})`);
+      this.open.setColor('#ff9999');
+      this.openCoin.setVisible(true);
+
+      const coinW = 20;
+      const gap = 8;
+      const totalW = this.open.displayWidth + coinW + gap;
+      const startX = -totalW / 2;
+      this.openCoin.setPosition(startX + coinW / 2, 0);
+      this.open.setPosition(startX + coinW + gap, 0).setOrigin(0, 0.5);
+    } else {
+      this.open.setFontSize('17px');
+      this.open.setText(`ОТКРЫТЬ ЗА ${total.toLocaleString('ru-RU')}`);
+      this.open.setColor('#ffffff');
+      this.openCoin.setVisible(true);
+
+      const coinW = 20;
+      const gap = 8;
+      const totalW = this.open.displayWidth + coinW + gap;
+      const startX = -totalW / 2;
+      this.openCoin.setPosition(startX + coinW / 2, 0);
+      this.open.setPosition(startX + coinW + gap, 0).setOrigin(0, 0.5);
+    }
+
+    this._paintOpenBtn(false);
   }
 
   refreshCoins() {
-    this.coinsText.setText(`${gameState.coins}`);
+    this.coinsText.setText(`${gameState.coins.toLocaleString('ru-RU')}`);
   }
 
   // Пулы кейса: оружие по цене + скины ТОЛЬКО на это оружие.
-  // Легендарное оружие (ножи) — где ближний бой; легендарные скины —
-  // где allowLegendarySkins (кейс скинов — путь к геному).
   _casePools() {
     const c = this._caseDef();
     const ownedSkinIds = new Set(gameState.weaponSkins || []);
@@ -393,9 +932,7 @@ export default class LootBoxScene extends Phaser.Scene {
     );
     const poolNames = new Set();
     pool.forEach(w => poolNames.add(w.name));
-    // Скины ножа — легендарные, только где разрешены леге-скины.
-    // В кейсе скинов — еще и скины ближнего боя (все редкости 4):
-    // иначе леге-пул всего 3 штуки и контракт из 5 не собрать.
+
     if (allowLegendary) poolNames.add('Knife');
     if (c.allowLegendarySkins) ['катана', 'мачете', 'топор'].forEach(n => poolNames.add(n));
     const caseSkins = weaponSkins.filter(s => {
@@ -404,8 +941,7 @@ export default class LootBoxScene extends Phaser.Scene {
       if ((s.rarity ?? 1) >= 4 && !allowLegSkins) return false;
       return true;
     });
-    // Редкости скинов пула БЕЗ учёта владения: отличаем «такое уже есть»
-    // (пыль) от «такого в кейсе нет» (провал ниже по тирам).
+
     const rarityExists = new Set();
     weaponSkins.forEach(s => {
       if (!poolNames.has(s.weapon)) return;
@@ -417,10 +953,8 @@ export default class LootBoxScene extends Phaser.Scene {
 
   rollReward() {
     const { c, pool, caseSkins, allowLegendary, allowLegSkins, rarityExists } = this._casePools();
-    // Гардероб крутится отдельно: шмотка или монеты.
     if (c.kind === 'gear') return this._rollGear();
-    // Гарантированный кейс: скин фиксированной редкости без рулетки.
-    // Легендарный пул включает нож. Всё скуплено — пыль 25% как везде.
+
     if (c.fixedRarity != null) {
       try {
         const ownedIds = new Set(gameState.weaponSkins || []);
@@ -429,8 +963,7 @@ export default class LootBoxScene extends Phaser.Scene {
       } catch (e) {}
       return { type: 'coins', amount: Math.max(1, Math.round(c.price * 0.25)), jackpot: false, dust: true };
     }
-    // Строго по предикату: пустого класса нет — проваливаемся ниже по тирам,
-    // а не тянем чужое из общего пула.
+
     const weaponsOnly = c.kind === 'weapons';
     const skinsOnly = c.kind === 'skins';
     const pickWeapon = (pred) => {
@@ -443,9 +976,7 @@ export default class LootBoxScene extends Phaser.Scene {
       const list = caseSkins.filter(s => (s.rarity ?? 1) === rarity);
       return list.length ? Phaser.Math.RND.pick(list) : null;
     };
-    // Скин ветки: есть свободный — выдаём; всё такой редкости уже собрано —
-    // пыль (немного монет, без джекпота); такой редкости в кейсе нет вовсе —
-    // null, каскад ниже по тирам.
+
     const trySkin = (rarity) => {
       const sk = pickSkin(rarity);
       if (sk) return { type: 'skin', skin: sk };
@@ -460,14 +991,12 @@ export default class LootBoxScene extends Phaser.Scene {
       return { type: 'weapon', weapon };
     };
     const r = Math.random();
-    // Пороги веток — из полей кейса (legRate/epicW/rareW/commW/grayW).
-    // skinProb — доля скинов в ветке (0 — только оружие, 1 — только скины).
+
     const legR = c.legRate ?? 0.01, epicW = c.epicW ?? 0.05;
     const rareW = c.rareW ?? 0.10, commW = c.commW ?? 0.12, grayW = c.grayW ?? 0.18;
     const skinP = c.skinProb ?? 0.5;
     const tE = legR + epicW, tR = tE + rareW, tB = tR + commW, tG = tB + grayW;
-    // Легендарное: ближний бой (ножи) и/или скин 4. В оружейном —
-    // только ножи, в скинах — только скины.
+
     if (r < legR && (allowLegendary || allowLegSkins)) {
       if (allowLegendary) {
         const melee = pool.filter(w => w.category === 'melee');
@@ -482,7 +1011,7 @@ export default class LootBoxScene extends Phaser.Scene {
       }
       if (s4) return s4;
     }
-    // Эпическое: оружие tier 3 (price > 12000) или скин редкости 3.
+
     if (r < tE) {
       if (Math.random() >= skinP) {
         const w = pickWeapon(w => w.category !== 'melee' && w.price > 12000);
@@ -491,7 +1020,7 @@ export default class LootBoxScene extends Phaser.Scene {
       const s3 = trySkin(3);
       if (s3) return s3;
     }
-    // Редкое: оружие tier 2 (6000–12000) или скин редкости 2.
+
     if (r < tR) {
       if (Math.random() >= skinP) {
         const w = pickWeapon(w => w.category !== 'melee' && w.price > 6000 && w.price <= 12000);
@@ -500,7 +1029,7 @@ export default class LootBoxScene extends Phaser.Scene {
       const s2 = trySkin(2);
       if (s2) return s2;
     }
-    // Обычное: оружие tier 1 (2200–6000) или скин редкости 1.
+
     if (r < tB) {
       if (Math.random() >= skinP) {
         const w = pickWeapon(w => w.price >= 2200 && w.price <= 6000);
@@ -509,7 +1038,7 @@ export default class LootBoxScene extends Phaser.Scene {
       const s1 = trySkin(1);
       if (s1) return s1;
     }
-    // Ширпотреб: дешёвое оружие (< 2200) или скин редкости 0.
+
     if (r < tG) {
       if (Math.random() >= skinP) {
         const w = pickWeapon(w => w.price < 2200);
@@ -518,16 +1047,11 @@ export default class LootBoxScene extends Phaser.Scene {
       const s0 = trySkin(0);
       if (s0) return s0;
     }
-    // 20% — деньги больше цены кейса, 34% — деньги меньше цены.
-    // Размер — ОТДЕЛЬНЫМ роллом (доля больших — pBig кейса, иначе 0.37):
-    // иначе несработавшие ветки скинов/пушек сыпались бы только в большие
-    // и кейс печатал деньги.
+
     if (Math.random() < (c.pBig ?? 0.37)) return this._coinDrop(c, true);
     return this._coinDrop(c, false);
   }
 
-  // Крутка гардероба: gearRate — вещь, иначе монеты. Всё собрано — пыль.
-  // Добивка сета: не хватает 1 из 4 — недостающая часть падает с шансом 3%.
   _rollGear() {
     const c = this._caseDef();
     try {
@@ -552,8 +1076,6 @@ export default class LootBoxScene extends Phaser.Scene {
     const rate = c.gearRate ?? 0.55;
     if (r < rate) {
       if (fresh.length) {
-        // Взвешенный выбор по редкости вещи (GEAR_RARITY_WEIGHT: ширпотреб
-        // сыплется часто, легендарка — почти никогда).
         try {
           const weights = fresh.map(g => GEAR_RARITY_WEIGHT[Math.min(4, Math.max(0, g.rarity ?? 1))]);
           let total = weights.reduce((a, b) => a + b, 0);
@@ -572,23 +1094,18 @@ export default class LootBoxScene extends Phaser.Scene {
   }
 
   _coinDrop(c, big) {
-    // Диапазоны множителями от цены (bigMin/smallMax опциональны,
-    // по умолчанию 1 — как раньше: большие от цены и выше).
     const lo = big
       ? Math.round(c.price * (c.bigMin != null ? c.bigMin : 1))
       : Math.round(c.price * c.coinMin);
     const hi = big
       ? Math.round(c.price * c.coinMax)
       : Math.round(c.price * (c.smallMax != null ? c.smallMax : 1));
-    // hi обязан быть >= lo: при округлении lo==hi давало +1 сверху.
     const hi2 = Math.max(lo, hi);
     const amount = Phaser.Math.Between(Math.max(1, lo), hi2);
     const jackpot = big && amount >= Math.round(c.price * c.coinMax * 0.95);
     return { type: 'coins', amount, jackpot };
   }
 
-  // Ячейка ленты как объект: {kind:'coins'|'weapon'|'skin', ...}.
-  // Компенсация (дубликат) показывается деньгами: сумма + подпись за что.
   _poolEntryFor(reward) {
     if (reward.type === 'coins') {
       const e = { kind: 'coins', amount: reward.amount, jackpot: !!reward.jackpot };
@@ -636,8 +1153,6 @@ export default class LootBoxScene extends Phaser.Scene {
       const mult = jackpot ? c.coinMax : c.coinMin + Math.random() * (c.coinMax - c.coinMin);
       return { kind: 'coins', amount: Math.round(c.price * mult), jackpot };
     }
-    // Наполнение ленты — строго из ветки кейса: в оружейном нет скинов,
-    // в скинах нет пушек. Иначе крутка врёт о содержимом.
     if (c.kind === 'weapons') {
       if (r < 0.45 && pool.length) {
         const weapon = Phaser.Math.RND.pick(pool);
@@ -661,8 +1176,6 @@ export default class LootBoxScene extends Phaser.Scene {
       }
     }
     if (r < 0.55) {
-      // Наполнение ленты — из того же пула скинов кейса (легенд/ножей
-      // в рядовом и легенд в арсенале тут тоже нет).
       if (caseSkins.length) return { kind: 'skin', skin: Phaser.Math.RND.pick(caseSkins) };
     }
     const jackpot = Math.random() < c.jackpotChance;
@@ -674,65 +1187,97 @@ export default class LootBoxScene extends Phaser.Scene {
     return '#' + colorInt.toString(16).padStart(6, '0');
   }
 
-  // Редкость скина (0–4) → тир рамки (0–4) один в один.
   _skinTier(skin) {
     const r = skin.rarity ?? 1;
     return Math.min(4, Math.max(0, r));
   }
 
-  // Одна ячейка: картинка в рамке редкости, название — в цвете редкости.
-  // Скины — тоже рамкой (а не голым текстом): имя в цвете редкости скина.
-  // Монеты: джекпот — золото, сумма больше цены кейса — синь, мелочь — серая.
+  _tierLabel(tierIndex) {
+    return TIER_NAMES[Math.min(4, Math.max(0, tierIndex))] || 'ПРЕДМЕТ';
+  }
+
+  // Ячейка рулетки с красивым оформлением, тиром редкости, бликами и центрированным артом
   _reelCell(entry, CELL_W, CELL_H, casePrice) {
     let colorInt;
+    let tierIdx = 0;
     if (entry.kind === 'skin') {
+      tierIdx = this._skinTier(entry.skin);
       const rc = String(entry.skin.rarityColor || '');
-      colorInt = /^#[0-9a-fA-F]{6}$/.test(rc) ? parseInt(rc.slice(1), 16) : TIER_COLORS[this._skinTier(entry.skin)];
+      colorInt = /^#[0-9a-fA-F]{6}$/.test(rc) ? parseInt(rc.slice(1), 16) : TIER_COLORS[tierIdx];
     } else if (entry.kind === 'coins') {
-      colorInt = entry.jackpot ? TIER_COLORS[3] : (casePrice && entry.amount > casePrice ? TIER_COLORS[1] : TIER_COLORS[0]);
+      tierIdx = entry.jackpot ? 4 : (casePrice && entry.amount > casePrice ? 1 : 0);
+      colorInt = entry.jackpot ? TIER_COLORS[4] : (casePrice && entry.amount > casePrice ? TIER_COLORS[1] : TIER_COLORS[0]);
     } else if (entry.kind === 'gear') {
-      colorInt = 0x66d9e8;
+      tierIdx = entry.gear ? Math.min(4, Math.max(0, entry.gear.rarity ?? 1)) : 1;
+      colorInt = TIER_COLORS[tierIdx];
     } else {
-      colorInt = TIER_COLORS[weaponTier(entry.weapon)];
+      tierIdx = weaponTier(entry.weapon);
+      colorInt = TIER_COLORS[tierIdx];
     }
     const css = this._tierCss(colorInt);
-    const dark = Phaser.Display.Color.IntegerToColor(colorInt);
-    dark.brighten(-55);
 
     const container = this.add.container(0, 0);
-    const W = CELL_W - 24;
-    const H = CELL_H - 24;
+    const W = CELL_W - 22;
+    const H = CELL_H - 22;
+
     const bg = this.add.graphics();
-    bg.fillStyle(dark.color, 1);
+    bg.fillStyle(0x0e1020, 0.96);
     bg.fillRoundedRect(-W / 2, -H / 2, W, H, 10);
-    bg.lineStyle(8, colorInt, 1);
+
+    // Верхняя полоска тира редкости
+    bg.fillStyle(colorInt, 0.9);
+    bg.fillRoundedRect(-W / 2 + 3, -H / 2 + 2, W - 6, 3, { tl: 8, tr: 8, bl: 0, br: 0 });
+
+    // Рамка цвета редкости
+    bg.lineStyle(2.5, colorInt, 1);
     bg.strokeRoundedRect(-W / 2, -H / 2, W, H, 10);
+
+    // Тонкий внутренний блик
+    bg.lineStyle(1, 0xffffff, 0.12);
+    bg.strokeRoundedRect(-W / 2 + 2, -H / 2 + 2, W - 4, H - 4, 8);
+
+    // Бейдж тира (название редкости с просторным отступом от полоски)
+    const tierName = this._tierLabel(tierIdx);
+    const badgeY = -H / 2 + 22;
+    const badgeText = this.add.text(0, badgeY, tierName, {
+      fontSize: '11px',
+      color: css,
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    const bw = Math.max(84, Math.ceil(badgeText.displayWidth + 18));
+    const bh = 18;
+    bg.fillStyle(0x070914, 0.85);
+    bg.fillRoundedRect(-bw / 2, badgeY - bh / 2, bw, bh, 5);
+    bg.lineStyle(1, colorInt, 0.4);
+    bg.strokeRoundedRect(-bw / 2, badgeY - bh / 2, bw, bh, 5);
+
     container.add(bg);
+    container.add(badgeText);
 
     if (entry.kind === 'coins') {
-      // Значок строго внутри ячейки: высота ≤ 36% высоты, центр с отступом.
-      const ih = Math.min(64, H * 0.36);
-      const img = this.add.image(0, -H / 2 + 14 + ih / 2, 'icon_coins');
+      const ih = Math.min(60, H * 0.35);
+      const img = this.add.image(0, -10, 'icon_coins');
       img.setDisplaySize(ih / 0.77, ih);
       container.add(img);
-      container.add(this.add.text(0, H / 2 - 32, `+${entry.amount}`, {
-        fontSize: '26px', color: css, fontStyle: 'bold'
+
+      container.add(this.add.text(0, H / 2 - 36, `+${entry.amount.toLocaleString('ru-RU')}`, {
+        fontSize: '24px', color: css, fontStyle: 'bold'
       }).setOrigin(0.5));
+
       if (entry.sub) {
-        container.add(this.add.text(0, H / 2 - 12, entry.sub, {
-          fontSize: '12px', color: '#ffcc88', align: 'center',
+        container.add(this.add.text(0, H / 2 - 14, entry.sub, {
+          fontSize: '11px', color: '#ffcc88', align: 'center',
           wordWrap: { width: W - 16 }
         }).setOrigin(0.5));
       }
     } else if (entry.kind === 'weapon') {
       const imgKey = weaponImage(entry.weapon.name);
       if (this.textures.exists(imgKey)) {
-        const img = this.add.image(0, -H / 2 + 44, imgKey);
+        const img = this.add.image(0, -6, imgKey);
         const src = this.textures.get(imgKey).getSourceImage();
         if (src && src.width && src.height) {
-          let sc = Math.min((W - 20) / src.width, 70 / src.height);
-          // Катана в ячейке: в 2 раза крупнее и чуть вправо — с клампом,
-          // чтобы повёрнутая влезла в рамку.
+          let sc = Math.min((W - 24) / src.width, 68 / src.height);
           if (entry.weapon.name === 'катана') {
             const rot = 0.32, co = Math.cos(rot), si = Math.sin(rot);
             const fitRot = Math.min(
@@ -746,49 +1291,76 @@ export default class LootBoxScene extends Phaser.Scene {
         }
         container.add(img);
       }
-      container.add(this.add.text(0, H / 2 - 46, getWeaponLabel(entry.weapon.name), {
-        fontSize: '15px', color: css, fontStyle: 'bold', align: 'center',
+      container.add(this.add.text(0, H / 2 - 24, getWeaponLabel(entry.weapon.name), {
+        fontSize: '14px', color: css, fontStyle: 'bold', align: 'center',
         wordWrap: { width: W - 16 }
       }).setOrigin(0.5));
     } else if (entry.kind === 'gear' && entry.gear) {
-      container.add(this.add.text(0, -H / 2 + 16, 'ОДЕЖДА' + (entry.dup ? ' (повтор)' : ''), {
-        fontSize: '12px', color: '#99aacc', fontStyle: 'bold'
-      }).setOrigin(0.5));
       try {
         const gk = gearPreviewTex(entry.gear);
         if (gk && this.textures.exists(gk)) {
-          const gimg = this.add.image(0, 0, gk);
+          const gimg = this.add.image(0, -6, gk);
           const gs = this.textures.get(gk).getSourceImage();
           if (gs && gs.width && gs.height) {
-            gimg.setScale(Math.min((W - 20) / gs.width, 70 / gs.height));
+            gimg.setScale(Math.min((W - 24) / gs.width, 68 / gs.height));
           }
           container.add(gimg);
         }
       } catch (e) {}
-      container.add(this.add.text(0, H / 2 - 18, entry.gear.label, {
-        fontSize: '16px', color: entry.gear.rarityColor || css, fontStyle: 'bold',
+      container.add(this.add.text(0, H / 2 - 24, entry.gear.label, {
+        fontSize: '14px', color: entry.gear.rarityColor || css, fontStyle: 'bold',
         align: 'center', wordWrap: { width: W - 16 }
       }).setOrigin(0.5));
     } else {
-      container.add(this.add.text(0, -H / 2 + 16, 'СКИН', {
-        fontSize: '12px', color: '#99aacc', fontStyle: 'bold'
-      }).setOrigin(0.5));
-      container.add(this.add.text(0, 4, entry.skin.name, {
+      container.add(this.add.text(0, -4, entry.skin.name, {
         fontSize: '16px', color: entry.skin.rarityColor || css, fontStyle: 'bold',
         align: 'center', wordWrap: { width: W - 16 }
       }).setOrigin(0.5));
-      container.add(this.add.text(0, H / 2 - 18, getWeaponLabel(entry.skin.weapon), {
+      container.add(this.add.text(0, H / 2 - 20, getWeaponLabel(entry.skin.weapon), {
         fontSize: '12px', color: '#99aacc'
       }).setOrigin(0.5));
     }
     return container;
   }
 
+  // Звуковой щелчок рулетки при прокрутке ячейки (быстрый механический клик без тормозов)
+  _playReelTick() {
+    const now = (this.time && this.time.now) || Date.now();
+    if (this._lastTickTime && (now - this._lastTickTime < 70)) return;
+    this._lastTickTime = now;
+
+    try {
+      const sc = this.sound;
+      if (!sc || sc.locked || !sc.context || typeof sc.context.createOscillator !== 'function') return;
+      const ctx = sc.context;
+      if (ctx.state === 'suspended') return;
+      let vol = 0.05;
+      try {
+        const sv = gameState && gameState.sfxVol;
+        vol = 0.05 * (Number.isFinite(+sv) ? Math.max(0, Math.min(1, +sv)) : 1);
+      } catch (e) {}
+      if (!(vol > 0.005)) return;
+      const t0 = ctx.currentTime || 0;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(540, t0);
+      osc.frequency.exponentialRampToValueAtTime(180, t0 + 0.02);
+      gain.gain.setValueAtTime(vol, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.02);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.025);
+    } catch (e) {}
+  }
+
   openCase() {
     const c = this._caseDef();
     const total = c.price * this.openCount;
     if (gameState.coins < total) {
-      this.result.setText('Недостаточно монет');
+      this.result.setText('Недостаточно монет для открытия');
+      this.refreshOpen();
       return;
     }
 
@@ -805,21 +1377,17 @@ export default class LootBoxScene extends Phaser.Scene {
     this._pendingCount = this.openCount;
     this._pendingFinalized = false;
     this._finishedRewards = [];
-    // Запоминаем, из какого кейса призы: скины штампуются происхождением
-    // (нужно контракту — на легендарный идут только эпики из кейса Скинов).
     this._grantCaseId = c.id;
     this.refreshCoins();
     try {
       if (this.cache.audio.exists('sfx_buy') && !this.sound.locked) {
         this.sound.play('sfx_buy', { volume: 0.4 });
       }
-    } catch (e) { /* noop */ }
+    } catch (e) {}
 
     const rewards = [];
     for (let i = 0; i < this.openCount; i++) rewards.push(this.rollReward());
-    // Дубликат внутри одного открытия (п.9): второй такой же кейсовый ствол —
-    // уже компенсация, а не «новое оружие». rollReward не видит будущие
-    // выдачи, поэтому правим здесь до анимации. То же для шмоток.
+
     {
       const seenNew = new Set();
       const seenGear = new Set();
@@ -839,22 +1407,39 @@ export default class LootBoxScene extends Phaser.Scene {
         }
       });
     }
+
     this.opening = true;
     this._hideRewards();
-    this.open.setStyle({ color: '#888888' });
-    if (this._backBtn) this._backBtn.setStyle({ color: '#888888' });
+    this.refreshOpen();
+    if (this._backBtn) {
+      this._backBtn.setStyle({ color: '#888888' });
+      if (this._renderBack) this._renderBack(false);
+    }
     this._savePendingSpin(rewards);
+
+    // Плавное скрытие постамента при старте крутки + отключение рендера витрины
+    if (this._showcaseCont) {
+      this.tweens.add({
+        targets: this._showcaseCont,
+        alpha: 0,
+        scale: 0.94,
+        duration: 250,
+        ease: 'Cubic.Out',
+        onComplete: () => {
+          if (this._showcaseCont) this._showcaseCont.setVisible(false);
+          if (this._heroTween) this._heroTween.pause();
+        }
+      });
+    }
 
     this._pendingReels = rewards.length;
     this._multiLines = [];
     this._multiRewards = rewards.slice();
     rewards.forEach((reward, i) => {
       if (rewards.length === 1) {
-        this.startReel(reward, { y: 330, scale: 1, delay: 0 });
+        this.startReel(reward, { y: 366, scale: 1, delay: 0, isMaster: true });
       } else {
-        // Три крутки мелко (ниже карточек ~221, выше чипов ~578):
-        // ряды 292/402/512, золотая рамка без внешней.
-        this.startReel(reward, { y: 292 + i * 110, scale: 0.5, delay: i * 350 });
+        this.startReel(reward, { y: 295 + i * 112, scale: 0.52, delay: i * 300, isMaster: i === 0 });
       }
     });
   }
@@ -874,21 +1459,52 @@ export default class LootBoxScene extends Phaser.Scene {
     this._multiIcons = [];
   }
 
-  // Кнопка ОК после показа наград: прячет блок наград, возвращает открытие.
+  // Кнопка ОК/Забрать после показа наград
   _showOkButton() {
     const _cx = gameW(this) / 2;
     this._clearOk();
-    this._openRow = [this.open, this.openCoin, ...(this.countChips || [])].filter(Boolean);
+    this._openRow = [this._openBtnCont, ...(this.countChips || []).map(c => c.cont)].filter(Boolean);
     this._openRow.forEach(o => { try { o.setVisible(false); } catch (e) {} });
-    const btn = this.add.text(_cx, 630, 'ОК', {
-      fontSize: '24px', color: '#ffffff', backgroundColor: '#2a5a2a',
-      padding: 12, fixedWidth: 160, align: 'center'
-    }).setOrigin(0.5).setDepth(60);
-    btn.setInteractive({ useHandCursor: true });
-    btn.on('pointerover', () => btn.setStyle({ color: '#ffff55' }));
-    btn.on('pointerout', () => btn.setStyle({ color: '#ffffff' }));
-    btn.on('pointerdown', () => this._hideRewards());
-    this._okBtn = btn;
+
+    const btnCont = this.add.container(_cx, 638).setDepth(60);
+    const btnW = 200, btnH = 46;
+    const btnGfx = this.add.graphics();
+
+    const paintOk = (hovered) => {
+      btnGfx.clear();
+      btnGfx.fillStyle(hovered ? 0x278749 : 0x1d6c3a, 1);
+      btnGfx.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 10);
+      btnGfx.fillStyle(0xffffff, hovered ? 0.22 : 0.12);
+      btnGfx.fillRoundedRect(-btnW / 2 + 2, -btnH / 2 + 2, btnW - 4, 12, { tl: 8, tr: 8, bl: 0, br: 0 });
+      btnGfx.lineStyle(hovered ? 2.5 : 2, 0xffd24a, 1);
+      btnGfx.strokeRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 10);
+    };
+    paintOk(false);
+
+    const txt = this.add.text(0, 0, 'ЗАБРАТЬ', {
+      fontSize: '20px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    btnCont.add([btnGfx, txt]);
+    btnCont.setSize(btnW, btnH);
+    btnCont.setInteractive({ useHandCursor: true });
+    btnCont.on('pointerover', () => {
+      paintOk(true);
+      btnCont.setScale(1.03);
+      try {
+        if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+          this.sound.play('sfx_hover', { volume: 0.2 });
+        }
+      } catch (e) {}
+    });
+    btnCont.on('pointerout', () => {
+      paintOk(false);
+      btnCont.setScale(1);
+    });
+    btnCont.on('pointerdown', () => this._hideRewards());
+    this._okBtn = btnCont;
   }
 
   _clearOk() {
@@ -898,26 +1514,71 @@ export default class LootBoxScene extends Phaser.Scene {
     }
   }
 
-  // Убрать весь блок наград (иконки, ОК, текст) и вернуть ряд открытия.
   _hideRewards() {
     this._clearMultiIcons();
     this._clearOk();
     if (this.result) this.result.setText('');
     (this._openRow || []).forEach(o => { try { o.setVisible(true); } catch (e) {} });
+
+    // Возвращаем витрину выбранного кейса
+    if (this._showcaseCont) {
+      this._showcaseCont.setVisible(true);
+      if (this._heroTween) this._heroTween.resume();
+      this.tweens.add({
+        targets: this._showcaseCont,
+        alpha: 1,
+        scale: 1,
+        duration: 350,
+        ease: 'Cubic.Out'
+      });
+    }
   }
 
+  // Запуск крутки рулетки
   startReel(reward, layout) {
     const CELL_W = 340;
     const CELL_H = 200;
-    const cellCount = 13;
-    const finalIdx = 9;
-    const { y: REEL_Y, scale = 1, delay = 0 } = layout || {};
+    const cellCount = 11;
+    const finalIdx = 8;
+    const { y: REEL_Y, scale = 1, delay = 0, isMaster = true } = layout || {};
+    const _cx = gameW(this) / 2;
 
     const finalEntry = this._poolEntryFor(reward);
 
     if (!this.reelContainers) this.reelContainers = [];
     if (!this._reelFrames) this._reelFrames = [];
-    const reel = this.add.container(0, REEL_Y);
+
+    // Фоновая подложка трека рулетки
+    const trackW = (CELL_W * 3 + 40) * scale;
+    const trackH = (CELL_H + 24) * scale;
+    const trackBg = this.add.graphics().setDepth(38);
+    trackBg.fillStyle(0x0a0c18, 0.88);
+    trackBg.fillRoundedRect(_cx - trackW / 2, REEL_Y - trackH / 2, trackW, trackH, 12 * scale);
+    trackBg.lineStyle(1.5, 0x2a3048, 1);
+    trackBg.strokeRoundedRect(_cx - trackW / 2, REEL_Y - trackH / 2, trackW, trackH, 12 * scale);
+    this._reelFrames.push(trackBg);
+
+    // Боковые шторки под цвет фона (depth 41) — скрывают выходящие за пределы трека ячейки БЕЗ тяжелых WebGL stencil-масок!
+    const curtainY = REEL_Y - trackH / 2 - 2;
+    const curtainH = trackH + 4;
+    const leftCurtainW = Math.max(0, _cx - trackW / 2);
+    const rightCurtainX = _cx + trackW / 2;
+
+    const leftCurtain = this.add.graphics().setDepth(41);
+    leftCurtain.fillStyle(0x090b1c, 1);
+    leftCurtain.fillRect(0, curtainY, leftCurtainW, curtainH);
+    leftCurtain.fillStyle(0x050610, 0.5);
+    leftCurtain.fillRect(leftCurtainW - 16, curtainY, 16, curtainH);
+    this._reelFrames.push(leftCurtain);
+
+    const rightCurtain = this.add.graphics().setDepth(41);
+    rightCurtain.fillStyle(0x090b1c, 1);
+    rightCurtain.fillRect(rightCurtainX, curtainY, gameW(this) - rightCurtainX, curtainH);
+    rightCurtain.fillStyle(0x050610, 0.5);
+    rightCurtain.fillRect(rightCurtainX, curtainY, 16, curtainH);
+    this._reelFrames.push(rightCurtain);
+
+    const reel = this.add.container(0, REEL_Y).setDepth(40);
     reel.setScale(scale);
     this.reelContainers.push(reel);
 
@@ -928,68 +1589,77 @@ export default class LootBoxScene extends Phaser.Scene {
       reel.add(cell);
     }
 
-    // Рамка окна выигрыша (масштабируется вместе с лентой).
-    // У мелких лент — только золотая, без внешней белой (ряды впритык).
-    let frame = null;
-    let frameIn = null;
-    if (scale < 1) {
-      frameIn = this.add.graphics();
-      frameIn.lineStyle(4, 0xffd700, 1);
-      frameIn.strokeRoundedRect(
-        gameW(this) / 2 - (CELL_W / 2 + 6) * scale, REEL_Y - (CELL_H / 2 + 6) * scale,
-        (CELL_W + 12) * scale, (CELL_H + 12) * scale, 10
-      );
-      this._reelFrames.push(frameIn);
-    } else {
-      frame = this.add.graphics();
-      frame.lineStyle(7, 0xffffff, 0.95);
-      frame.strokeRoundedRect(
-        gameW(this) / 2 - (CELL_W / 2 + 12) * scale, REEL_Y - (CELL_H / 2 + 12) * scale,
-        (CELL_W + 24) * scale, (CELL_H + 24) * scale, 12
-      );
-      frameIn = this.add.graphics();
-      frameIn.lineStyle(4, 0xffd700, 1);
-      frameIn.strokeRoundedRect(
-        gameW(this) / 2 - (CELL_W / 2 + 6) * scale, REEL_Y - (CELL_H / 2 + 6) * scale,
-        (CELL_W + 12) * scale, (CELL_H + 12) * scale, 10
-      );
-      this._reelFrames.push(frame, frameIn);
-    }
+    // Рамка выигрышного окна по центру
+    const frameGfx = this.add.graphics().setDepth(42);
+    const winW = (CELL_W + 8) * scale;
+    const winH = (CELL_H + 12) * scale;
 
-    // В масштабированном контейнере позиция умножается на scale.
-    const targetX = gameW(this) / 2 - (finalIdx * CELL_W + CELL_W / 2) * scale;
-    const startX = gameW(this) / 2 - (CELL_W / 2) * scale + CELL_W * scale * 2;
+    // Золотая рамка
+    frameGfx.lineStyle(3.5, 0xffd700, 1);
+    frameGfx.strokeRoundedRect(_cx - winW / 2, REEL_Y - winH / 2, winW, winH, 10 * scale);
+
+    // Внешнее свечение
+    frameGfx.lineStyle(2, 0xffd700, 0.35);
+    frameGfx.strokeRoundedRect(_cx - winW / 2 - 4 * scale, REEL_Y - winH / 2 - 4 * scale, winW + 8 * scale, winH + 8 * scale, 12 * scale);
+
+    // Верхняя и нижняя золотые стрелочки-маркеры (указатели payline)
+    const arrowSz = 9 * scale;
+    frameGfx.fillStyle(0xffd700, 1);
+    frameGfx.fillPoints([
+      new Phaser.Geom.Point(_cx, REEL_Y - winH / 2 + arrowSz + 2),
+      new Phaser.Geom.Point(_cx - arrowSz, REEL_Y - winH / 2 - 2),
+      new Phaser.Geom.Point(_cx + arrowSz, REEL_Y - winH / 2 - 2)
+    ], true);
+
+    frameGfx.fillPoints([
+      new Phaser.Geom.Point(_cx, REEL_Y + winH / 2 - arrowSz - 2),
+      new Phaser.Geom.Point(_cx - arrowSz, REEL_Y + winH / 2 + 2),
+      new Phaser.Geom.Point(_cx + arrowSz, REEL_Y + winH / 2 + 2)
+    ], true);
+
+    this._reelFrames.push(frameGfx);
+
+    const targetX = _cx - (finalIdx * CELL_W + CELL_W / 2) * scale;
+    const startX = _cx - (CELL_W / 2) * scale + CELL_W * scale * 2;
     reel.x = startX;
 
-    this.tweens.add({
+    let lastTickIndex = Math.floor(reel.x / (CELL_W * scale));
+
+    const tweenCfg = {
       targets: reel,
       x: targetX,
       duration: REEL_DURATION,
       delay,
       ease: 'Cubic.Out',
       onComplete: () => {
-        if (frame) {
-          try { frame.destroy(); } catch (e) {}
-          this._reelFrames = this._reelFrames.filter(f => f !== frame);
-        }
-        if (frameIn) {
-          try { frameIn.destroy(); } catch (e) {}
-          this._reelFrames = this._reelFrames.filter(f => f !== frameIn);
-        }
+        try { frameGfx.destroy(); } catch (e) {}
+        try { trackBg.destroy(); } catch (e) {}
+        try { leftCurtain.destroy(); } catch (e) {}
+        try { rightCurtain.destroy(); } catch (e) {}
+        this._reelFrames = this._reelFrames.filter(f => f !== frameGfx && f !== trackBg && f !== leftCurtain && f !== rightCurtain);
         this.reelContainers = this.reelContainers.filter(r => r !== reel);
-        // Ленту уничтожаем сразу: иначе вставшие ячейки висят на экране
-        // и смешиваются со следующей круткой/призами.
         try { reel.destroy(); } catch (e) {}
         this.finishReel(reward);
       }
-    });
+    };
+
+    if (isMaster) {
+      tweenCfg.onUpdate = () => {
+        const curTickIndex = Math.floor(reel.x / (CELL_W * scale));
+        if (curTickIndex !== lastTickIndex) {
+          lastTickIndex = curTickIndex;
+          this._playReelTick();
+        }
+      };
+    }
+
+    this.tweens.add(tweenCfg);
   }
 
-  // Выдача награды + строка итога. В мультирежиме строки копятся.
   _grantReward(reward) {
     if (reward.type === 'coins') {
       addCoins(reward.amount);
-      return `+${reward.amount}${reward.jackpot ? ' ДЖЕКПОТ!' : ''}`;
+      return `+${reward.amount.toLocaleString('ru-RU')}${reward.jackpot ? ' ДЖЕКПОТ!' : ''}`;
     }
     if (reward.type === 'weapon') {
       unlockWeapon(reward.weapon.name);
@@ -998,14 +1668,13 @@ export default class LootBoxScene extends Phaser.Scene {
     if (reward.type === 'dup') {
       const comp = Math.round(reward.weapon.price / 3);
       addCoins(comp);
-      // Вторая такая же пушка — компенсация (п.9), не «новое оружие».
-      return `Компенсация за ${getWeaponLabel(reward.weapon.name)} +${comp}`;
+      return `Компенсация за ${getWeaponLabel(reward.weapon.name)} +${comp.toLocaleString('ru-RU')}`;
     }
     if (reward.type === 'gear') {
       if (gearOwned(reward.gear)) {
         const comp = Math.round(reward.gear.price / 3);
         addCoins(comp);
-        return `Повтор: ${reward.gear.label} +${comp}`;
+        return `Повтор: ${reward.gear.label} +${comp.toLocaleString('ru-RU')}`;
       }
       gearUnlockBuy(reward.gear);
       return `Одежда: ${reward.gear.label}`;
@@ -1013,11 +1682,9 @@ export default class LootBoxScene extends Phaser.Scene {
     if (reward.type === 'geardup') {
       const comp = Math.round((reward.gear ? reward.gear.price : 300) / 3);
       addCoins(comp);
-      return `Повтор: ${reward.gear ? reward.gear.label : 'одежда'} +${comp}`;
+      return `Повтор: ${reward.gear ? reward.gear.label : 'одежда'} +${comp.toLocaleString('ru-RU')}`;
     }
     unlockSkin(reward.skin.id);
-    // Штамп происхождения скина (кейс): контракт меняет на легендарный
-    // только эпики из кейса Скинов.
     try {
       gameState.skinOrigin = gameState.skinOrigin || {};
       if (this._grantCaseId) gameState.skinOrigin[reward.skin.id] = this._grantCaseId;
@@ -1027,12 +1694,8 @@ export default class LootBoxScene extends Phaser.Scene {
   }
 
   finishReel(reward) {
-    // Награды выдаются разом, когда докрутился последний барабан.
-    // Оплата и счётчики — в openCase() при клике.
     try { (this._finishedRewards || (this._finishedRewards = [])).push(reward); } catch (e) {}
-    // Легенда в улове — салют один раз, когда докрутился
-    // последний барабан (иконки уже на экране). Стволы и лего-скины
-    // делят салют, подпись разная.
+
     try {
       if (this._pendingReels <= 1) {
         const list = (this._multiRewards && this._multiRewards.length ? this._multiRewards : [reward]) || [];
@@ -1043,28 +1706,31 @@ export default class LootBoxScene extends Phaser.Scene {
         else if (hasEpic) this._epicItemFx();
       }
     } catch (e) {}
+
     this._pendingReels--;
     if (this._pendingReels > 0) return;
-    // Финал крутки — строго один раз (флаг от двойной финализации):
-    // сначала оплата и счётчики, потом выдача всех накопленных наград.
+
     if (this._pendingFinalized) return;
     this._pendingFinalized = true;
+
     ((this._finishedRewards && this._finishedRewards.length) ? this._finishedRewards : [reward])
       .forEach(rw => { try { this._grantReward(rw); } catch (e) {} });
     try { saveGameState(); } catch (e) {}
+
     this._clearReels();
     this._showMultiIcons(this._multiRewards && this._multiRewards.length ? this._multiRewards : [reward]);
     this._multiLines = [];
-    // Кнопка ОК: убирает блок наград, возвращает ряд открытия.
     this._showOkButton();
 
     this.refreshCoins();
     this.opening = false;
-    this.open.setStyle({ color: '#ffffff' });
-    if (this._backBtn) this._backBtn.setStyle({ color: '#ffffff' });
+    this.refreshOpen();
+    if (this._backBtn) {
+      this._backBtn.setStyle({ color: '#ffffff' });
+      if (this._renderBack) this._renderBack(false);
+    }
   }
 
-  // Салют легендарному предмету: вспышка, кольца, баннер, тряска, фанфары.
   _legendaryWeaponFx(kind) {
     try {
       const D = 70;
@@ -1107,7 +1773,6 @@ export default class LootBoxScene extends Phaser.Scene {
     } catch (e) {}
   }
 
-  // Эффект при выпадении эпического предмета
   _epicItemFx() {
     try {
       const D = 70;
@@ -1148,7 +1813,6 @@ export default class LootBoxScene extends Phaser.Scene {
     } catch (e) {}
   }
 
-  // Фанфары без файлов: 4 ноты вверх через WebAudio (как клац трубки).
   _legendaryFanfare() {
     try {
       const sc = this.sound;
@@ -1185,10 +1849,7 @@ export default class LootBoxScene extends Phaser.Scene {
     } catch (e) {}
   }
 
-  // Витрина призов мультиоткрытия: общий фон + крупные ячейки в ряд,
-  // плавно съезжаются с боков. Все подписи — внутри ячеек, ничего не налезает.
-  // Несколько денежных призов — одна ячейка суммой (компенсации за дубли
-  // с подписью «за что» — отдельно). Выдача не меняется, только показ.
+  // Витрина наград (для одного и мультиоткрытий) в роскошной раме с анимацией
   _showMultiIcons(rewards) {
     this._clearMultiIcons();
     const entries = (rewards || []).map(rw => this._poolEntryFor(rw));
@@ -1205,44 +1866,70 @@ export default class LootBoxScene extends Phaser.Scene {
     if (coinSum > 0) merged.unshift({ kind: 'coins', amount: coinSum, jackpot: coinJack });
     const list = merged.length ? merged : entries;
     const n = list.length;
-    const CELL_W = 240;
-    const CELL_H = 200;
-    const step = 260;
-    const y = 430;
-    const x0 = gameW(this) / 2 - (n - 1) * step / 2;
+    const CELL_W = 250;
+    const CELL_H = 210;
+    const step = 270;
+    const y = 390;
+    const _cx = gameW(this) / 2;
+    const x0 = _cx - (n - 1) * step / 2;
 
-    const bw = (n - 1) * step + CELL_W + 80;
-    const bh = CELL_H + 110;
+    const bw = Math.max(380, (n - 1) * step + CELL_W + 70);
+    const bh = CELL_H + 116;
+
+    // Затемняющая подложка
+    const scrim = this.add.graphics().setDepth(49);
+    scrim.fillStyle(0x060710, 0.75);
+    scrim.fillRect(0, 56, gameW(this), 636);
+    scrim.setAlpha(0);
+    this._multiIcons.push(scrim);
+    this.tweens.add({ targets: scrim, alpha: 1, duration: 300 });
+
+    // Панель наград
     const bg = this.add.graphics().setDepth(50);
-    bg.fillStyle(0x0d0d2a, 0.96);
-    bg.fillRoundedRect(gameW(this) / 2 - bw / 2, y - bh / 2, bw, bh, 16);
-    bg.lineStyle(3, 0xffd24a, 1);
-    bg.strokeRoundedRect(gameW(this) / 2 - bw / 2, y - bh / 2, bw, bh, 16);
+    bg.fillStyle(0x0e1024, 0.98);
+    bg.fillRoundedRect(_cx - bw / 2, y - bh / 2, bw, bh, 16);
+    bg.fillStyle(0xffffff, 0.08);
+    bg.fillRoundedRect(_cx - bw / 2 + 2, y - bh / 2 + 2, bw - 4, 6, { tl: 14, tr: 14, bl: 0, br: 0 });
+    bg.lineStyle(2.5, 0xffd24a, 1);
+    bg.strokeRoundedRect(_cx - bw / 2, y - bh / 2, bw, bh, 16);
+
+    // Заклёпки по углам
+    const ro = 14;
+    [[_cx - bw / 2 + ro, y - bh / 2 + ro], [_cx + bw / 2 - ro, y - bh / 2 + ro],
+     [_cx - bw / 2 + ro, y + bh / 2 - ro], [_cx + bw / 2 - ro, y + bh / 2 - ro]].forEach(([rx, ry]) => {
+      bg.fillStyle(0xffd24a, 0.7);
+      bg.fillCircle(rx, ry, 3.5);
+      bg.fillStyle(0xffffff, 0.9);
+      bg.fillCircle(rx - 1, ry - 1, 1);
+    });
+
     bg.setAlpha(0);
     this._multiIcons.push(bg);
-    this.tweens.add({ targets: bg, alpha: 1, duration: 400 });
+    this.tweens.add({ targets: bg, alpha: 1, duration: 350 });
 
-    const title = this.add.text(gameW(this) / 2, y - bh / 2 + 22, 'НАГРАДЫ', {
-      fontSize: '20px', color: '#ffd24a', fontStyle: 'bold'
+    // Заголовок модалки
+    const title = this.add.text(_cx, y - bh / 2 + 24, 'НАГРАДЫ', {
+      fontSize: '22px', color: '#ffd24a', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(51).setAlpha(0);
     this._multiIcons.push(title);
-    this.tweens.add({ targets: title, alpha: 1, duration: 400, delay: 200 });
+    this.tweens.add({ targets: title, alpha: 1, duration: 350, delay: 150 });
 
     list.forEach((entry, i) => {
       const cell = this._reelCell(entry, CELL_W, CELL_H, this._caseDef().price);
-      cell.setDepth(51);
+      cell.setDepth(52);
       const tx = x0 + i * step;
-      // Стартуем с боков — едем в центр.
-      cell.setPosition(i < n / 2 ? -160 : gameW(this) + 160, y + 14);
+      cell.setPosition(tx, y + 14);
+      cell.setScale(0.3);
       cell.setAlpha(0);
       this._multiIcons.push(cell);
+
       this.tweens.add({
         targets: cell,
-        x: tx,
+        scale: 1,
         alpha: 1,
-        duration: 600,
-        delay: i * 140,
-        ease: 'Cubic.Out'
+        duration: 500,
+        delay: 180 + i * 120,
+        ease: 'Back.easeOut'
       });
     });
   }

@@ -405,7 +405,8 @@ export default class BootScene extends Phaser.Scene {
         });
         // Платформы по темам (геймдизайн: свой материал + светлая кромка).
         ['platform_city', 'platform_sunset', 'platform_waste', 'platform_desert',
-         'platform_ind', 'platform_cave1', 'platform_cave2'].forEach(k => {
+         'platform_ind', 'platform_cave1', 'platform_cave2',
+         'plat_office_floor', 'plat_ind_girder', 'plat_bunker_slab', 'plat_canyon_wood'].forEach(k => {
           try { this.generatePlatformArt(k); } catch (e) {}
         });
         keys.forEach(key => {
@@ -418,7 +419,7 @@ export default class BootScene extends Phaser.Scene {
          'map_crate', 'map_crate1', 'map_crate2', 'map_crate3', 'map_crate4', 'map_crate5',
          'map_crate6', 'map_crate7', 'map_crate8', 'map_crate9',
          'map_wall_iron2', 'map_wall_metal', 'map_wire', 'map_rabica', 'map_eji',
-         'map_jerry', 'map_ammo', 'map_tires', 'map_crate_stack'].forEach(k => {
+         'map_jerry', 'map_ammo', 'map_tires', 'map_crate_stack', 'map_generator', 'map_pipes', 'map_dune_rock', 'map_sand_barrier', 'map_vent_unit', 'map_concrete_block', 'map_stalagmite', 'map_shield', 'map_lamp_post', 'map_ladder_truss', 'map_office_desk', 'map_server_rack', 'map_support_pillar', 'map_interior_wall', 'map_int_office', 'map_int_factory', 'map_int_fact_assembly', 'map_int_fact_reactor', 'map_int_fact_warehouse', 'map_int_fact_control', 'map_int_canyon', 'map_int_bunker', 'map_wall_brick', 'map_wall_concrete', 'map_wall_partition', 'p_dust', 'p_ember', 'p_drop'].forEach(k => {
           try { this.generateMapArt(k); } catch (e) {}
         });
         ['map_garage', 'map_apteka', 'map_shop', 'map_zdanie', 'map_kino', 'map_pochta', 'map_stol',
@@ -434,7 +435,7 @@ export default class BootScene extends Phaser.Scene {
         // Земля gr_* — всегда кодом (плитка 256x128, бесшовная по горизонтали).
         // ПОСЛЕ prepareCharacters: он пересоздаёт __realTextures, иначе
         // редактор (_isRealTex) спрячет варианты земли.
-        ['gr_grass', 'gr_sand', 'gr_stones', 'gr_beton', 'gr_beton_sand', 'gr_scorch'].forEach(k => {
+        ['gr_grass', 'gr_sand', 'gr_stones', 'gr_beton', 'gr_beton_sand', 'gr_scorch', 'gr_city_pavement', 'gr_canyon_rock'].forEach(k => {
           try { this.generateGroundArt(k); } catch (e) {}
         });
         // Кейсы экрана «Кейсы» — всегда кодом (не меню, решение владельца).

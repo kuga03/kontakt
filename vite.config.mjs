@@ -16,6 +16,7 @@ export default defineConfig({
         { src: 'maps', dest: '' },
         { src: 'favicon.ico', dest: '' },
         { src: 'version.json', dest: '' },
+        { src: 'ota.json', dest: '' },
       ],
     }),
   ],

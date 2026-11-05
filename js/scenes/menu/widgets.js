@@ -44,21 +44,54 @@ const BTN_ICON_PNG = {
 };
 
 export function _panel(cx, top, w, h, title) {
+    const x0 = cx - w / 2;
+    const g0 = this.add.graphics();
+    // Глубокий темный фон панели
+    g0.fillStyle(0x090c16, 0.94);
+    g0.fillRoundedRect(x0, top, w, h, 12);
+
     if (this.textures.exists('фон для блоков меню')) {
       const img = this.add.image(cx, top + h / 2, 'фон для блоков меню');
       img.setDisplaySize(w, h);
-      img.setAlpha(0.7);
-    } else {
-      const g0 = this.add.graphics();
-      g0.fillStyle(0x12122e, 0.92);
-      g0.fillRoundedRect(cx - w / 2, top, w, h, 12);
+      img.setAlpha(0.28);
     }
+
+    // Тонкий внутренний золотой контур с уголками
     const g = this.add.graphics();
-    g.lineStyle(2, 0x3a3a6a, 1);
-    g.strokeRoundedRect(cx - w / 2, top, w, h, 12);
-    this.add.text(cx, top + 20, title, {
-      fontSize: '18px', color: '#8fb8ff', fontStyle: 'bold'
+    g.lineStyle(1.5, 0x8a6a10, 0.85);
+    g.strokeRoundedRect(x0, top, w, h, 12);
+
+    // Угловые золотые тактические скобки
+    const cLen = 14;
+    g.lineStyle(2.5, 0xd8a920, 0.95);
+    // Верх-лево
+    g.lineBetween(x0, top + cLen, x0, top + 6);
+    g.lineBetween(x0 + 6, top, x0 + cLen, top);
+    // Верх-право
+    g.lineBetween(x0 + w - cLen, top, x0 + w - 6, top);
+    g.lineBetween(x0 + w, top + 6, x0 + w, top + cLen);
+    // Низ-лево
+    g.lineBetween(x0, top + h - cLen, x0, top + h - 6);
+    g.lineBetween(x0 + 6, top + h, x0 + cLen, top + h);
+    // Низ-право
+    g.lineBetween(x0 + w - cLen, top + h, x0 + w - 6, top + h);
+    g.lineBetween(x0 + w, top + h - 6, x0 + w, top + h - cLen);
+
+    // Капсула заголовка панели
+    const titlePill = this.add.graphics();
+    const probe = this.add.text(0, 0, title, { fontSize: '13px', fontStyle: 'bold' });
+    const pillW = Math.max(120, probe.displayWidth + 38);
+    probe.destroy();
+
+    titlePill.fillStyle(0x111628, 0.98);
+    titlePill.fillRoundedRect(cx - pillW / 2, top + 7, pillW, 26, 6);
+    titlePill.lineStyle(1.5, 0xd8a920, 0.9);
+    titlePill.strokeRoundedRect(cx - pillW / 2, top + 7, pillW, 26, 6);
+
+    this.add.text(cx, top + 20, `◆ ${title} ◆`, {
+      fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
     }).setOrigin(0.5);
+
     return top + h;
   }
 
@@ -328,27 +361,28 @@ export function _drawBtnIcon(g, id, x, y, s, color) {
 
   // «Мои уровни» — маленький пончик в углу: кольцо + подпись.
 export function _donutLevels(x, y) {
-    const R = 26;
+    const R = 24;
     const ring = this.add.graphics();
     const glyph = this.add.graphics();
-    const paint = (color) => {
+    const paint = (color, bgCol) => {
       ring.clear();
-      ring.fillStyle(color, 1);
+      ring.fillStyle(bgCol || 0x111628, 0.95);
       ring.fillCircle(x, y, R);
-      ring.fillStyle(0x0a0a2a, 1);
-      ring.fillCircle(x, y, R - 9);
-      ring.lineStyle(2, color, 0.9);
+      ring.lineStyle(1.5, color, 0.9);
       ring.strokeCircle(x, y, R);
-      this._drawBtnIcon(glyph, 'layers', x, y, 9, color);
+      ring.lineStyle(1, 0x4da6ff, 0.4);
+      ring.strokeCircle(x, y, R - 6);
+      this._drawBtnIcon(glyph, 'layers', x, y, 8, color);
     };
-    paint(0xdfe8ff);
-    const label = this.add.text(x, y + R + 12, 'МОИ УРОВНИ', {
-      fontSize: '11px', color: '#ffffff'
+    paint(0xd8a920, 0x111628);
+    const label = this.add.text(x, y + R + 10, 'МОИ УРОВНИ', {
+      fontSize: '11px', color: '#c4d4f8', fontStyle: 'bold'
     }).setOrigin(0.5);
-    const zone = this.add.zone(x, y, R * 2 + 16, R * 2 + 30).setInteractive({ useHandCursor: true });
+    const zone = this.add.zone(x, y, R * 2 + 16, R * 2 + 28).setInteractive({ useHandCursor: true });
     zone.on('pointerover', () => {
-      paint(0xffff55);
-      label.setColor('#ffff55');
+      paint(0xffe066, 0x221a08);
+      label.setColor('#ffd24a');
+      label.setScale(1.05);
       try {
         if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
           this.sound.play('sfx_hover', { volume: 0.2 });
@@ -356,8 +390,9 @@ export function _donutLevels(x, y) {
       } catch (e) {}
     });
     zone.on('pointerout', () => {
-      paint(0xdfe8ff);
-      label.setColor('#ffffff');
+      paint(0xd8a920, 0x111628);
+      label.setColor('#c4d4f8');
+      label.setScale(1);
     });
     zone.on('pointerdown', () => this.scene.start('MyLevelsScene'));
   }

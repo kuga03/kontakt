@@ -251,7 +251,7 @@ export default class LevelEditorScene extends Phaser.Scene {
         this.addSpawn(o.x, o.y, o.spawnType);
       } else if (o.type === 'ground') {
         this.addGround(o.y, o.h || 80, true, o.a, o.x, o.w, o.texKey);
-      } else if (o.type === 'building') {
+      } else if (o.type === 'building' || o.type === 'decor') {
         this.addObject(o.x, o.y, 'building', o.w || 200, o.h || 200, o.a, o.texKey);
       } else if (o.type === 'platform') {
         this.addObject(o.x, o.y, 'platform', o.w, o.h, o.a);

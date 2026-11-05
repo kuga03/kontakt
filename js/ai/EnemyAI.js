@@ -1,6 +1,7 @@
 // SimpleBot — ИИ ботов. Движение идёт по графу перемещений (navMesh.js),
 // цель выбирается по режиму; стрельба, гранаты, умения/ульты — здесь же.
 import { navGraph, nearestNode, findPath, followPath, edgeKey } from './navMesh.js';
+import { ammoLow } from '../entities/player/hud.js';
 
 const CALLSIGNS = [
   'Орион', 'Скала', 'Дикий', 'Буран', 'Волк', 'Рысь', 'Гром', 'Тень',
@@ -20,6 +21,7 @@ export default class EnemyAI {
     this._lastShot = 0;
     this._lastGrenade = 0;
     this._lastAbility = 0;
+    this._coverDucking = false;
     this._nav = null;
     this._navCd = 0;
     this._navFails = 0;
@@ -66,6 +68,22 @@ export default class EnemyAI {
     const dy = target.y - p.y;
     const weaponRange = (p.weapon && p.weapon.range) ? p.weapon.range : 700;
 
+    // Цель стрельбы: ТОЛЬКО реальный живой враг (не флаг, не союзник, не точка).
+    let shootTarget = this._nearestEnemy();
+    if (shootTarget && (shootTarget.team === p.team || shootTarget.dead || !shootTarget.active)) {
+      shootTarget = null;
+    }
+    const distToShoot = shootTarget ? Math.hypot(shootTarget.x - p.x, shootTarget.y - p.y) : Infinity;
+
+    // Темп стрельбы по сложности (ветеран быстрее).
+    let shootInterval = 280;
+    try {
+      const diff = scene.botDifficulty;
+      const fr = (p.weapon && p.weapon.fireRate) || 600;
+      const mult = (diff && diff.cadMult) || 1.5;
+      shootInterval = Phaser.Math.Clamp(Math.round(fr * mult), 130, 1200);
+    } catch (e) {}
+
     // Враг держим на дистанции 0.3..1.0 дальности оружия: ближе — отходим, в поясе — стоим.
     const targetIsEnemy = !!(target && (target.maxHp !== undefined || target.dead !== undefined) &&
       target.team && target.team !== p.team);
@@ -74,6 +92,53 @@ export default class EnemyAI {
     const maxD = weaponRange * 1.0;
 
     const midAir = !!(this._nav && this._nav.phase === 1 && !this._nav.done);
+    const grounded = !!(p.body && (p.body.blocked.down || p.body.touching.down));
+
+    // Проверка нахождения внутри целевой зоны (закладка бомбы, разминирование, захват KOTH)
+    const isAtPlant = !!(target && target._isPlantZone && Math.abs(dx) <= 75);
+    const isAtDefuse = !!(target && target._isDefuseTarget && Math.abs(dx) <= 45 && Math.abs(dy) <= 60);
+    const isAtKoth = !!(target && target._isKothZone && Math.abs(dx) <= 65 && Math.abs(dy) <= 45);
+    const inObjectiveZone = isAtPlant || isAtDefuse || isAtKoth;
+
+    // Тактическое укрытие (мешки, капот машины, низкие блоки 22..85px)
+    const lowCover = (!midAir && grounded) ? this._findNearbyLowCover() : null;
+    const isReloading = !!(p.weapon && p.weapon.reloading);
+    const isCriticalHp = p.hp < p.maxHp * 0.40;
+    const hasEnemyThreat = !!(shootTarget && distToShoot <= weaponRange + 80);
+
+    // Приседаем (duck), если:
+    // 1. Идет перезарядка рядом с укрытием
+    // 2. Критическое здоровье под угрозой врага (выглядываем только для выстрела)
+    // 3. Перестрелка из-за укрытия: пригибаемся в паузах между выстрелами от ответного огня
+    // 4. Стоим в зоне закладки/разминирования бомбы рядом с укрытием
+    let wantCoverDuck = false;
+    if (lowCover) {
+      if (inObjectiveZone) {
+        wantCoverDuck = true;
+      } else if (hasEnemyThreat) {
+        if (isReloading) {
+          wantCoverDuck = true;
+        } else if (isCriticalHp) {
+          // Выглядываем (peek) только когда оружие готово произвести выстрел
+          const readyToFire = time - this._lastShot >= shootInterval;
+          wantCoverDuck = !readyToFire;
+        } else if (distToShoot > 140) {
+          // Тактическая перестрелка: в паузе между выстрелами пригибаемся за укрытием,
+          // приподнимаемся перед выстрелом (peek & fire)
+          const readyToFire = time - this._lastShot >= shootInterval * 0.65;
+          wantCoverDuck = !readyToFire;
+        }
+      }
+    }
+
+    if (wantCoverDuck) {
+      this._coverDucking = true;
+      try { if (typeof p.setCrouch === 'function') p.setCrouch(true); } catch (e) {}
+    } else if (this._coverDucking) {
+      this._coverDucking = false;
+      try { if (typeof p.setCrouch === 'function') p.setCrouch(false); } catch (e) {}
+    }
+
     let _holdLos = true;
     try {
       if (typeof scene.hasLineOfSight === 'function') {
@@ -83,7 +148,12 @@ export default class EnemyAI {
     const inBand = targetIsEnemy && _holdLos && distToT >= minD - 20 && distToT <= maxD + 20;
     if (inBand) { if (!this._holdT0) this._holdT0 = time; } else this._holdT0 = 0;
     const holdTooLong = !!this._holdT0 && time - this._holdT0 > 4000;
+
     if (this.stationary) {
+      try { p.stop(); } catch (e) {}
+    } else if (inObjectiveZone) {
+      try { p.stop(); } catch (e) {}
+    } else if (wantCoverDuck && !targetIsEnemy) {
       try { p.stop(); } catch (e) {}
     } else if (midAir) {
       this._navigate(target, time, dx);
@@ -95,54 +165,35 @@ export default class EnemyAI {
       this._navigate(target, time, dx);
     }
 
-    // Если бот не на ребре пути с флагом low (присед) и не в воздухе в фазе прыжка —
+    // Если бот не на ребре пути с флагом low (присед), не в воздухе в фазе прыжка и не сидит в тактическом укрытии —
     // встаем из приседа, чтобы не залипать на укрытиях в сидячем положении.
-    if (p.crouching && !midAir) {
+    if (p.crouching && !midAir && !this._coverDucking) {
       const curEdge = this._nav && this._nav.path && this._nav.path[this._nav.i];
       if (!curEdge || !curEdge.low) {
         try { if (typeof p.setCrouch === 'function') p.setCrouch(false); } catch (e) {}
       }
     }
 
-    // Цель стрельбы: ТОЛЬКО реальный живой враг (не флаг, не союзник, не точка).
-    let shootTarget = this._nearestEnemy();
-    if (shootTarget && (shootTarget.team === p.team || shootTarget.dead || !shootTarget.active)) {
-      shootTarget = null;
-    }
+    if (shootTarget) {
+      // Прицел.
+      try { p.aimAt(shootTarget.x, shootTarget.y); } catch (e) {}
 
-    if (!shootTarget) {
-      // Нет врагов в пределах досягаемости — прекращаем стрельбу
-      return;
-    }
-
-    // Прицел.
-    try { p.aimAt(shootTarget.x, shootTarget.y); } catch (e) {}
-
-    const distToShoot = Math.hypot(shootTarget.x - p.x, shootTarget.y - p.y);
-    // Темп стрельбы по сложности (ветеран быстрее).
-    let shootInterval = 280;
-    try {
-      const diff = scene.botDifficulty;
-      const fr = (p.weapon && p.weapon.fireRate) || 600;
-      const mult = (diff && diff.cadMult) || 1.5;
-      shootInterval = Phaser.Math.Clamp(Math.round(fr * mult), 130, 1200);
-    } catch (e) {}
-
-    // Стрельба: только если есть прямая видимость до цели (стены режут).
-    let _shootLos = true;
-    try {
-      if (typeof scene.hasLineOfSight === 'function') {
-        _shootLos = !!scene.hasLineOfSight(p.x, p.y, shootTarget.x, shootTarget.y);
-      }
-    } catch (e) { _shootLos = true; }
-
-    if (!_passive && _shootLos && distToShoot <= weaponRange + 60 &&
-        time - this._lastShot > shootInterval) {
-      this._lastShot = time;
+      // Стрельба: только если есть прямая видимость до цели (стены режут).
+      let _shootLos = true;
       try {
-        const ok = p.shoot(time, shootTarget.x, shootTarget.y);
-        if (!ok) this._lastShot = time - Math.round(shootInterval * 0.5);
-      } catch (e) {}
+        if (typeof scene.hasLineOfSight === 'function') {
+          _shootLos = !!scene.hasLineOfSight(p.x, p.y + (p.crouching ? -6 : -24), shootTarget.x, shootTarget.y);
+        }
+      } catch (e) { _shootLos = true; }
+
+      if (!_passive && _shootLos && distToShoot <= weaponRange + 60 &&
+          time - this._lastShot > shootInterval) {
+        this._lastShot = time;
+        try {
+          const ok = p.shoot(time, shootTarget.x, shootTarget.y);
+          if (!ok) this._lastShot = time - Math.round(shootInterval * 0.5);
+        } catch (e) {}
+      }
     }
 
     // Гранаты (редко): только по реальному врагу в прямой видимости.
@@ -167,8 +218,8 @@ export default class EnemyAI {
       try { p.throwGrenade('frag', _grenadeTarget.x, _grenadeTarget.y); } catch (e) {}
     }
 
-    // Умение.
-    if (time - this._lastAbility > 6000 && Math.random() < 0.015) {
+    // Умение: разумное применение по ситуации вместо случайного спама.
+    if (time - this._lastAbility > 2000 && this._shouldUseAbility(time)) {
       this._lastAbility = time;
       try { p.useAbility(time); } catch (e) {}
     }
@@ -271,6 +322,140 @@ export default class EnemyAI {
       try { if (scene._inSolid && scene._inSolid(x, y, 4)) break; } catch (e) {}
     }
     return Math.hypot(x - target.x, y - target.y) <= 90;
+  }
+
+  // Проверка необходимости применения классового умения.
+  _shouldUseAbility(time) {
+    const p = this.p;
+    if (!p || p.dead || !p.hasAbility) return false;
+    if (time < p.lastAbilityAt + p.abilityCooldown) return false;
+
+    const abName = p.abilityName;
+    const scene = this.scene;
+    const players = (scene && scene.players) || [];
+
+    if (abName === 'Аптечка') {
+      // 1. Себе: если HP < 75%
+      if (p.hp < p.maxHp * 0.75) return true;
+      // 2. Союзнику рядом: если у союзника HP < 75%
+      for (let i = 0; i < players.length; i++) {
+        const m = players[i];
+        if (!m || m === p || m.dead || !m.active || m.team !== p.team) continue;
+        if (Math.abs(m.y - p.y) > 100) continue;
+        const d = Math.hypot(m.x - p.x, m.y - p.y);
+        if (d <= 280 && m.hp < m.maxHp * 0.75) return true;
+      }
+      return false;
+    }
+
+    if (abName === 'Броня') {
+      // 1. Себе: если броня упала ниже 40%
+      if (p.armor < p.maxArmor * 0.4) return true;
+      // 2. Союзнику рядом: если у союзника брони < 40%
+      for (let i = 0; i < players.length; i++) {
+        const m = players[i];
+        if (!m || m === p || m.dead || !m.active || m.team !== p.team) continue;
+        if (Math.abs(m.y - p.y) > 100) continue;
+        const d = Math.hypot(m.x - p.x, m.y - p.y);
+        if (d <= 280 && m.armor < m.maxArmor * 0.4) return true;
+      }
+      return false;
+    }
+
+    if (abName === 'Сумка с патронами') {
+      // 1. Себе: мало патронов
+      if (ammoLow(p)) return true;
+      // 2. Союзнику рядом: если у союзника мало патронов — кидаем ему
+      for (let i = 0; i < players.length; i++) {
+        const m = players[i];
+        if (!m || m === p || m.dead || !m.active || m.team !== p.team) continue;
+        if (Math.abs(m.y - p.y) > 100) continue;
+        const d = Math.hypot(m.x - p.x, m.y - p.y);
+        if (d <= 260 && ammoLow(m)) {
+          p._abilityTargetX = m.x;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  // Поиск подходящего кита (аптечка, броня, патроны), лежащего неподалёку.
+  _findNeededPickup() {
+    const p = this.p;
+    const scene = this.scene;
+    if (!scene || !scene.pickups) return null;
+
+    const hpLow = p.hp < p.maxHp * 0.55;
+    const armorLow = p.armor < p.maxArmor * 0.35;
+    const isAmmoLow = ammoLow(p);
+
+    if (!hpLow && !armorLow && !isAmmoLow) return null;
+
+    const kids = scene.pickups.getChildren();
+    if (!kids || kids.length === 0) return null;
+
+    let best = null;
+    let bestDist = Infinity;
+    const MAX_SEARCH_DIST = 500;
+
+    for (let i = 0; i < kids.length; i++) {
+      const pk = kids[i];
+      if (!pk || !pk.active) continue;
+      // Нельзя забрать чужой командный кит
+      if (pk.team && pk.team !== p.team) continue;
+      // Проверяем, нужен ли этот конкретный предмет
+      const type = pk.pickupType;
+      let needed = false;
+      if (type === 'medkit' && hpLow) needed = true;
+      else if (type === 'armor' && armorLow) needed = true;
+      else if (type === 'ammo' && isAmmoLow) needed = true;
+
+      if (!needed) continue;
+      if (typeof pk.canTake === 'function' && !pk.canTake(p)) continue;
+
+      // Ограничение по высоте: не лезем за китами далеко по вертикали (чужие ярусы)
+      if (Math.abs(pk.y - p.y) > 160) continue;
+
+      const d = Math.hypot(pk.x - p.x, pk.y - p.y);
+      if (d > MAX_SEARCH_DIST) continue;
+
+      // Приоритет аптечке при критическом здоровье
+      const score = (type === 'medkit' && p.hp < p.maxHp * 0.35) ? d * 0.5 : d;
+      if (score < bestDist) {
+        bestDist = score;
+        best = pk;
+      }
+    }
+    return best;
+  }
+
+  // Поиск ближайшего низкого укрытия (мешки, капот машины, ящик) для приседа
+  _findNearbyLowCover() {
+    const p = this.p;
+    const scene = this.scene;
+    if (!scene || !scene.covers || !p.body) return null;
+    const pb = p.body;
+    const feetY = pb.bottom;
+    const px = pb.x + pb.width / 2;
+    const covers = scene.covers.getChildren ? scene.covers.getChildren() : [];
+    for (let i = 0; i < covers.length; i++) {
+      const c = covers[i];
+      if (!c || !c.body || !c.body.enable) continue;
+      const cb = c.body;
+      // Подходящая высота укрытия для стрельбы из приседа (22..95px)
+      if (cb.height < 22 || cb.height > 95) continue;
+      // Тот же уровень пола (разница подошвы не более 35px)
+      if (Math.abs(cb.bottom - feetY) > 35) continue;
+      // Горизонтальная близость к укрытию (до 100px)
+      const cx = cb.x + cb.width / 2;
+      if (Math.abs(cx - px) <= 100) {
+        return c;
+      }
+    }
+    return null;
   }
 
   _fallbackMove(dir, dx) {
@@ -397,27 +582,103 @@ export default class EnemyAI {
       }
     }
 
-    // BOMB: цель — бомба (или точка закладки).
+    // BOMB: скоординированная тактика команды
     if (mode === 'BOMB') {
-      const bomb = p.team === 'blue' ? scene.blueBomb : scene.redBomb;
-      if (bomb && !bomb.carrier) return bomb;
+      const ourBomb = p.team === 'blue' ? scene.blueBomb : scene.redBomb;
       const enemyBomb = p.team === 'blue' ? scene.redBomb : scene.blueBomb;
-      if (enemyBomb && enemyBomb.carrier && enemyBomb.carrier !== p &&
-          enemyBomb.carrier.team !== p.team) return enemyBomb.carrier;
+      const plantBase = p.team === 'blue' ? scene.enemyBase : scene.blueBase;
+      const homeBase = p.team === 'blue' ? scene.blueBase : scene.enemyBase;
+
+      // 1. Бот САМ несёт бомбу — бежим ставить на вражескую базу!
+      if (ourBomb && ourBomb.carrier === p) {
+        if (plantBase && Number.isFinite(plantBase.x)) {
+          return { x: plantBase.x, y: plantBase.y, _isPlantZone: true };
+        }
+      }
+
+      // 2. Вражеская бомба брошена в поле (не дома и без носителя) — ПРИОРИТЕТ: бежим разминировать!
+      if (enemyBomb && !enemyBomb.carrier && !enemyBomb.home) {
+        return { x: enemyBomb.x, y: enemyBomb.y, _isDefuseTarget: true };
+      }
+
+      // 3. Враг несёт свою бомбу — бежим перехватить вражеского носителя!
+      if (enemyBomb && enemyBomb.carrier && enemyBomb.carrier.team !== p.team) {
+        return enemyBomb.carrier;
+      }
+
+      // 4. Наша бомба брошена в поле — бежим подбирать её!
+      if (ourBomb && !ourBomb.carrier && !ourBomb.home) {
+        return ourBomb;
+      }
+
+      // 5. Союзник несёт нашу бомбу — эскортируем носителя и расчищаем точку закладки
+      if (ourBomb && ourBomb.carrier && ourBomb.carrier.team === p.team) {
+        const carrier = ourBomb.carrier;
+        const myEnemies = this._nearestEnemy();
+        // Враг близко к носителю — атакуем угрозу
+        if (myEnemies && Math.hypot(myEnemies.x - carrier.x, myEnemies.y - carrier.y) < 500) {
+          return myEnemies;
+        }
+        // Иначе часть эскорта бежит рядом с носителем, а часть — вперёд на базу расчищать точку
+        let botHash = 0;
+        for (const ch of String(p.playerName || '')) botHash += ch.charCodeAt(0);
+        if ((botHash % 2 === 0) && plantBase && Number.isFinite(plantBase.x)) {
+          // Авангард: бежит расчищать точку закладки
+          return { x: plantBase.x, y: plantBase.y, _isPlantZone: true };
+        } else {
+          // Эскорт: прикрывает носителя
+          const escortDir = (plantBase && plantBase.x > carrier.x) ? 1 : -1;
+          return { x: carrier.x + escortDir * 100, y: carrier.y };
+        }
+      }
+
+      // 6. Наша бомба ждёт на нашей базе
+      if (ourBomb && !ourBomb.carrier && ourBomb.home) {
+        return ourBomb;
+      }
+
+      // 7. Если всё остальное не сработало, идём к вражеской бомбе
       if (enemyBomb) return enemyBomb;
     }
 
-    // KOTH: ближайшая точка, которую не держит своя команда (иначе все стоят у
-    // своих и не спорят за средние). Половина ботов берёт вторую по близости.
-    // Все точки свои — обычная цель (враг).
+    // KOTH: распределённый захват и защита контрольных точек
     if (mode === 'KOTH' && Array.isArray(scene.kothPoints) && scene.kothPoints.length) {
-      const pts = scene.kothPoints.filter(pt => pt.holder !== p.team).slice().sort((a, b) =>
+      let botHash = 0;
+      for (const ch of String(p.playerName || '')) botHash += ch.charCodeAt(0);
+
+      // 1. Точки свои, но под атакой противника (спорные) — защита базы/точек
+      const contestedOwn = scene.kothPoints.filter(pt => pt.holder === p.team && (pt._st === 'contest' || pt.prog !== 0));
+      if (contestedOwn.length > 0 && (botHash % 3 === 0)) {
+        const pt = contestedOwn[0];
+        return { x: pt.x, y: pt.y, _isKothZone: true, _point: pt };
+      }
+
+      // 2. Чужие или нейтральные точки — захват
+      const unowned = scene.kothPoints.filter(pt => pt.holder !== p.team).slice().sort((a, b) =>
         Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y));
-      let h = 0;
-      for (const ch of String(p.playerName || '')) h += ch.charCodeAt(0);
-      const pick = pts.length > 1 && (h & 1) ? pts[1] : pts[0];
-      if (pick) return pick;
+      if (unowned.length > 0) {
+        // Распределяем команду между ближайшей и следующей не захваченной точкой
+        const pick = (unowned.length > 1 && (botHash % 2 === 1)) ? unowned[1] : unowned[0];
+        return { x: pick.x, y: pick.y, _isKothZone: true, _point: pick };
+      }
+
+      // 3. Все точки уже захвачены своей командой!
+      // Распределяемся на удержание/патруль точек и перехват приближающихся врагов
+      const myPts = scene.kothPoints.slice().sort((a, b) =>
+        Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y));
+      const defPt = myPts[botHash % myPts.length];
+      if (defPt) {
+        const nearEnemy = this._nearestEnemy();
+        if (nearEnemy && Math.hypot(nearEnemy.x - defPt.x, nearEnemy.y - defPt.y) < 420) {
+          return nearEnemy;
+        }
+        return { x: defPt.x, y: defPt.y, _isKothZone: true, _point: defPt };
+      }
     }
+
+    // Поиск аптечки/брони/патронов поблизости, если бот не занят флагом/бомбой
+    const neededPickup = this._findNeededPickup();
+    if (neededPickup) return neededPickup;
 
     // По умолчанию — ближайший враг в пределах дальности и на том же фланге.
     let best = null, bestD = Infinity;

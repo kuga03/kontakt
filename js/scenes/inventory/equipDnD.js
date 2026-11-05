@@ -21,16 +21,20 @@ const BODY_COLORS = [
   '#ffaa44', '#aa44ff', '#00ccaa', '#888888', '#ffffff'
 ];
 
-const EQUIP_SLOTS = [
-  { x: 1030, y: 430, slot: 'primary', label: 'ОСНОВНОЕ' },
-  { x: 1030, y: 498, slot: 'secondary', label: 'ВТОРОЕ' },
-  { x: 1030, y: 566, slot: 'melee', label: 'БЛИЖНЕЕ' }
-];
+function getEquipSlots(scene) {
+  return [
+    { x: UX(scene, 1030), y: 430, slot: 'primary', label: 'ОСНОВНОЕ' },
+    { x: UX(scene, 1030), y: 498, slot: 'secondary', label: 'ВТОРОЕ' },
+    { x: UX(scene, 1030), y: 566, slot: 'melee', label: 'БЛИЖНЕЕ' }
+  ];
+}
 
-const COMPARE_SLOTS = [
-  { x: 300, y: 565, slot: 0 },
-  { x: 500, y: 565, slot: 1 }
-];
+function getCompareSlots(scene) {
+  return [
+    { x: UX(scene, 300), y: 565, slot: 0 },
+    { x: UX(scene, 500), y: 565, slot: 1 }
+  ];
+}
 
 export function drawEquipSlots(panel, parent) {
     const eq = getEquipment(this.selectedClass);
@@ -41,7 +45,7 @@ export function drawEquipSlots(panel, parent) {
     }).setOrigin(0.5);
     if (parent) parent.add(eqLabel);
 
-    EQUIP_SLOTS.forEach(slot => {
+    getEquipSlots(this).forEach(slot => {
       const name = eq[slot.slot];
       // Заточка надетого (п.14.4): +N в имя, золото на +4/+, клик — в модалку.
       let ulevel = 0;
@@ -145,7 +149,7 @@ export function drawCompareSlots(panel, parent) {
     }).setOrigin(0.5);
     if (parent) parent.add(compareLabel);
 
-    COMPARE_SLOTS.forEach((slot) => {
+    getCompareSlots(this).forEach((slot) => {
       const rect = { x: slot.x - 55, y: slot.y - 20, w: 110, h: 40 };
       const g = this.add.graphics();
       g.fillStyle(0x101322, 1);
@@ -172,7 +176,7 @@ export function drawCompareSlots(panel, parent) {
 export function nearestCompareSlot(x, y, maxDist) {
     let best = null;
     let bestDist = Infinity;
-    COMPARE_SLOTS.forEach((slot, i) => {
+    getCompareSlots(this).forEach((slot, i) => {
       const d = Math.hypot(x - slot.x, y - slot.y);
       if (d < bestDist && d <= maxDist) {
         best = i;
@@ -185,7 +189,7 @@ export function nearestCompareSlot(x, y, maxDist) {
 export function nearestEquipSlot(x, y, maxDist) {
     let best = null;
     let bestDist = Infinity;
-    EQUIP_SLOTS.forEach(slot => {
+    getEquipSlots(this).forEach(slot => {
       const d = Math.hypot(x - slot.x, y - slot.y);
       if (d < bestDist && d <= maxDist) {
         best = slot;
@@ -341,7 +345,7 @@ export function bindDrag() {
         card._homeParent = null;
       } catch (e) {}
 
-      const equipZone = { x: 795, y: 350, w: 475, h: 230 };
+      const equipZone = { x: UX(this, 795), y: 350, w: 475, h: 230 };
       const inEquipZone =
         card.x >= equipZone.x - 20 &&
         card.x <= equipZone.x + equipZone.w + 20 &&
@@ -397,13 +401,14 @@ export function bindDrag() {
   // Отказ слоту: красная вспышка + подсказка какой тип сюда можно.
 export function _denyEquipSlot(need) {
     const names = { primary: 'ОСНОВНОЕ', secondary: 'ВТОРОЕ', melee: 'БЛИЖНЕЕ' };
-    const idx = EQUIP_SLOTS.findIndex(s => s.slot === need);
+    const slots = getEquipSlots(this);
+    const idx = slots.findIndex(s => s.slot === need);
     const rec = (this.equipSlotRects || [])[idx];
     if (rec) {
       this.redrawSlot(rec, 0xff4444);
       this.time.delayedCall(600, () => this.clearDropHighlights());
     }
-    const s = EQUIP_SLOTS[idx];
+    const s = slots[idx];
     if (s) {
       const t = this.add.text(s.x, s.y - 36, `Сюда — только: ${names[need] || need}`, {
         fontSize: '12px', color: '#ff8888', backgroundColor: '#111133', padding: 4
@@ -449,7 +454,7 @@ export function redrawSlot(item, color) {
 export function nearestEquipSlotIndex(x, y, maxDist) {
     let best = null;
     let bestDist = Infinity;
-    EQUIP_SLOTS.forEach((slot, i) => {
+    getEquipSlots(this).forEach((slot, i) => {
       const d = Math.hypot(x - slot.x, y - slot.y);
       if (d < bestDist && d <= maxDist) {
         best = i;

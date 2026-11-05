@@ -587,41 +587,40 @@ export function generateMapBuilding(key) {
                key === 'map_ruin4' || key === 'map_ruin5' || key === 'map_ruin6' || key === 'map_ruin7' ||
                key === 'map_tank' || key === 'map_tower' || key === 'map_bags') {
       if (key === 'map_wreck') {
-        // Остов рисуем ВО ВЕСЬ холст 200×120 — спрайт в createCover
-        // растягивается ровно по хитбоксу укрытия, поэтому art должен
-        // заполнять свои размеры (иначе физика больше/меньше картинки).
+        // Остов рисуем ВО ВЕСЬ холст 200×120: колёса и кузов касаются самого низа (H - 2),
+        // чтобы машина стояла плотно на земле без какого-либо зазора или парения в воздухе!
         ctx.save();
-        // кузов: капот ниже, кабина выше
+        // кузов: капот ниже, кабина выше, посадка плотно на оси колёс
         ctx.fillStyle = '#5d5240';
         ctx.beginPath();
-        ctx.moveTo(10, H - 42);
-        ctx.lineTo(22, H - 74);
+        ctx.moveTo(10, H - 26);
+        ctx.lineTo(22, H - 66);
         ctx.lineTo(58, H - 86);
         ctx.lineTo(112, H - 84);
-        ctx.lineTo(150, H - 68);
-        ctx.lineTo(190, H - 70);
-        ctx.lineTo(192, H - 42);
+        ctx.lineTo(150, H - 62);
+        ctx.lineTo(190, H - 64);
+        ctx.lineTo(192, H - 26);
         ctx.closePath();
         ctx.fill();
         // ржавые потёки и вмятины
         for (let i = 0; i < 10; i++) {
           ctx.fillStyle = rnd() < 0.5 ? 'rgba(138,90,48,0.5)' : 'rgba(0,0,0,0.3)';
-          ctx.fillRect(Math.round(14 + rnd() * 172), Math.round(H - 80 + rnd() * 30), 2 + Math.floor(rnd() * 6), 2 + Math.floor(rnd() * 4));
+          ctx.fillRect(Math.round(14 + rnd() * 172), Math.round(H - 78 + rnd() * 30), 2 + Math.floor(rnd() * 6), 2 + Math.floor(rnd() * 4));
         }
         ctx.fillStyle = 'rgba(255,240,210,0.1)';
-        ctx.fillRect(24, H - 74, 66, 3);
+        ctx.fillRect(24, H - 66, 66, 3);
         // выбитые окна — тёмные дыры с осколками
         const winHole = (wx, ww) => {
           ctx.fillStyle = 'rgba(8,8,10,0.92)';
-          ctx.fillRect(wx, H - 82, ww, 26);
+          ctx.fillRect(wx, H - 76, ww, 26);
           ctx.strokeStyle = edge;
           ctx.lineWidth = 2;
-          ctx.strokeRect(wx, H - 82, ww, 26);
+          ctx.strokeRect(wx, H - 76, ww, 26);
           ctx.fillStyle = 'rgba(150,170,190,0.5)';
           ctx.beginPath();
-          ctx.moveTo(wx + 3, H - 82);
-          ctx.lineTo(wx + 10, H - 82);
-          ctx.lineTo(wx + 4, H - 66);
+          ctx.moveTo(wx + 3, H - 76);
+          ctx.lineTo(wx + 10, H - 76);
+          ctx.lineTo(wx + 4, H - 60);
           ctx.closePath();
           ctx.fill();
         };
@@ -629,49 +628,50 @@ export function generateMapBuilding(key) {
         winHole(98, 26);
         // фара — разбита (тёмная), вторая вырвана
         ctx.fillStyle = 'rgba(8,8,10,0.9)';
-        ctx.fillRect(8, H - 58, 10, 10);
+        ctx.fillRect(8, H - 48, 10, 10);
         ctx.strokeStyle = edge;
         ctx.lineWidth = 2;
-        ctx.strokeRect(8, H - 58, 10, 10);
-        // колёса: одно спущено
+        ctx.strokeRect(8, H - 48, 10, 10);
+        // колёса: касаются точно нижнего края холста (H - 2)
         const wheel = (wx, flat) => {
-          const wy = flat ? H - 32 : H - 38, wr = flat ? 20 : 23;
+          const wr = flat ? 18 : 24;
+          const wy = flat ? H - 2 - wr : H - 2 - wr;
           ctx.fillStyle = '#1c1c20';
           ctx.beginPath();
-          ctx.arc(wx, wy, wr, 0, Math.PI * 2);
+          if (flat) {
+            ctx.ellipse(wx, wy + 2, wr + 4, wr - 2, 0, 0, Math.PI * 2);
+          } else {
+            ctx.arc(wx, wy, wr, 0, Math.PI * 2);
+          }
           ctx.fill();
           ctx.strokeStyle = edge;
           ctx.lineWidth = 2;
           ctx.stroke();
           ctx.fillStyle = '#4a4e54';
           ctx.beginPath();
-          ctx.arc(wx, wy, 9, 0, Math.PI * 2);
+          ctx.arc(wx, wy, 8, 0, Math.PI * 2);
           ctx.fill();
           ctx.fillStyle = '#1c1c20';
-          ctx.fillRect(wx - 1, wy - 8, 2, 16);
-          ctx.fillRect(wx - 8, wy - 1, 16, 2);
+          ctx.fillRect(wx - 1, wy - 7, 2, 14);
+          ctx.fillRect(wx - 7, wy - 1, 14, 2);
         };
-        wheel(46, false);
-        wheel(154, true);
-        // бампер волочится
+        wheel(46, false); // переднее колесо на земле
+        wheel(154, true);  // спущенное заднее колесо расплющено на земле
+        // бампер волочится по земле
         ctx.strokeStyle = '#3a3e44';
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(8, H - 38);
-        ctx.lineTo(2, H - 22);
+        ctx.moveTo(8, H - 26);
+        ctx.lineTo(2, H - 2);
         ctx.stroke();
         ctx.restore();
-        // земля под колёсами: тень + щебень до края холста
-        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        // плотная контактная тень строго под колёсами и днищем
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
         ctx.beginPath();
-        ctx.ellipse(W / 2, H - 8, 74, 7, 0, 0, Math.PI * 2);
+        ctx.ellipse(W / 2, H - 2, 86, 4, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(0, H - 8, W, 8);
-        for (let i = 0; i < 10; i++) {
-          ctx.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.45)' : 'rgba(140,140,130,0.4)';
-          ctx.fillRect(Math.round(rnd() * W), Math.round(H - 20 + rnd() * 16), 2 + Math.floor(rnd() * 4), 2 + Math.floor(rnd() * 3));
-        }
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.fillRect(10, H - 3, W - 20, 3);
       } else if (key === 'map_ruin2') {
         // Сломанная башня: высокий корпус, правый угол обвален ниже,
         // плиты перекрытий, щели-бойницы, пробоина, арматура, щебень.

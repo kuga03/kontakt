@@ -258,39 +258,83 @@ export function _countUpCoins(amount, done) {
   // Не забрано — подсвечивается; клик — окно наград в 2 раза меньше меню.
 export function createDailyGift(x, y, size) {
     const d = this.dailyAvailable();
-    const S = size || 56;
+    const CW = 216;
+    const CH = 52;
+    const card = this.add.container(x, y);
+
     const bg = this.add.graphics();
-    const cols = [0xff5555, 0xffaa00, 0x44ccff, 0xaa44ff];
-    const ci = (new Date().getDate()) % cols.length;
-    bg.fillStyle(cols[ci], 1);
-    bg.fillRoundedRect(x - S / 2, y - S / 2, S, S, 10);
-    bg.lineStyle(d.avail ? 3 : 2, d.avail ? 0xffff55 : 0xffffff, 1);
-    bg.strokeRoundedRect(x - S / 2, y - S / 2, S, S, 10);
-    // Авторский PNG подарка на тёмной плашке (чтоб не сливался);
-    // нет файла — рисованный бантик.
+    bg.fillStyle(d.avail ? 0x221808 : 0x101424, 0.95);
+    bg.fillRoundedRect(-CW / 2, -CH / 2, CW, CH, 8);
+    bg.lineStyle(d.avail ? 1.5 : 1, d.avail ? 0xffd24a : 0x3a4868, 0.9);
+    bg.strokeRoundedRect(-CW / 2, -CH / 2, CW, CH, 8);
+    card.add(bg);
+
+    // Золотая иконка подарка слева
+    const iconX = -CW / 2 + 28;
+    const iconG = this.add.graphics();
+    iconG.fillStyle(d.avail ? 0xffaa00 : 0x556688, 1);
+    iconG.fillRoundedRect(iconX - 16, -16, 32, 32, 6);
+    iconG.lineStyle(1.5, d.avail ? 0xffe066 : 0x8899aa, 1);
+    iconG.strokeRoundedRect(iconX - 16, -16, 32, 32, 6);
+    card.add(iconG);
+
     if (this.textures.exists('значок подарок дня')) {
-      bg.fillStyle(0x0a0a1a, 0.75);
-      bg.fillRoundedRect(x - S / 2 + 5, y - S / 2 + 5, S - 10, S - 10, 8);
-      const img = this.add.image(x, y, 'значок подарок дня');
-      img.setDisplaySize(S - 16, S - 16);
+      const img = this.add.image(iconX, 0, 'значок подарок дня');
+      img.setDisplaySize(24, 24);
+      card.add(img);
     } else {
-      // Бантик: две петли + коробка геометрией (масштаб от размера).
-      const k = S / 56;
-      bg.fillStyle(0xffffff, 0.95);
-      bg.fillRect(x - 16 * k, y - 2 * k, 32 * k, 20 * k);
-      bg.fillStyle(0xffd24a, 1);
-      bg.fillTriangle(x - 12 * k, y - 2 * k, x, y - 12 * k, x, y - 2 * k);
-      bg.fillTriangle(x + 12 * k, y - 2 * k, x, y - 12 * k, x, y - 2 * k);
-      bg.fillStyle(0xcc2222, 1);
-      bg.fillRect(x - 16 * k, y + 5 * k, 32 * k, 5 * k);
+      // Геометрический бантик
+      const bow = this.add.graphics();
+      bow.fillStyle(0xffffff, 1);
+      bow.fillRect(iconX - 12, -2, 24, 4);
+      bow.fillRect(iconX - 2, -12, 4, 24);
+      bow.fillStyle(0xffd24a, 1);
+      bow.fillCircle(iconX, 0, 3.5);
+      card.add(bow);
     }
-    const hit = this.add.rectangle(x, y, S, S, 0xffffff, 0.001);
-    hit.setInteractive({ useHandCursor: true });
-    hit.on('pointerdown', () => this._openDailyModal());
+
+    // Тексты статуса
+    const title = this.add.text(iconX + 24, -8, 'ЕЖЕДНЕВНЫЙ БОНУС', {
+      fontSize: '11px', color: '#ffd24a', fontStyle: 'bold'
+    }).setOrigin(0, 0.5);
+
+    const subText = d.avail
+      ? `+${d.reward || 700} МОНЕТ · ЗАБРАТЬ!`
+      : 'НАГРАДА ПОЛУЧЕНА ✓';
+    const subColor = d.avail ? '#66ff66' : '#8899bb';
+
+    const sub = this.add.text(iconX + 24, 9, subText, {
+      fontSize: '11px', color: subColor, fontStyle: 'bold'
+    }).setOrigin(0, 0.5);
+    card.add([title, sub]);
+
+    card.setSize(CW, CH);
+    card.setInteractive(new Phaser.Geom.Rectangle(-CW / 2, -CH / 2, CW, CH), Phaser.Geom.Rectangle.Contains);
+    card.input.cursor = 'pointer';
+    card.on('pointerdown', () => this._openDailyModal());
+
+    card.on('pointerover', () => {
+      bg.lineStyle(2, 0xffe066, 1);
+      bg.strokeRoundedRect(-CW / 2, -CH / 2, CW, CH, 8);
+      card.setScale(1.03);
+      try {
+        if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+          this.sound.play('sfx_hover', { volume: 0.2 });
+        }
+      } catch (e) {}
+    });
+
+    card.on('pointerout', () => {
+      bg.lineStyle(d.avail ? 1.5 : 1, d.avail ? 0xffd24a : 0x3a4868, 0.9);
+      bg.strokeRoundedRect(-CW / 2, -CH / 2, CW, CH, 8);
+      card.setScale(1);
+    });
+
     if (d.avail) {
       this.tweens.add({
-        targets: bg, alpha: { from: 1, to: 0.65 },
-        yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut'
+        targets: iconG,
+        scale: { from: 1, to: 1.12 },
+        yoyo: true, repeat: -1, duration: 800, ease: 'Sine.easeInOut'
       });
     }
   }

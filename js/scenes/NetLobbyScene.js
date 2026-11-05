@@ -118,7 +118,8 @@ export default class NetLobbyScene extends Phaser.Scene {
           if (!this.scene.isActive()) return;
           if (this.net && this.net.connected) return;
           if (this._activeField) return;
-          this._refreshRooms();
+          if (this._serverWaitModal) return;
+          this._refreshRooms({ background: true });
         } catch (e) {}
       }
     });
@@ -244,6 +245,7 @@ export default class NetLobbyScene extends Phaser.Scene {
       } catch (e) {}
       this._roomsTimer = null;
       this._closeServerModal();
+      this._closeServerWaitModal();
     });
 
     // Вернулись из инвентаря/магазина (сцена спит, а не умирает) —
@@ -337,17 +339,148 @@ export default class NetLobbyScene extends Phaser.Scene {
     return '127.0.0.1:8081';
   }
 
-  _refreshRooms() {
+  _closeServerWaitModal() {
+    try {
+      if (this._waitPromptTimer) { this._waitPromptTimer.remove(); this._waitPromptTimer = null; }
+    } catch (e) {}
+    if (this._serverWaitModal) {
+      try {
+        if (this._serverWaitModal.timerEvent) this._serverWaitModal.timerEvent.remove();
+        if (this._serverWaitModal.probeEvent) this._serverWaitModal.probeEvent.remove();
+        (this._serverWaitModal.elems || []).forEach(e => { try { e.destroy(); } catch (err) {} });
+      } catch (e) {}
+      this._serverWaitModal = null;
+    }
+  }
+
+  _showServerWaitModal(host) {
+    if (this._serverWaitModal) return;
+    const cx = gameW(this) / 2, cy = 360;
+    const W = 560, H = 360;
+    const elems = [];
+    const put = (o) => { elems.push(o); return o; };
+
+    const overlay = put(this.add.rectangle(cx, cy, gameW(this), 720, 0x000000, 0.85).setDepth(500).setInteractive());
+    const bg = put(this.add.rectangle(cx, cy, W, H, 0x14142e, 1).setDepth(501).setStrokeStyle(2, 0xffd24a, 1));
+
+    put(this.add.text(cx, cy - 130, 'ПОДКЛЮЧЕНИЕ К СЕРВЕРУ...', {
+      fontSize: '22px', color: '#ffd24a', fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(502));
+
+    const statusT = put(this.add.text(cx, cy - 90, `Сервер: ${String(host).slice(0, 36)}`, {
+      fontSize: '15px', color: '#99aacc'
+    }).setOrigin(0.5).setDepth(502));
+
+    let countdown = 60;
+    const timerT = put(this.add.text(cx, cy - 25, '60', {
+      fontSize: '52px', color: '#ffd700', fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(502));
+
+    const subT = put(this.add.text(cx, cy + 40, 'Бесплатный сервер на Render просыпается (обычно 20–50 сек).\nПожалуйста, подождите или вернитесь назад.', {
+      fontSize: '13px', color: '#ccd6ee', align: 'center', lineSpacing: 4
+    }).setOrigin(0.5).setDepth(502));
+
+    const backBtn = put(this.add.text(cx, cy + 120, '← НАЗАД В ГЛАВНОЕ МЕНЮ', {
+      fontSize: '16px', color: '#ffffff', backgroundColor: '#6a2a2a', padding: { left: 26, right: 26, top: 10, bottom: 10 }, fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(503).setInteractive({ useHandCursor: true }));
+
+    backBtn.on('pointerover', () => backBtn.setStyle({ color: '#ffaaaa', backgroundColor: '#8a3333' }));
+    backBtn.on('pointerout', () => backBtn.setStyle({ color: '#ffffff', backgroundColor: '#6a2a2a' }));
+    backBtn.on('pointerdown', () => {
+      this._closeServerWaitModal();
+      try { if (this.net) this.net.close(); } catch (e) {}
+      this.scene.start('MenuScene');
+    });
+
+    const timerEvent = this.time.addEvent({
+      delay: 1000,
+      repeat: 60,
+      callback: () => {
+        countdown--;
+        if (!timerT.active) return;
+        timerT.setText(String(Math.max(0, countdown)));
+        if (countdown <= 0) {
+          if (this._serverWaitModal && this._serverWaitModal.probeEvent) {
+            this._serverWaitModal.probeEvent.remove();
+          }
+          statusT.setText('Сервер не ответил');
+          timerT.setText('ТАЙМАУТ');
+          timerT.setFontSize(30);
+          timerT.setColor('#ff6666');
+          subT.setText('Сервер сейчас недоступен или ещё не проснулся.\nВы можете повторить попытку или вернуться в меню.');
+
+          const retryBtn = put(this.add.text(cx - 130, cy + 120, 'ПОВТОРИТЬ', {
+            fontSize: '15px', color: '#ffffff', backgroundColor: '#2a5a2a', padding: { left: 20, right: 20, top: 10, bottom: 10 }, fontStyle: 'bold'
+          }).setOrigin(0.5).setDepth(503).setInteractive({ useHandCursor: true }));
+
+          retryBtn.on('pointerdown', () => {
+            this._closeServerWaitModal();
+            this._refreshRooms();
+          });
+
+          backBtn.setPosition(cx + 120, cy + 120);
+          backBtn.setText('← В МЕНЮ');
+        }
+      }
+    });
+
+    // Живой опрос сервера в фоне во время бодрствования модалки:
+    const probeEvent = this.time.addEvent({
+      delay: 2500,
+      loop: true,
+      callback: () => {
+        if (!this._serverWaitModal || !this.scene.isActive()) return;
+        fetchRooms(host).then((arr) => {
+          if (Array.isArray(arr) && this._serverWaitModal) {
+            this._closeServerWaitModal();
+            this._rooms = arr;
+            this._roomsLoading = false;
+            this._roomsStamp = Date.now();
+            this._roomsError = null;
+            this._serverPing = 120;
+            this._serverPingHost = host;
+            if (!this.net.connected && this.scene.isActive()) this.rebuild();
+          }
+        }).catch(() => {});
+      }
+    });
+
+    this._serverWaitModal = { elems, timerEvent, probeEvent };
+  }
+
+  _refreshRooms(opts = {}) {
     if (this.net && this.net.connected) return;
     if (this._roomsLoading) return;
+    const isBg = !!(opts && opts.background);
     this._roomsLoading = true;
     const host = this._listHost();
     const t0 = Date.now();
+
+    try { if (this._waitPromptTimer) this._waitPromptTimer.remove(); } catch (e) {}
+    if (!isBg && !this._serverWaitModal) {
+      this._waitPromptTimer = this.time.delayedCall(700, () => {
+        if (this._roomsLoading && this.scene.isActive() && !this._serverWaitModal) {
+          this._showServerWaitModal(host);
+        }
+      });
+    }
+
     fetchRooms(host).then((arr) => {
-      if (!this.scene.isActive()) return;
-      // null — тут нет игрового сервера (чужой ответ/тишина): та же
-      // ветка ошибки, иначе рисовали бы пинг по статике без WebSocket.
-      if (!Array.isArray(arr)) {
+      if (Array.isArray(arr)) {
+        this._closeServerWaitModal();
+        if (!this.scene.isActive()) return;
+        this._rooms = arr;
+        this._roomsLoading = false;
+        this._roomsStamp = Date.now();
+        this._roomsError = null;
+        this._serverPing = Date.now() - t0;
+        this._serverPingHost = host;
+        if (!this.net.connected && this.scene.isActive()) this.rebuild();
+        else this._roomsLoading = false;
+        return;
+      }
+      // Не комната или ответ пустой: если модалка висит, НЕ закрываем её — опрос продолжается таймером.
+      if (!this._serverWaitModal) {
         this._rooms = [];
         this._roomsLoading = false;
         this._roomsStamp = Date.now();
@@ -355,28 +488,19 @@ export default class NetLobbyScene extends Phaser.Scene {
         this._serverPing = -1;
         this._serverPingHost = host;
         if (!this.net.connected && this.scene.isActive()) this.rebuild();
-        return;
       }
-      this._rooms = arr;
-      this._roomsLoading = false;
-      this._roomsStamp = Date.now();
-      this._roomsError = null;
-      this._serverPing = Date.now() - t0;
-      this._serverPingHost = host;
-      // Перерисовываем только экран списка (не комнату).
-      if (!this.net.connected && this.scene.isActive()) this.rebuild();
-      else this._roomsLoading = false;
     }).catch(() => {
-      if (!this.scene.isActive()) return;
-      this._rooms = [];
-      this._roomsLoading = false;
-      // Штамп и адрес ошибки — чтобы не долбить недоступный сервер
-      // при каждом rebuild (иначе спам ERR_CONNECTION_REFUSED в консоли).
-      this._roomsStamp = Date.now();
-      this._roomsError = host;
-      this._serverPing = -1;
-      this._serverPingHost = host;
-      if (!this.net.connected && this.scene.isActive()) this.rebuild();
+      // Ошибка подключения: если модалка висит, она не должна захлопываться.
+      if (!this._serverWaitModal) {
+        if (!this.scene.isActive()) return;
+        this._rooms = [];
+        this._roomsLoading = false;
+        this._roomsStamp = Date.now();
+        this._roomsError = host;
+        this._serverPing = -1;
+        this._serverPingHost = host;
+        if (!this.net.connected && this.scene.isActive()) this.rebuild();
+      }
     });
   }
 
@@ -522,7 +646,7 @@ export default class NetLobbyScene extends Phaser.Scene {
     const LABEL_X = UX(this, 460);   // правый край подписей (origin 1,0.5)
     const FIELD_X = UX(this, 660);   // центр полей ввода
     if (!Array.isArray(this._rooms) && !this._roomsLoading) this._refreshRooms();
-    else if (!this._roomsLoading && (this._roomsStamp || 0) + 5000 < Date.now()) this._refreshRooms();
+    else if (!this._roomsLoading && (this._roomsStamp || 0) + 5000 < Date.now()) this._refreshRooms({ background: true });
     this._box.add(this.add.text(cx, 84, 'ВЫБРАТЬ МАТЧ — комнаты сервера', {
       fontSize: '17px', color: '#99aacc'
     }).setOrigin(0.5));

@@ -5,6 +5,7 @@ import Sniper from '../../entities/Sniper.js';
 
 import { bakeHouseLayers } from '../../data/bgHouses.js';
 import { bakePanorama, bakeCrispBands } from '../../data/bgPanorama.js';
+import { generateMapArt } from '../boot/artEnv.js';
 
 import * as MapPrims from '../../world/mapPrimitives.js';
 
@@ -83,6 +84,13 @@ export function createMap() {
       const bgImg = this.add.image(this.mapWidth / 2, bgY, bgTexKey);
       bgImg.setDisplaySize(bgW, bgH);
       bgImg.setDepth(-10);
+      // Привязываем параллакс неба: едва заметное отставание от камеры по X (0.03)
+      // Создает эффект бесконечно далекого горизонта без уплывания краев
+      try {
+        bgImg.setScrollFactor(0.03, 1);
+        this._bgSkyImg = bgImg;
+        this._bgSkyBaseX = this.mapWidth / 2;
+      } catch (e) {}
       // Фон приглушаем, чтобы платформы читались: затемнение + лёгкий
       // блюр (WebGL; на Canvas тихо пропускаем — останется затемнение).
       try { bgImg.setAlpha(0.55); } catch (e) {}
@@ -108,6 +116,9 @@ export function createMap() {
     // Пекутся раз на тему (см. data/bgHouses), дальше только tilePositionX.
     this._buildHouseLayers(themeId);
 
+    // Атмосферный фоновый эмбиент микрочастиц (песок, искры, капли)
+    this.createWeather(themeId);
+
     const level = this.campaignLevel;
     let hasGround = false;
     if (level && level.objects) {
@@ -130,12 +141,14 @@ export function createMap() {
         if (o.type === 'ground') {
           this.createGround(o.x, o.y, o.w, o.h, o.a, o.texKey);
           hasGround = true;
+        } else if (o.type === 'decor') {
+          this.createDecor(o.x, o.y, o.w, o.h, o.texKey, o.a, o.depth);
         } else if (o.type === 'building') {
           this.createBuilding(o.x, o.y, o.w, o.h, o.texKey, o.a);
         } else if (o.type === 'platform') {
-          this.createPlatform(o.x, o.y, o.w, o.h, o.a);
+          this.createPlatform(o.x, o.y, o.w, o.h, o.a, o.texKey);
         } else if (o.type === 'wall') {
-          this.createWall(o.x, o.y, o.w, o.h, o.a);
+          this.createWall(o.x, o.y, o.w, o.h, o.a, o.texKey);
         } else {
           // Ящики/бочки из карты — их PNG (map_crate/map_barrel...),
           // а не рисованная заглушка: texKey едет первым аргументом.
@@ -164,8 +177,8 @@ export function _buildHouseLayers(themeId) {
     return MapPrims.buildHouseLayers(this, themeId, bakeCrispBands, bakeHouseLayers);
   }
 
-export function createPlatform(x, y, width, height, alpha = 1) {
-    return MapPrims.createPlatform(this, x, y, width, height, alpha);
+export function createPlatform(x, y, width, height, alpha = 1, texKey = null) {
+    return MapPrims.createPlatform(this, x, y, width, height, alpha, texKey);
   }
 
 export function createGround(x, y, width, height, alpha = 1, texKey = null) {
@@ -185,10 +198,75 @@ export function createCover(x, y, width, height, texOrAlpha = 1, opts = {}) {
     return MapPrims.createCover(this, x, y, width, height, texOrAlpha, opts);
   }
 
+export function createDecor(x, y, width, height, texKey, alpha = 1, depth = -2) {
+    return MapPrims.createDecor(this, x, y, width, height, texKey, alpha, depth);
+  }
+
 export function createBuilding(x, y, width, height, texKey, alpha = 1) {
     return MapPrims.createBuilding(this, x, y, width, height, texKey, alpha);
   }
 
-export function createWall(x, y, width, height, alpha = 1) {
-    return MapPrims.createWall(this, x, y, width, height, alpha);
+export function createWall(x, y, width, height, alpha = 1, texKey = null) {
+    return MapPrims.createWall(this, x, y, width, height, alpha, texKey);
   }
+
+// Атмосферные фоновые микрочастицы (песок в пустыне, искры на заводе/высотках, капли в пещере)
+export function createWeather(themeId) {
+  try {
+    this._weatherParticles = [];
+    let pKey = null;
+    let count = 0;
+    let speedX = [0, 0];
+    let speedY = [0, 0];
+    let alphaRange = [0.3, 0.7];
+    let scaleRange = [0.6, 1.2];
+
+    if (themeId === 'pustinya' || themeId === 'pustoch' || themeId === 'wasteland') {
+      pKey = 'p_dust';
+      count = 28;
+      speedX = [40, 110];
+      speedY = [-10, 25];
+      alphaRange = [0.25, 0.65];
+      scaleRange = [0.6, 1.3];
+    } else if (themeId === 'zavod' || themeId === 'krisha' || themeId === 'ulica') {
+      pKey = 'p_ember';
+      count = 22;
+      speedX = [-30, 40];
+      speedY = [-40, -15];
+      alphaRange = [0.35, 0.85];
+      scaleRange = [0.5, 1.1];
+    } else if (themeId === 'pechera' || themeId === 'peshera') {
+      pKey = 'p_drop';
+      count = 18;
+      speedX = [-5, 5];
+      speedY = [60, 140];
+      alphaRange = [0.3, 0.7];
+      scaleRange = [0.6, 1.0];
+    }
+
+    if (!pKey) return;
+    if (!this.textures.exists(pKey)) {
+      try { generateMapArt.call(this, pKey); } catch (e) {}
+    }
+    if (!this.textures.exists(pKey)) return;
+
+    for (let i = 0; i < count; i++) {
+      const rx = Phaser.Math.Between(0, this.mapWidth);
+      const ry = Phaser.Math.Between(100, this.mapHeight - 60);
+      const sp = this.add.image(rx, ry, pKey);
+      sp.setDepth(-1.5); // перед фоновыми фасадами, позади бойцов и платформ
+      sp.setAlpha(Phaser.Math.FloatBetween(alphaRange[0], alphaRange[1]));
+      const sc = Phaser.Math.FloatBetween(scaleRange[0], scaleRange[1]);
+      sp.setScale(sc);
+      this._weatherParticles.push({
+        sprite: sp,
+        vx: Phaser.Math.FloatBetween(speedX[0], speedX[1]),
+        vy: Phaser.Math.FloatBetween(speedY[0], speedY[1]),
+        baseAlpha: sp.alpha,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+  } catch (e) {
+    this._weatherParticles = [];
+  }
+}

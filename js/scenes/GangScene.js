@@ -65,24 +65,25 @@ export default class GangScene extends Phaser.Scene {
       ], true);
     } catch (e) {}
     // Рамка ПЕРЕД текстом (иначе закроет его).
+    const backX = UX(this, 70);
     try {
       const bf = this.add.graphics();
       bf.fillStyle(0x3a2430, 1);
-      bf.fillRoundedRect(70 - 52, 28 - 17, 104, 34, 8);
+      bf.fillRoundedRect(backX - 52, 28 - 17, 104, 34, 8);
       bf.lineStyle(2, 0xa06a7a, 1);
-      bf.strokeRoundedRect(70 - 52, 28 - 17, 104, 34, 8);
+      bf.strokeRoundedRect(backX - 52, 28 - 17, 104, 34, 8);
       bf.lineStyle(1, 0xffffff, 0.15);
-      bf.lineBetween(70 - 44, 28 - 13, 70 + 44, 28 - 13);
+      bf.lineBetween(backX - 44, 28 - 13, backX + 44, 28 - 13);
     } catch (e) {}
-    const back = this.add.text(UX(this, 70), 28, '← Назад', { fontSize: '18px', color: '#ffffff', padding: 8 }).setOrigin(0.5);
+    const back = this.add.text(backX, 28, '← Назад', { fontSize: '18px', color: '#ffffff', padding: 8 }).setOrigin(0.5);
     back.setInteractive({ useHandCursor: true });
     back.on('pointerover', () => back.setStyle({ color: '#ffff55' }));
     back.on('pointerout', () => back.setStyle({ color: '#ffffff' }));
     back.on('pointerdown', () => this.scene.start('MenuScene'));
 
-    this._panel(208, 86, 384, 578, 'Моя банда', 0x1f6a3d);
+    this._panel(UX(this, 208), 86, 384, 578, 'Моя банда', 0x1f6a3d);
     this._panel(_cx, 86, 464, 578, 'КАРТА ГОРОДА', 0x2a5aaa);
-    this._panel(1072, 86, 384, 578, 'КОНТРАКТЫ', 0xa07a1a);
+    this._panel(UX(this, 1072), 86, 384, 578, 'КОНТРАКТЫ', 0xa07a1a);
     this._roster(g, t);
     this._map(t);
     this._contracts(t);

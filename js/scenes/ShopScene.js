@@ -45,7 +45,6 @@ export default class ShopScene extends Phaser.Scene {
   create(data) {
     syncGameState();
     const _cx = gameW(this) / 2;
-    this.cameras.main.setBackgroundColor('#0a0a2a');
     this.activeButton = null;
     this.shopItems = [];
     this.headCells = [];
@@ -56,80 +55,199 @@ export default class ShopScene extends Phaser.Scene {
     const _initTab = data && data.tab;
     this.tab = (_initTab === 'upgrade') ? 'upgrade' : 'weapons';
 
-    this.add.text(_cx, 25, 'СНАРЯЖЕНИЕ', {
-      fontSize: '36px',
-      color: '#ffffff'
-    }).setOrigin(0.5);
-
-    // Баланс со значком стопки долларов вместо надписи «Монеты».
-    // Сдвинут вправо — слева вверху теперь кнопка «Назад».
-    this.coinIcon = this.add.image(UX(this, 140), 40, 'icon_coins').setOrigin(0, 0.5);
-    if (this.textures.exists('icon_coins')) {
-      this.coinIcon.setDisplaySize(24, 18);
-    }
-    this.coinsText = this.add.text(UX(this, 170), 30, '', {
-      fontSize: '20px',
-      color: '#ffee88'
-    });
+    this._initBackground();
+    this._initHeader();
 
     this.drawTabs();
     this.drawTooltip();
     this.redrawTab();
 
-    this.backBtn = this.add.text(UX(this, 70), 28, '← Назад', {
-      fontSize: '18px',
-      color: '#ffffff',
-      backgroundColor: '#553333',
-      padding: 8
-    }).setOrigin(0.5).setDepth(50);
-
-    this.backBtn.setInteractive({ useHandCursor: true });
-    this.backBtn.on('pointerdown', () => {
-      this.scene.start('MenuScene');
-    });
-    this.backBtn.on('pointerover', () => this.backBtn.setStyle({ color: '#ffff55' }));
-    this.backBtn.on('pointerout', () => this.backBtn.setStyle({ color: '#ffffff' }));
+    // ESC для возврата в меню
+    try {
+      this.input.keyboard.on('keydown-ESC', () => this.scene.start('MenuScene'));
+    } catch (e) {}
 
     this.refresh();
   }
 
+  // Трёхступенчатый градиент фона как во всех обновлённых сценах
+  _initBackground() {
+    const W = gameW(this);
+    this.cameras.main.setBackgroundColor('#080916');
+
+    const bgb = this.add.graphics().setDepth(-10);
+    bgb.fillStyle(0x0f1226, 1);
+    bgb.fillRect(0, 0, W, 240);
+    bgb.fillStyle(0x090b1c, 1);
+    bgb.fillRect(0, 240, W, 240);
+    bgb.fillStyle(0x050610, 1);
+    bgb.fillRect(0, 480, W, 240);
+
+    bgb.lineStyle(1, 0xffd24a, 0.22);
+    bgb.lineBetween(0, 56, W, 56);
+    bgb.lineBetween(0, 692, W, 692);
+  }
+
+  _initHeader() {
+    const _cx = gameW(this) / 2;
+
+    this.add.text(_cx, 22, 'СНАРЯЖЕНИЕ', {
+      fontSize: '24px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(50);
+
+    // Золотая черта с ромбом под заголовком
+    const fl = this.add.graphics().setDepth(50);
+    fl.lineStyle(2, 0xffd24a, 0.8);
+    fl.lineBetween(_cx - 150, 42, _cx + 150, 42);
+    fl.fillStyle(0xffd24a, 0.9);
+    const dd = 5;
+    fl.fillPoints([
+      new Phaser.Geom.Point(_cx, 42 - dd), new Phaser.Geom.Point(_cx + dd, 42),
+      new Phaser.Geom.Point(_cx, 42 + dd), new Phaser.Geom.Point(_cx - dd, 42)
+    ], true);
+
+    // Кнопка Назад в стиле меню Банды/Инвентаря
+    const backX = UX(this, 70), backY = 27;
+    const backW = 104, backH = 34;
+    const backFr = this.add.graphics().setDepth(59);
+
+    const renderBack = (hot) => {
+      backFr.clear();
+      backFr.fillStyle(0x3a1e24, 1);
+      backFr.fillRoundedRect(backX - backW / 2, backY - backH / 2, backW, backH, 8);
+      backFr.fillStyle(0xffffff, hot ? 0.15 : 0.08);
+      backFr.fillRoundedRect(backX - backW / 2, backY - backH / 2, backW, 5, { tl: 8, tr: 8, bl: 0, br: 0 });
+      backFr.lineStyle(hot ? 2 : 1.5, hot ? 0xffff88 : 0x9e4a5a, 1);
+      backFr.strokeRoundedRect(backX - backW / 2, backY - backH / 2, backW, backH, 8);
+    };
+    renderBack(false);
+
+    this.backBtn = this.add.text(backX, backY, '← Назад', {
+      fontSize: '15px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      fixedWidth: backW,
+      padding: { top: 7, bottom: 7 },
+      align: 'center'
+    }).setOrigin(0.5).setDepth(60);
+
+    this.backBtn.setInteractive({ useHandCursor: true });
+    this.backBtn.on('pointerdown', () => this.scene.start('MenuScene'));
+    this.backBtn.on('pointerover', () => {
+      renderBack(true);
+      this.backBtn.setStyle({ color: '#ffff55' });
+      try {
+        if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+          this.sound.play('sfx_hover', { volume: 0.2 });
+        }
+      } catch (e) {}
+    });
+    this.backBtn.on('pointerout', () => {
+      renderBack(false);
+      this.backBtn.setStyle({ color: '#ffffff' });
+    });
+
+    // Плашка баланса монет (UX сдвинута вправо)
+    const coinPillX = UX(this, 195);
+    const coinPillY = 27;
+    const coinPillW = 126;
+    const coinPillH = 32;
+
+    const coinBg = this.add.graphics().setDepth(50);
+    coinBg.fillStyle(0x101326, 0.95);
+    coinBg.fillRoundedRect(coinPillX - coinPillW / 2, coinPillY - coinPillH / 2, coinPillW, coinPillH, 8);
+    coinBg.lineStyle(1.5, 0xffd24a, 0.7);
+    coinBg.strokeRoundedRect(coinPillX - coinPillW / 2, coinPillY - coinPillH / 2, coinPillW, coinPillH, 8);
+
+    this.coinIcon = this.add.image(coinPillX - coinPillW / 2 + 18, coinPillY, 'icon_coins').setOrigin(0.5).setDepth(51);
+    if (this.textures.exists('icon_coins')) {
+      this.coinIcon.setDisplaySize(20, 16);
+    }
+    this.coinsText = this.add.text(coinPillX - coinPillW / 2 + 34, coinPillY, '', {
+      fontSize: '15px',
+      color: '#ffee88',
+      fontStyle: 'bold'
+    }).setOrigin(0, 0.5).setDepth(51);
+  }
+
   drawTabs() {
     this.tabBtns = [];
-    // Центры разнесены ±110 от 640: «ОРУЖИЕ» (~100px) и «МОДЕРНИЗАЦИЯ»
-    // (~190px) не налезают друг на друга и на кнопку «Назад».
-    // Вкладки — внутри 1280-блока (центр по UX на широком Андроиде).
+    const _cx = gameW(this) / 2;
     const tabs = [
-      { id: 'weapons', label: 'ОРУЖИЕ', x: UX(this, 530) },
-      { id: 'upgrade', label: 'МОДЕРНИЗАЦИЯ', x: UX(this, 750) }
+      { id: 'weapons', label: 'ОРУЖИЕ', x: _cx - 105, w: 170 },
+      { id: 'upgrade', label: 'МОДЕРНИЗАЦИЯ', x: _cx + 105, w: 200 }
     ];
 
     tabs.forEach(t => {
-      const btn = this.add.text(t.x, 65, t.label, {
-        fontSize: '18px',
-        color: '#ffffff',
-        backgroundColor: this.tab === t.id ? '#334466' : '#222244',
-        padding: 8
-      }).setOrigin(0.5).setDepth(50);
-      btn.setInteractive({ useHandCursor: true });
-      btn.on('pointerdown', () => {
-        this.tab = t.id;
-        this.redrawTab();
+      const tabFr = this.add.graphics().setDepth(50);
+      const h = 34;
+
+      const renderTab = (active, hot) => {
+        tabFr.clear();
+        tabFr.fillStyle(active ? 0x2e2510 : hot ? 0x1d2238 : 0x111425, 0.95);
+        tabFr.fillRoundedRect(t.x - t.w / 2, 74 - h / 2, t.w, h, 8);
+        tabFr.fillStyle(0xffffff, active ? 0.12 : hot ? 0.08 : 0.04);
+        tabFr.fillRoundedRect(t.x - t.w / 2, 74 - h / 2, t.w, 4, { tl: 8, tr: 8, bl: 0, br: 0 });
+        tabFr.lineStyle(active ? 2 : 1.5, active ? 0xffd24a : hot ? 0x6688cc : 0x2a3550, 1);
+        tabFr.strokeRoundedRect(t.x - t.w / 2, 74 - h / 2, t.w, h, 8);
+      };
+
+      const btn = this.add.text(t.x, 74, t.label, {
+        fontSize: '14px',
+        color: this.tab === t.id ? '#ffd24a' : '#a0b0c8',
+        fontStyle: 'bold'
+      }).setOrigin(0.5).setDepth(51);
+
+      renderTab(this.tab === t.id, false);
+
+      const hit = this.add.rectangle(t.x, 74, t.w, h, 0xffffff, 0)
+        .setOrigin(0.5)
+        .setDepth(52)
+        .setInteractive({ useHandCursor: true });
+
+      hit.on('pointerdown', () => {
+        if (this.tab !== t.id) {
+          try {
+            if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+              this.sound.play('sfx_hover', { volume: 0.25 });
+            }
+          } catch (e) {}
+          this.tab = t.id;
+          this.redrawTab();
+        }
       });
-      btn.on('pointerover', () => {
-        if (this.tab !== t.id) btn.setStyle({ color: '#ffff55' });
+
+      hit.on('pointerover', () => {
+        if (this.tab !== t.id) {
+          renderTab(false, true);
+          btn.setStyle({ color: '#ffffff' });
+          try {
+            if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+              this.sound.play('sfx_hover', { volume: 0.15 });
+            }
+          } catch (e) {}
+        }
       });
-      btn.on('pointerout', () => {
-        if (this.tab !== t.id) btn.setStyle({ color: '#ffffff' });
+
+      hit.on('pointerout', () => {
+        if (this.tab !== t.id) {
+          renderTab(false, false);
+          btn.setStyle({ color: '#a0b0c8' });
+        }
       });
-      this.tabBtns.push({ btn, id: t.id });
+
+      this.tabBtns.push({ btn, id: t.id, renderTab });
     });
   }
 
   redrawTab() {
-    this.tabBtns.forEach(({ btn, id }) => {
+    this.tabBtns.forEach(({ btn, id, renderTab }) => {
+      const active = (this.tab === id);
+      renderTab(active, false);
       btn.setStyle({
-        color: this.tab === id ? '#ffff55' : '#ffffff',
-        backgroundColor: this.tab === id ? '#334466' : '#222244'
+        color: active ? '#ffd24a' : '#a0b0c8'
       });
     });
 
@@ -142,13 +260,9 @@ export default class ShopScene extends Phaser.Scene {
     } else if (this.tab === 'upgrade') {
       this.buildUpgrade();
     } else {
-      // Вкладки «внешность» больше нет (и «гранат» тоже) —
-      // страховка от битого состояния.
       this.tab = 'weapons';
       this.buildColumns();
     }
-    // Цены/состояния ячеек выставляются только здесь: иначе до первой покупки
-    // все priceText пустые.
     this.refresh();
   }
 
@@ -206,8 +320,10 @@ export default class ShopScene extends Phaser.Scene {
       .sort((a, b) => (a.unlockLevel || 1) - (b.unlockLevel || 1));
     columns.push({ label: 'ВТОРОЕ ОРУЖИЕ', items: secondaries });
 
-    // 6 колонок на 1280: ячейки ужаты 220→190, зазоры 10.
-    const COL_X = [40, 240, 440, 640, 840, 1040];
+    // 6 колонок: ячейки ужаты 220→190, зазоры 10.
+    // Центрирование по ширине экрана (равные отступы слева и справа).
+    const startX = Math.round((gameW(this) - 1190) / 2);
+    const COL_X = [0, 1, 2, 3, 4, 5].map(i => startX + i * 200);
     const TOP = 120;
     const BOTTOM = 680;
     const CELL_W = 190;
@@ -225,12 +341,19 @@ export default class ShopScene extends Phaser.Scene {
     columns.forEach((column, ci) => {
       const x = COL_X[ci];
 
-      // Подпись класса. Сохраняем в sectionLabels, иначе переживает смену
-      // вкладки и висит над «Гранатами»/«Внешностью».
-      const colLabel = this.add.text(x, TOP - 18, column.label, {
-        fontSize: '15px',
-        color: '#88ccff'
-      }).setOrigin(0, 0.5);
+      // Подпись класса в виде стильного бейджа
+      const colHeaderBg = this.add.graphics();
+      colHeaderBg.fillStyle(0x101426, 0.9);
+      colHeaderBg.fillRoundedRect(x, TOP - 26, CELL_W, 20, 5);
+      colHeaderBg.lineStyle(1, 0x2e3b56, 0.8);
+      colHeaderBg.strokeRoundedRect(x, TOP - 26, CELL_W, 20, 5);
+      this.sectionLabels.push(colHeaderBg);
+
+      const colLabel = this.add.text(x + CELL_W / 2, TOP - 16, column.label, {
+        fontSize: '11px',
+        color: '#ffd24a',
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 0.5);
       this.sectionLabels.push(colLabel);
 
       const maskG = this.add.graphics();
@@ -816,22 +939,26 @@ export default class ShopScene extends Phaser.Scene {
     return hasGunImg ? gunH : iconH;
   }
 
-  drawCellBg(bg, w, h, state) {
+  drawCellBg(bg, w, h, state, hover = false) {
     bg.clear();
     if (state === 'owned') {
-      bg.fillStyle(0x224422, 0.9);
+      bg.fillStyle(hover ? 0x184224 : 0x112d19, 0.94);
       bg.fillRoundedRect(0, 0, w, h, 8);
-      bg.lineStyle(2, 0x44aa44);
+      bg.fillStyle(0xffffff, 0.08);
+      bg.fillRoundedRect(0, 0, w, 4, { tl: 8, tr: 8, bl: 0, br: 0 });
+      bg.lineStyle(hover ? 2 : 1.5, hover ? 0x66ff88 : 0x33aa55, 1);
       bg.strokeRoundedRect(0, 0, w, h, 8);
     } else if (state === 'locked') {
-      bg.fillStyle(0x333333, 0.45);
+      bg.fillStyle(0x10121d, 0.8);
       bg.fillRoundedRect(0, 0, w, h, 8);
-      bg.lineStyle(1, 0x555555);
+      bg.lineStyle(1, 0x252a3c, 0.9);
       bg.strokeRoundedRect(0, 0, w, h, 8);
     } else {
-      bg.fillStyle(0x1a1a4a, 0.9);
+      bg.fillStyle(hover ? 0x1e2646 : 0x12162a, 0.94);
       bg.fillRoundedRect(0, 0, w, h, 8);
-      bg.lineStyle(1, 0x4466aa);
+      bg.fillStyle(0xffffff, hover ? 0.12 : 0.05);
+      bg.fillRoundedRect(0, 0, w, 4, { tl: 8, tr: 8, bl: 0, br: 0 });
+      bg.lineStyle(hover ? 2 : 1.5, hover ? 0xffd24a : 0x3b4a70, 1);
       bg.strokeRoundedRect(0, 0, w, h, 8);
     }
   }
@@ -917,19 +1044,15 @@ export default class ShopScene extends Phaser.Scene {
         const live = this.cellState(weapon);
         try {
           if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
-            this.sound.play('sfx_hover', { volume: 0.2 });
+            this.sound.play('sfx_hover', { volume: 0.15 });
           }
         } catch (e) { /* noop */ }
-        bg.clear();
-        this.drawCellBg(bg, w, h, live);
-        bg.lineStyle(2, 0xffee55);
-        bg.strokeRoundedRect(0, 0, w, h, 8);
+        this.drawCellBg(bg, w, h, live, true);
       });
       hitZone.on('pointerout', () => {
         this.hideTooltip();
         const live = this.cellState(weapon);
-        bg.clear();
-        this.drawCellBg(bg, w, h, live);
+        this.drawCellBg(bg, w, h, live, false);
       });
 
       hitZone.setInteractive({ useHandCursor: state === 'normal' });
@@ -1206,9 +1329,9 @@ export default class ShopScene extends Phaser.Scene {
     const h = 20 + 26 + lines.length * 18;
 
     this.tooltipBg.clear();
-    this.tooltipBg.fillStyle(0x000000, 0.85);
+    this.tooltipBg.fillStyle(0x0e1124, 0.96);
     this.tooltipBg.fillRoundedRect(0, 0, w, h, 8);
-    this.tooltipBg.lineStyle(1, 0xaa8844);
+    this.tooltipBg.lineStyle(1.5, 0xffd24a, 0.9);
     this.tooltipBg.strokeRoundedRect(0, 0, w, h, 8);
 
     // Кламп по экрану 1280×720: у нижнего ряда тултип всплывает НАД курсором,

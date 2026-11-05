@@ -7,7 +7,11 @@ export function generatePlatformArt(key) {
       platform_desert: { body: '#6e5638', dark: '#453522', lite: '#e8d090', kind: 'cracks' },
       platform_ind:    { body: '#2e3438', dark: '#161a1c', lite: '#d8a83a', kind: 'hazard' },
       platform_cave1:  { body: '#1a201c', dark: '#0a0d0b', lite: '#3fae72', kind: 'rock' },
-      platform_cave2:  { body: '#1a1e26', dark: '#0a0c12', lite: '#5a8ad0', kind: 'rock' }
+      platform_cave2:  { body: '#1a1e26', dark: '#0a0c12', lite: '#5a8ad0', kind: 'rock' },
+      plat_office_floor: { body: '#2c3038', dark: '#181a1f', lite: '#94a4b8', kind: 'office' },
+      plat_ind_girder:   { body: '#333840', dark: '#1a1d22', lite: '#e0b030', kind: 'hazard' },
+      plat_bunker_slab:  { body: '#2a323a', dark: '#15191d', lite: '#6085a8', kind: 'rivets' },
+      plat_canyon_wood:  { body: '#58432c', dark: '#322314', lite: '#c5a26c', kind: 'wood' }
     };
     const p = P[key];
     if (!p) return false;
@@ -105,6 +109,28 @@ export function generatePlatformArt(key) {
         ctx.fillRect(Math.round(rnd() * W), Math.round(4 + rnd() * 9), 1 + Math.floor(rnd() * 3), 1 + Math.floor(rnd() * 2));
       }
       try { ctx.globalAlpha = 1; } catch (e) {}
+    } else if (p.kind === 'office') {
+      // Офисный коммерческий ламинат: продольные доски и тонкие швы
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0, 7, W, 1);
+      for (let px = 20; px < W; px += 48) {
+        ctx.fillRect(px, 4, 1.5, 7);
+        // Мелкие мебельные винты в скрытом монтаже
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillRect(px + 4, 5, 2, 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      }
+    } else if (p.kind === 'wood') {
+      // Дощатый деревянный настил моста со стыками балок и канатной перевязкой
+      for (let px = 0; px < W; px += 30) {
+        ctx.fillStyle = p.dark;
+        ctx.fillRect(px, 3, 2, 9);
+        // Канатный узел/виток настила
+        ctx.fillStyle = '#8a6e45';
+        ctx.fillRect(px + 12, 4, 4, 6);
+        ctx.fillStyle = '#4a3820';
+        ctx.strokeRect(px + 12, 4, 4, 6);
+      }
     }
     // низ: тень и кромка
     ctx.fillStyle = p.dark;

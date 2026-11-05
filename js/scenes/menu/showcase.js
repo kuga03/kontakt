@@ -1,8 +1,6 @@
 import { gameState, mostPlayedClass, expRequired, getEquipment } from '../../data/gameState.js';
-
 import { getRank } from '../../data/ranks.js';
 import { classDefinitions } from '../../data/weapons.js';
-
 import Assault from '../../entities/Assault.js';
 import Tank from '../../entities/Tank.js';
 import Medic from '../../entities/Medic.js';
@@ -14,252 +12,354 @@ const PREVIEW_CLASSES = { Assault, Tank, Medic, Sniper };
 // Версия игры (бета, не выпущена).
 export const GAME_VERSION = 'Beta v0.21';
 
-// Баттл-пасс «Контракты» живёт в data/pass.js (40 ярусов × 2 ряда,
-// сезон 30 дней, задания строго по порядку).
-// Здесь — только позиция ленты (переживает переоткрытия окна).
-let passScrollX = 0;
-
-// Открытая секция центра («single» — режимы, «online» — мок онлайна).
-// Модульная переменная — переживает перестройки колонки без рестарта сцены.
-let openSection = 'single';
-
-// Подписи режимов для истории боёв.
-
-// Авторские PNG-значки для кнопок (id иконки → ключ текстуры).
-// Нет файла — рисуется вектор из _drawBtnIcon.
-const BTN_ICON_PNG = {
-  cart: 'значок магазин',
-  backpack: 'значок инвентарь',
-  star: 'значок дерево навыков',
-  dna: 'значок геном',
-  case: 'значок кейсы',
-  list: 'значок выбрать матч',
-  friends: 'значок друзья',
-  swords: 'значок свободная игра',
-  globe: 'значок онлайн',
-  flag: 'значок компания',
-  skull: 'значок испытание',
-  medal: 'значок рейтинг',
-  bolt: 'значок быстрая игра',
-  single: 'значок одиночная игра'
-};
-
 export function createShowcase(cx, w, badgeMaxW) {
-    const K = 1.5;
-    const cls = mostPlayedClass();
-    const cd = classDefinitions.find(v => v.id === cls) || classDefinitions[0];
+  const cls = mostPlayedClass();
+  const cd = classDefinitions.find(v => v.id === cls) || classDefinitions[0];
 
-    const PW = w || 196;
-    const PX = cx - PW / 2, PY = 148, PH = Math.round(474 / K);
-    if (this.textures.exists('фон для блоков меню')) {
-      const pimg = this.add.image(cx, PY + PH / 2, 'фон для блоков меню');
-      pimg.setDisplaySize(PW, PH);
-      pimg.setAlpha(0.7);
-    }
-    const g = this.add.graphics();
-    if (!this.textures.exists('фон для блоков меню')) {
-      g.fillStyle(0x12122e, 0.92);
-      g.fillRoundedRect(PX, PY, PW, PH, 12);
-    }
-    g.lineStyle(2, cd.color || 0x3a3a6a, 1);
-    g.strokeRoundedRect(PX, PY, PW, PH, 12);
+  // Голографический тактический пьедестал под ногами оперативника
+  const pedY = 378;
+  const pedG = this.add.graphics();
+  // Мягкая внешняя тень платформы
+  pedG.fillStyle(0x000000, 0.45);
+  pedG.fillEllipse(cx, pedY + 4, 260, 58);
+  // Внутреннее свечение пьедестала
+  pedG.fillStyle(0x0e1728, 0.88);
+  pedG.fillEllipse(cx, pedY, 230, 48);
+  // Золотой контур платформы
+  pedG.lineStyle(2.5, 0xd8a920, 0.95);
+  pedG.strokeEllipse(cx, pedY, 230, 48);
+  // Внутреннее тактическое кольцо
+  pedG.lineStyle(1.5, 0x4da6ff, 0.55);
+  pedG.strokeEllipse(cx, pedY, 175, 36);
+  // Центровой диск
+  pedG.fillStyle(0x16223d, 0.7);
+  pedG.fillEllipse(cx, pedY, 110, 24);
+  pedG.lineStyle(1, 0xd8a920, 0.6);
+  pedG.strokeEllipse(cx, pedY, 110, 24);
+  // Тактические риски по краям платформы
+  for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+    const rx1 = cx + Math.cos(a) * 105;
+    const ry1 = pedY + Math.sin(a) * 21;
+    const rx2 = cx + Math.cos(a) * 115;
+    const ry2 = pedY + Math.sin(a) * 24;
+    pedG.lineStyle(2, 0xd8a920, 0.8);
+    pedG.lineBetween(rx1, ry1, rx2, ry2);
+  }
 
-    // Рейтинг: бейдж НАД блоком персонажа — фон + кубок + цифра.
-    // Это ОНЛАЙН-рейтинг: начинается с 0 и растёт только сетевыми боями,
-    // одиночка на него не влияет. Блок крупный, почти впритык к соседям.
-    const rating = Math.max(0, gameState.onlineRating | 0);
-    const bY = PY - 26;
-    const budget = Math.max(110, badgeMaxW || 190);
-    const rNum = rating >= 10000
-      ? (rating / 1000).toFixed(1).replace('.', ',') + 'k'
-      : `${rating}`;
-    let rFs = 15, rW = 0;
-    const probe = this.add.text(-500, -500, '', {
-      fontSize: '15px', fontStyle: 'bold'
-    }).setOrigin(0.5);
-    while (rFs >= 12) {
-      probe.setFontSize(rFs);
-      probe.setText(`Рейтинг: ${rNum}`);
-      rW = probe.displayWidth;
-      if (rW + 32 + 36 <= budget) break;
-      rFs--;
-    }
-    const bgW = Math.ceil(rW) + 32 + 36;
-    probe.destroy();
-    const rBg = this.add.graphics();
-    rBg.fillStyle(0x12122e, 0.95);
-    rBg.fillRoundedRect(cx - bgW / 2, bY - 18, bgW, 36, 10);
-    rBg.lineStyle(2, 0xffd24a, 0.9);
-    rBg.strokeRoundedRect(cx - bgW / 2, bY - 18, bgW, 36, 10);
-    const rT = this.add.text(cx + 10, bY, `Рейтинг: ${rNum}`, {
-      fontSize: rFs + 'px', color: '#ffd24a', fontStyle: 'bold'
-    }).setOrigin(0.5);
-    // Значок слева от надписи: авторский PNG на тёмной подложке,
-    // иначе рисованный кубок.
-    const ccx = cx + 10 - rT.displayWidth / 2 - 19, ccy = bY;
-    if (this.textures.exists('значок очки рейтинга')) {
-      const rcb = this.add.graphics();
-      rcb.fillStyle(0x0a0a1a, 0.85);
-      rcb.fillCircle(ccx, ccy, 16);
-      const cupImg = this.add.image(ccx, ccy, 'значок очки рейтинга');
-      // Фит с сохранением пропорций: медалька 306×620, квадратом её
-      // плющило вдвое (та же болячка, что была у значков кнопок).
-      try {
-        const csrc = this.textures.get('значок очки рейтинга').getSourceImage();
-        const csw = Math.max(1, (csrc && csrc.width) || 1);
-        const csh = Math.max(1, (csrc && csrc.height) || 1);
-        cupImg.setScale(Math.min(30 / csw, 30 / csh));
-      } catch (e) { cupImg.setDisplaySize(30, 30); }
-    } else {
-      const cup = this.add.graphics();
-      cup.fillStyle(0xffd24a, 1);
-      cup.fillPoints([
-        new Phaser.Geom.Point(ccx - 6, ccy - 6), new Phaser.Geom.Point(ccx + 6, ccy - 6),
-        new Phaser.Geom.Point(ccx + 3, ccy + 3), new Phaser.Geom.Point(ccx - 3, ccy + 3)
-      ], true);
-      cup.lineStyle(2, 0xffd24a, 1);
-      cup.strokeCircle(ccx - 7, ccy - 3, 3.5);
-      cup.strokeCircle(ccx + 7, ccy - 3, 3.5);
-      cup.lineStyle(2, 0xffd24a, 1);
-      cup.lineBetween(ccx, ccy + 3, ccx, ccy + 7);
-      cup.lineBetween(ccx - 5, ccy + 7, ccx + 5, ccy + 7);
-    }
-    this.add.text(cx, PY + 14, getRank(gameState.level), {
-      fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
-    }).setOrigin(0.5);
-    this.add.text(cx, PY + 32, cd.label, {
-      fontSize: '13px', color: '#ffffff', fontStyle: 'bold'
-    }).setOrigin(0.5);
+  // Плавающий бейдж звания и рейтинга над оперативником
+  const bY = 138;
+  const rating = Math.max(0, gameState.onlineRating | 0);
+  const rNum = rating >= 10000
+    ? (rating / 1000).toFixed(1).replace('.', ',') + 'k'
+    : `${rating}`;
 
-    // Герой — тот же живой риг, что в инвентаре (Preview-класс + снаряжение
-    // из инвентаря), а не статичные PNG. Класс — самый наигранный по боям.
-    // Крупный (×1.75 — ровно ×2 в щель 237px не влезает: фигура 254px;
-    // верх = якорь−67k, низ = якорь+60k).
+  const badgeW = 270;
+  const badgeH = 46;
+  const rBg = this.add.graphics();
+  rBg.fillStyle(0x0b0e1a, 0.92);
+  rBg.fillRoundedRect(cx - badgeW / 2, bY - badgeH / 2, badgeW, badgeH, 10);
+  rBg.lineStyle(1.5, 0x8a6a10, 0.9);
+  rBg.strokeRoundedRect(cx - badgeW / 2, bY - badgeH / 2, badgeW, badgeH, 10);
+  // Золотая акцентная полоска сверху
+  rBg.fillStyle(0xd8a920, 1);
+  rBg.fillRoundedRect(cx - badgeW / 2 + 10, bY - badgeH / 2, badgeW - 20, 2.5, 1);
+
+  // Звание и класс
+  this.add.text(cx - 30, bY - 8, getRank(gameState.level), {
+    fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  const classBadgeColor = cd.color != null ? (typeof cd.color === 'string' ? cd.color : '#' + cd.color.toString(16).padStart(6, '0')) : '#4da6ff';
+  this.add.text(cx - 30, bY + 9, cd.label.toUpperCase(), {
+    fontSize: '11px', color: classBadgeColor, fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  // Капсула рейтинга справа внутри бейджа
+  const cupPillX = cx + 82;
+  const cupPill = this.add.graphics();
+  cupPill.fillStyle(0x181a28, 0.95);
+  cupPill.fillRoundedRect(cupPillX - 44, bY - 14, 88, 28, 6);
+  cupPill.lineStyle(1, 0xd8a920, 0.85);
+  cupPill.strokeRoundedRect(cupPillX - 44, bY - 14, 88, 28, 6);
+
+  const ccx = cupPillX - 26;
+  const ccy = bY;
+  if (this.textures.exists('значок очки рейтинга')) {
+    const cupImg = this.add.image(ccx, ccy, 'значок очки рейтинга');
     try {
-      if (this._showPreview) {
-        try { this._showPreview.destroy(); } catch (e) {}
-        this._showPreview = null;
-      }
-      this._showHat = null;
-      const Cls = PREVIEW_CLASSES[cls] || PREVIEW_CLASSES.Assault;
-      const hx = cx - 12, hy = 303;
-      const p = new Cls(this, hx, hy, { name: 'showcase', team: 'blue', noDefaults: true });
-      p.previewScale(1.75);
-      // Витрина — как в редакторе, но ствол честный: тот, что реально надет
-      // у класса в инвентаре (раньше всегда выдавался АК — врало после
-      // сброса/смены снаряжения). Пустые руки прячутся ниже, как было.
-      try {
-        const eq = getEquipment(cls);
-        if (eq && eq.primary) {
-          p.addWeapon(eq.primary);
-          p.activeWeaponIndex = p.inventory.length - 1;
-          p._lastGunName = null;
-        }
-      } catch (e) {}
-      if (p.body) {
-        p.body.setAllowGravity(false);
-        p.body.setImmovable(true);
-      }
-      p.setVelocity(0, 0);
-      p._editorGrounded = true;
-      p.aimAt(hx + 200, hy - 10);
-      p.updateBars();
-      if (p.updateGun) p.updateGun();
-      p.healthBar.setVisible(false);
-      p.armorBar.setVisible(false);
-      p.nameText.setVisible(false);
-      // Безоружный класс: прячем и векторный ствол (иначе рисует силуэт).
-      if (!p.weapon) {
-        p._gunAllowed = false;
-        p._setGunVisible(false);
-      }
-      this._showPreview = p;
-      // Убор рисует сам персонаж (capImg из экипировки) — дубль поверх
-      // больше не нужен (давал две балаклавы).
-      this._showHat = null;
-    } catch (e) { /* витрина не роняет меню */ }
-    // Кнопка статистики вместо двух строк (влезает в панель).
-    const statBtn = this.add.text(cx, PY + PH - 20, 'СТАТИСТИКА', {
-      fontSize: '13px', color: '#ffffff', backgroundColor: '#252560', padding: 7
-    }).setOrigin(0.5);
-    statBtn.setInteractive({ useHandCursor: true });
-    statBtn.on('pointerdown', () => this._openStatsModal());
-    statBtn.on('pointerover', () => statBtn.setStyle({ color: '#ffff55' }));
-    statBtn.on('pointerout', () => statBtn.setStyle({ color: '#ffffff' }));
+      const csrc = this.textures.get('значок очки рейтинга').getSourceImage();
+      const csw = Math.max(1, (csrc && csrc.width) || 1);
+      const csh = Math.max(1, (csrc && csh.height) || 1);
+      cupImg.setScale(Math.min(22 / csw, 22 / csh));
+    } catch (e) { cupImg.setDisplaySize(22, 22); }
+  } else {
+    const cup = this.add.graphics();
+    cup.fillStyle(0xffd24a, 1);
+    cup.fillPoints([
+      new Phaser.Geom.Point(ccx - 5, ccy - 5), new Phaser.Geom.Point(ccx + 5, ccy - 5),
+      new Phaser.Geom.Point(ccx + 2.5, ccy + 2.5), new Phaser.Geom.Point(ccx - 2.5, ccy + 2.5)
+    ], true);
+    cup.lineStyle(1.5, 0xffd24a, 1);
+    cup.lineBetween(ccx, ccy + 2.5, ccx, ccy + 6);
+    cup.lineBetween(ccx - 4, ccy + 6, ccx + 4, ccy + 6);
   }
 
-  // Тонкая ячейка сверху на весь экран: слева монеты + опыт, справа кнопки.
-export function createTopBar() {
-    const H = 38;
-    const bg = this.add.graphics();
-    bg.fillStyle(0x0d0d22, 0.95);
-    bg.fillRect(0, 0, gameW(this), H);
-    bg.lineStyle(1, 0x3a3a6a, 1);
-    bg.lineBetween(0, H, gameW(this), H);
+  this.add.text(cupPillX + 8, bY, `${rNum}`, {
+    fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
+  }).setOrigin(0.5);
 
-    // Слева направо: имя, клан, деньги, опыт.
-    let tx = 14;
-    const nameT = this.add.text(tx, H / 2, String(gameState.playerName || 'Игрок').slice(0, 14), {
-      fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
-    }).setOrigin(0, 0.5);
-    tx += nameT.displayWidth + 12;
-    if (gameState.clan && gameState.clan.tag) {
-      const clanT = this.add.text(tx, H / 2, `[${gameState.clan.tag}]`, {
-        fontSize: '14px', color: '#ffd24a', fontStyle: 'bold'
-      }).setOrigin(0, 0.5);
-      tx += clanT.displayWidth + 12;
+  // Герой — живой анимированный риг по центру сцены
+  try {
+    if (this._showPreview) {
+      try { this._showPreview.destroy(); } catch (e) {}
+      this._showPreview = null;
     }
-    const coinsIcon = this.add.image(tx + 12, H / 2, 'icon_coins').setOrigin(0.5).setDisplaySize(24, 18);
-    // Цель для анимации монет (куда летят значки при клейме наград).
-    this._topCoinsIcon = coinsIcon;
-    tx += 24 + 6;
-    const coinsT = this.add.text(tx, H / 2, `${gameState.coins}`, {
-      fontSize: '18px', color: '#ffee88', fontStyle: 'bold'
+    this._showHat = null;
+    const Cls = PREVIEW_CLASSES[cls] || PREVIEW_CLASSES.Assault;
+    const hx = cx - 10, hy = 308;
+    const p = new Cls(this, hx, hy, { name: 'showcase', team: 'blue', noDefaults: true });
+    p.previewScale(1.85);
+    try {
+      const eq = getEquipment(cls);
+      if (eq && eq.primary) {
+        p.addWeapon(eq.primary);
+        p.activeWeaponIndex = p.inventory.length - 1;
+        p._lastGunName = null;
+      }
+    } catch (e) {}
+    if (p.body) {
+      p.body.setAllowGravity(false);
+      p.body.setImmovable(true);
+    }
+    p.setVelocity(0, 0);
+    p._editorGrounded = true;
+    p.aimAt(hx + 240, hy - 10);
+    p.updateBars();
+    if (p.updateGun) p.updateGun();
+    p.healthBar.setVisible(false);
+    p.armorBar.setVisible(false);
+    p.nameText.setVisible(false);
+    if (!p.weapon) {
+      p._gunAllowed = false;
+      p._setGunVisible(false);
+    }
+    this._showPreview = p;
+    this._showHat = null;
+  } catch (e) { /* витрина не роняет меню */ }
+
+  // Кнопка статистики под пьедесталом
+  const statBtn = this.add.text(cx, 404, '📊 СТАТИСТИКА', {
+    fontSize: '12px',
+    color: '#ffd24a',
+    fontStyle: 'bold',
+    backgroundColor: '#121628ee',
+    padding: { left: 14, right: 14, top: 5, bottom: 5 }
+  }).setOrigin(0.5);
+  statBtn.setInteractive({ useHandCursor: true });
+  statBtn.on('pointerdown', () => this._openStatsModal());
+  statBtn.on('pointerover', () => {
+    statBtn.setStyle({ color: '#ffffff', backgroundColor: '#8a6a10ee' });
+    statBtn.setScale(1.05);
+  });
+  statBtn.on('pointerout', () => {
+    statBtn.setStyle({ color: '#ffd24a', backgroundColor: '#121628ee' });
+    statBtn.setScale(1);
+  });
+}
+
+// Тонкая люксовая ячейка сверху на весь экран: имя, клан, деньги, опыт и утилиты.
+export function createTopBar() {
+  const H = 42;
+  const W = gameW(this);
+  const bg = this.add.graphics();
+  // Глубокий премиальный фон с золотой каймой
+  bg.fillStyle(0x080a14, 0.96);
+  bg.fillRect(0, 0, W, H);
+  bg.lineStyle(1.5, 0xd8a920, 0.9);
+  bg.lineBetween(0, H, W, H);
+  // Мягкая тонкая линия глубины под каймой
+  bg.lineStyle(1, 0x443008, 0.5);
+  bg.lineBetween(0, H + 1, W, H + 1);
+
+  // Слева: капсула игрока (имя + клан)
+  let tx = 14;
+  const pName = String(gameState.playerName || 'Игрок').slice(0, 14);
+  const clanTag = (gameState.clan && gameState.clan.tag) ? `[${gameState.clan.tag}]` : null;
+
+  const profPill = this.add.container(tx, 6);
+  const profBg = this.add.graphics();
+  profPill.add(profBg);
+
+  const nameT = this.add.text(28, 15, pName, {
+    fontSize: '15px', color: '#ffffff', fontStyle: 'bold'
+  }).setOrigin(0, 0.5);
+  profPill.add(nameT);
+  let pW = 28 + nameT.displayWidth + 12;
+
+  if (clanTag) {
+    const clanT = this.add.text(pW, 15, clanTag, {
+      fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
     }).setOrigin(0, 0.5);
-    // Ссылка для живого обновления после клейма контрактов/покупок.
-    this._topCoinsT = coinsT;
-    tx += coinsT.displayWidth + 20;
-
-    // Шкала опыта + уровень.
-    const bx = tx;
-    const bw = 150;
-    const req = Math.max(1, expRequired(gameState.level));
-    const frac = Phaser.Math.Clamp((gameState.experience | 0) / req, 0, 1);
-    const bar = this.add.graphics();
-    bar.fillStyle(0x22223a, 1);
-    bar.fillRoundedRect(bx, H / 2 - 6, bw, 12, 6);
-    bar.fillStyle(0xffee55, 1);
-    bar.fillRoundedRect(bx, H / 2 - 6, Math.max(10, bw * frac), 12, 6);
-    this.add.text(bx + bw + 10, H / 2, `Ур. ${gameState.level} · ${gameState.experience | 0}/${req}`, {
-      fontSize: '14px', color: '#ffeeaa'
-    }).setOrigin(0, 0.5);
-
-    // Свой профиль: открывает Друзей сразу с открытым окном профиля.
-    const profBtn = this.add.text(gameW(this) - 300, H / 2, '👤 ПРОФИЛЬ', {
-      fontSize: '14px', color: '#ffffff', backgroundColor: '#252560', padding: 6
-    }).setOrigin(0.5);
-    profBtn.setInteractive({ useHandCursor: true });
-    profBtn.on('pointerdown', () => this.scene.start('FriendsScene', { view: 'self', returnTo: 'MenuScene' }));
-    profBtn.on('pointerover', () => profBtn.setStyle({ color: '#ffff55' }));
-    profBtn.on('pointerout', () => profBtn.setStyle({ color: '#ffffff' }));
-
-    // Пончик (донат-витрина): открывает отдельное меню доната.
-    const donutBtn = this.add.text(gameW(this) - 410, H / 2, '🍩', {
-      fontSize: '26px'
-    }).setOrigin(0.5);
-    donutBtn.setInteractive({ useHandCursor: true });
-    donutBtn.on('pointerdown', () => this.scene.start('DonateScene'));
-    // Тексты в игре создаются с масштабом 0.5 (HiDPI-хак в game.js) —
-    // запоминаем базовый и возвращаем его, иначе «обратно» не ужмётся.
-    const donutBase = donutBtn.scaleX;
-    donutBtn.on('pointerover', () => donutBtn.setScale(donutBase * 1.25));
-    donutBtn.on('pointerout', () => donutBtn.setScale(donutBase));
-
-    this.createAchIcon(gameW(this) - 134, H / 2 + 1);
-    this.createHistoryIcon(gameW(this) - 186, H / 2 + 1);
-    this.createFullscreenButton(gameW(this) - 82, H / 2 + 1);
-    this.createGearButton(gameW(this) - 38, H / 2 + 1);
+    profPill.add(clanT);
+    pW += clanT.displayWidth + 12;
   }
 
-  // Иконка-часы истории боёв: авторский PNG, иначе вектор.
-  // Открывает инвентарь на виде истории.
+  profBg.fillStyle(0x131728, 0.92);
+  profBg.fillRoundedRect(0, 0, pW, 30, 8);
+  profBg.lineStyle(1, 0x3a4568, 0.9);
+  profBg.strokeRoundedRect(0, 0, pW, 30, 8);
+
+  // Значок профиля слева в капсуле
+  const userG = this.add.graphics();
+  userG.fillStyle(0x4da6ff, 1);
+  userG.fillCircle(15, 12, 4);
+  userG.fillRoundedRect(9, 18, 12, 6, 3);
+  profPill.add(userG);
+
+  profPill.setSize(pW, 30);
+  profPill.setInteractive(new Phaser.Geom.Rectangle(0, 0, pW, 30), Phaser.Geom.Rectangle.Contains);
+  profPill.input.cursor = 'pointer';
+  profPill.on('pointerdown', () => this.scene.start('FriendsScene', { view: 'self', returnTo: 'MenuScene' }));
+  profPill.on('pointerover', () => {
+    profBg.lineStyle(1.5, 0xffd24a, 1);
+    profBg.strokeRoundedRect(0, 0, pW, 30, 8);
+    nameT.setColor('#ffff55');
+  });
+  profPill.on('pointerout', () => {
+    profBg.lineStyle(1, 0x3a4568, 0.9);
+    profBg.strokeRoundedRect(0, 0, pW, 30, 8);
+    nameT.setColor('#ffffff');
+  });
+
+  tx += pW + 12;
+
+  // Капсула монет
+  const coinPill = this.add.container(tx, 6);
+  const coinBg = this.add.graphics();
+  coinPill.add(coinBg);
+
+  const coinsIcon = this.add.image(18, 15, 'icon_coins').setOrigin(0.5).setDisplaySize(22, 17);
+  this._topCoinsIcon = coinsIcon;
+  coinPill.add(coinsIcon);
+
+  const coinsVal = Number(gameState.coins || 0).toLocaleString('ru-RU');
+  const coinsT = this.add.text(34, 15, coinsVal, {
+    fontSize: '15px', color: '#ffe066', fontStyle: 'bold'
+  }).setOrigin(0, 0.5);
+  this._topCoinsT = coinsT;
+  coinPill.add(coinsT);
+
+  const cW = 34 + coinsT.displayWidth + 14;
+  coinBg.fillStyle(0x18150a, 0.95);
+  coinBg.fillRoundedRect(0, 0, cW, 30, 8);
+  coinBg.lineStyle(1.5, 0x8a6a10, 0.9);
+  coinBg.strokeRoundedRect(0, 0, cW, 30, 8);
+
+  tx += cW + 12;
+
+  // Капсула опыта и уровня
+  const req = Math.max(1, expRequired(gameState.level));
+  const frac = Phaser.Math.Clamp((gameState.experience | 0) / req, 0, 1);
+  const bw = 120;
+  const expPillW = 54 + bw + 80;
+
+  const expPill = this.add.graphics();
+  expPill.fillStyle(0x101322, 0.92);
+  expPill.fillRoundedRect(tx, 6, expPillW, 30, 8);
+  expPill.lineStyle(1, 0x2e3852, 0.85);
+  expPill.strokeRoundedRect(tx, 6, expPillW, 30, 8);
+
+  // Значок уровня
+  const lvlBg = this.add.graphics();
+  lvlBg.fillStyle(0xd8a920, 1);
+  lvlBg.fillRoundedRect(tx + 4, 9, 44, 24, 6);
+  this.add.text(tx + 26, 21, `УР.${gameState.level}`, {
+    fontSize: '11px', color: '#090a14', fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  // Полоска прогресса опыта
+  const barX = tx + 54;
+  const barG = this.add.graphics();
+  barG.fillStyle(0x1b2033, 1);
+  barG.fillRoundedRect(barX, 15, bw, 12, 5);
+  if (frac > 0) {
+    barG.fillStyle(0xffcc33, 1);
+    barG.fillRoundedRect(barX, 15, Math.max(8, bw * frac), 12, 5);
+    barG.fillStyle(0xffe680, 0.85);
+    barG.fillRoundedRect(barX, 15, Math.max(8, bw * frac), 4, 2);
+  }
+  barG.lineStyle(1, 0x404d70, 0.8);
+  barG.strokeRoundedRect(barX, 15, bw, 12, 5);
+
+  this.add.text(barX + bw + 10, 21, `${gameState.experience | 0}/${req}`, {
+    fontSize: '11px', color: '#c4d0ec', fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  // Правая группа элементов (утилиты, магазин, настройки)
+  // Донат-витрина (пончик)
+  const donutBtn = this.add.container(W - 320, 6);
+  const donBg = this.add.graphics();
+  donBg.fillStyle(0x221a08, 0.95);
+  donBg.fillRoundedRect(0, 0, 100, 30, 8);
+  donBg.lineStyle(1.5, 0xd8a920, 0.9);
+  donBg.strokeRoundedRect(0, 0, 100, 30, 8);
+  donutBtn.add(donBg);
+
+  const donIcon = this.add.text(18, 15, '🍩', { fontSize: '18px' }).setOrigin(0.5);
+  const donTxt = this.add.text(34, 15, 'ДОНАТ', {
+    fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
+  }).setOrigin(0, 0.5);
+  donutBtn.add([donIcon, donTxt]);
+
+  donutBtn.setSize(100, 30);
+  donutBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 100, 30), Phaser.Geom.Rectangle.Contains);
+  donutBtn.input.cursor = 'pointer';
+  donutBtn.on('pointerdown', () => this.scene.start('DonateScene'));
+  donutBtn.on('pointerover', () => {
+    donBg.lineStyle(2, 0xffe066, 1);
+    donBg.strokeRoundedRect(0, 0, 100, 30, 8);
+    donTxt.setColor('#ffffff');
+    donutBtn.setScale(1.05);
+  });
+  donutBtn.on('pointerout', () => {
+    donBg.lineStyle(1.5, 0xd8a920, 0.9);
+    donBg.strokeRoundedRect(0, 0, 100, 30, 8);
+    donTxt.setColor('#ffd24a');
+    donutBtn.setScale(1);
+  });
+
+  // Кнопка быстрого перехода в Профиль
+  const profTextBtn = this.add.container(W - 210, 6);
+  const ptBg = this.add.graphics();
+  ptBg.fillStyle(0x131a30, 0.92);
+  ptBg.fillRoundedRect(0, 0, 82, 30, 8);
+  ptBg.lineStyle(1, 0x3a4870, 0.9);
+  ptBg.strokeRoundedRect(0, 0, 82, 30, 8);
+  profTextBtn.add(ptBg);
+
+  const ptTxt = this.add.text(41, 15, 'ПРОФИЛЬ', {
+    fontSize: '12px', color: '#c4d4f8', fontStyle: 'bold'
+  }).setOrigin(0.5);
+  profTextBtn.add(ptTxt);
+
+  profTextBtn.setSize(82, 30);
+  profTextBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 82, 30), Phaser.Geom.Rectangle.Contains);
+  profTextBtn.input.cursor = 'pointer';
+  profTextBtn.on('pointerdown', () => this.scene.start('FriendsScene', { view: 'self', returnTo: 'MenuScene' }));
+  profTextBtn.on('pointerover', () => {
+    ptBg.lineStyle(1.5, 0xffd24a, 1);
+    ptBg.strokeRoundedRect(0, 0, 82, 30, 8);
+    ptTxt.setColor('#ffff55');
+  });
+  profTextBtn.on('pointerout', () => {
+    ptBg.lineStyle(1, 0x3a4870, 0.9);
+    ptBg.strokeRoundedRect(0, 0, 82, 30, 8);
+    ptTxt.setColor('#c4d4f8');
+  });
+
+  // Иконки утилит справа: Достижения, История, Полный экран, Настройки
+  this.createHistoryIcon(W - 118, 21);
+  this.createAchIcon(W - 86, 21);
+  this.createFullscreenButton(W - 54, 21);
+  this.createGearButton(W - 22, 21);
+}

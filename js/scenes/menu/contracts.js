@@ -48,10 +48,32 @@ export function createContractsRow() {
     const done = passClaimedCount(ps);
     const daysLeft = passDaysLeft();
     this._contractsDays = daysLeft;
-    this._contractsCounter = this.add.text(_cx, 612, `КОНТРАКТЫ · ${done}/40 · сезон: ${daysLeft} дн.`, {
-      fontSize: '14px', color: '#ffd24a', fontStyle: 'bold'
+
+    const rowY = 660;
+    const barW = 460;
+    const barH = 44;
+
+    const barG = this.add.graphics();
+    barG.fillStyle(0x0c0f1c, 0.94);
+    barG.fillRoundedRect(_cx - barW / 2, rowY - barH / 2, barW, barH, 10);
+    barG.lineStyle(1.5, 0x8a6a10, 0.9);
+    barG.strokeRoundedRect(_cx - barW / 2, rowY - barH / 2, barW, barH, 10);
+
+    // Золотая акцентная полоска снизу плашки
+    barG.fillStyle(0xd8a920, 1);
+    barG.fillRoundedRect(_cx - barW / 2 + 16, rowY + barH / 2 - 2.5, barW - 32, 2.5, 1);
+
+    // Золотой значок слева
+    const starG = this.add.graphics();
+    starG.fillStyle(0xd8a920, 1);
+    starG.fillCircle(_cx - barW / 2 + 28, rowY, 13);
+    this.add.text(_cx - barW / 2 + 28, rowY, '⭐', { fontSize: '13px' }).setOrigin(0.5);
+
+    this._contractsCounter = this.add.text(_cx - 30, rowY, `КОНТРАКТЫ · ${done}/40 · СЕЗОН: ${daysLeft} ДН.`, {
+      fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
     }).setOrigin(0.5);
-    this._contractsBtn = this.createButton(_cx, 662, 'Контракты', () => this._openContracts(), false, null, null, null, 16);
+
+    this._contractsBtn = this.createButton(_cx + barW / 2 - 68, rowY, 'ОТКРЫТЬ', () => this._openContracts(), false, null, 110, 32, 14);
     this._contractsOverlay = null;
     this._refreshContractsGlow();
   }

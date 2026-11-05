@@ -88,6 +88,39 @@ export function updateTick(time, delta) {
     // След — точка раз в 1с (или при сдвиге >120px), у всех, включая
     // человека. Пишется в полный лог как [JMP] и [TR] (см. copyDbg).
     try {
+      // 1. Параллакс фоновых слоев домов за камерой
+      const cam = this.cameras && this.cameras.main;
+      if (cam) {
+        const cx = cam.scrollX || 0;
+        if (this._bgFar && this._bgFar.tilePositionX !== undefined) {
+          this._bgFar.tilePositionX = cx * 0.04;
+        }
+        if (this._bgNear && this._bgNear.tilePositionX !== undefined) {
+          this._bgNear.tilePositionX = cx * 0.08;
+        }
+      }
+      // 2. Анимация атмосферных микрочастиц погоды/эмбиента
+      if (this._weatherParticles && this._weatherParticles.length > 0) {
+        const sec = _dt / 1000;
+        const mw = this.mapWidth || 3800;
+        const mh = this.mapHeight || 900;
+        for (let i = 0; i < this._weatherParticles.length; i++) {
+          const p = this._weatherParticles[i];
+          const sp = p.sprite;
+          if (!sp || !sp.active) continue;
+          sp.x += p.vx * sec;
+          sp.y += p.vy * sec;
+          p.phase += sec * 2;
+          sp.alpha = p.baseAlpha + Math.sin(p.phase) * 0.15;
+          // Циклический перенос через границы карты
+          if (sp.x > mw + 100) sp.x = -80;
+          else if (sp.x < -100) sp.x = mw + 80;
+          if (sp.y > mh - 45) sp.y = 80;
+          else if (sp.y < 50) sp.y = mh - 60;
+        }
+      }
+    } catch (e) {}
+    try {
       if (this.mode === 'CTF' && Array.isArray(this.players)) {
         const _js = this._jumpStat || (this._jumpStat = {});
         const _tr = this._trailAll || (this._trailAll = {});

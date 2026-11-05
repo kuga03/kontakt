@@ -40,16 +40,6 @@
   </style>
 </head>
 <body>
-  <div id="offline-overlay" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;z-index:99999;background:rgba(0,0,0,0.92);color:#ffffff;font-family:sans-serif;align-items:center;justify-content:center;text-align:center;padding:20px;box-sizing:border-box;">
-    <div style="max-width:500px;width:100%;">
-      <div id="offline-status" style="font-size:18px;margin-bottom:30px;line-height:1.5;">Подключение к серверу...</div>
-      <div id="offline-timer" style="font-size:48px;color:#ffd700;margin-bottom:30px;font-weight:bold;">60</div>
-      <div id="offline-buttons" style="display:none;gap:15px;justify-content:center;flex-wrap:wrap;">
-        <button id="btn-play-offline" style="font-size:16px;padding:14px 28px;background:#2a5a2a;color:#fff;border:none;border-radius:6px;cursor:pointer;min-width:160px;">Играть<br><small style="font-size:12px;opacity:0.8;">офлайн (без сетевых режимов)</small></button>
-        <button id="btn-wait-online" style="font-size:16px;padding:14px 28px;background:#2a4a6a;color:#fff;border:none;border-radius:6px;cursor:pointer;min-width:160px;">Ожидать<br><small style="font-size:12px;opacity:0.8;">подключения</small></button>
-      </div>
-    </div>
-  </div>
   <div id="err-overlay" style="display:none;position:fixed;left:8px;bottom:8px;max-width:92vw;max-height:60vh;overflow:auto;z-index:9999;background:#330000;color:#ffaaaa;font:12px/1.5 monospace,sans-serif;padding:8px 12px;border:1px solid #ff5555;white-space:pre-wrap;user-select:text;"></div>
   <script>
     (function () {
@@ -115,82 +105,5 @@
     }
   </script>
   <script type="module" src="./js/game.js"></script>
-  <script>
-    (function () {
-      (function initOfflineCheck() {
-        if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return;
-        var overlay = document.getElementById('offline-overlay');
-        var statusEl = document.getElementById('offline-status');
-        var timerEl = document.getElementById('offline-timer');
-        var buttonsEl = document.getElementById('offline-buttons');
-        if (!overlay || !statusEl || !timerEl || !buttonsEl) return;
-        var OTA_URL = 'https://kontakt-eijf.onrender.com/ota/updates';
-        var countdown = 60;
-        var timerInterval = null;
-        var serverAvailable = false;
-        var gameStarted = false;
-        function showOverlay() { overlay.style.display = 'flex'; }
-        function hideOverlay() { overlay.style.display = 'none'; }
-        function showButtons() {
-          statusEl.textContent = 'Сервер недоступен. Сетевые режимы не будут работать.';
-          timerEl.style.display = 'none';
-          buttonsEl.style.display = 'flex';
-        }
-        function startCountdown() {
-          showOverlay();
-          timerInterval = setInterval(function () {
-            countdown--;
-            timerEl.textContent = String(countdown);
-            if (countdown <= 0) {
-              clearInterval(timerInterval);
-              timerInterval = null;
-              showButtons();
-            }
-          }, 1000);
-        }
-        function startGame() {
-          if (gameStarted) return;
-          gameStarted = true;
-          hideOverlay();
-          loadPhaser();
-        }
-        function loadPhaser() {
-          (function loadNext(i) {
-            if (i >= sources.length) {
-              window.__phaserCdnFailed && window.__phaserCdnFailed();
-              return;
-            }
-            var s = document.createElement('script');
-            s.src = sources[i];
-            s.crossOrigin = 'anonymous';
-            s.onload = function () {
-              if (typeof Phaser === 'undefined') loadNext(i + 1);
-              else window.__bootGame();
-            };
-            s.onerror = function () { loadNext(i + 1); };
-            document.head.appendChild(s);
-          })(0);
-        }
-        document.getElementById('btn-play-offline').addEventListener('click', startGame);
-        document.getElementById('btn-wait-online').addEventListener('click', function () {
-          countdown = 60;
-          timerEl.style.display = 'block';
-          buttonsEl.style.display = 'none';
-          statusEl.textContent = 'Подключение к серверу...';
-          startCountdown();
-        });
-        function checkServer() {
-          fetch(OTA_URL, { method: 'GET', cache: 'no-store', signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined })
-            .then(function (r) { if (r && r.ok) { serverAvailable = true; } })
-            .catch(function () {})
-            .finally(function () {
-              if (serverAvailable) { startGame(); }
-              else { startCountdown(); }
-            });
-        }
-        checkServer();
-      })();
-    })();
-  </script>
 </body>
 </html>

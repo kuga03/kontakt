@@ -92,11 +92,13 @@ export default class GameScene extends Phaser.Scene {
   }
   createMap() { return MapBuilder.createMap.call(this); }
   _buildHouseLayers(themeId) { return MapBuilder._buildHouseLayers.call(this, themeId); }
-  createPlatform(x, y, width, height, alpha = 1) { return MapBuilder.createPlatform.call(this, x, y, width, height, alpha); }
+  createPlatform(x, y, width, height, alpha = 1, texKey = null) { return MapBuilder.createPlatform.call(this, x, y, width, height, alpha, texKey); }
   createGround(x, y, width, height, alpha = 1, texKey = null) { return MapBuilder.createGround.call(this, x, y, width, height, alpha, texKey); }
   createCover(x, y, width, height, texOrAlpha = 1, opts = {}) { return MapBuilder.createCover.call(this, x, y, width, height, texOrAlpha, opts); }
+  createDecor(x, y, width, height, texKey, alpha = 1, depth = -2) { return MapBuilder.createDecor.call(this, x, y, width, height, texKey, alpha, depth); }
+  createWeather(themeId) { return MapBuilder.createWeather.call(this, themeId); }
   createBuilding(x, y, width, height, texKey, alpha = 1) { return MapBuilder.createBuilding.call(this, x, y, width, height, texKey, alpha); }
-  createWall(x, y, width, height, alpha = 1) { return MapBuilder.createWall.call(this, x, y, width, height, alpha); }
+  createWall(x, y, width, height, alpha = 1, texKey = null) { return MapBuilder.createWall.call(this, x, y, width, height, alpha, texKey); }
   createPlayer() { return Spawns.createPlayer.call(this); }
   _isObjectiveCarrier(p) { return Spawns._isObjectiveCarrier.call(this, p); }
   _bindFighter(p) { return Spawns._bindFighter.call(this, p); }

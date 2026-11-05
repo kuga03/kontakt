@@ -8,7 +8,7 @@
   "plugins": {
     "CapacitorUpdater": {
       "autoUpdate": "atBackground",
-      "updateUrl": "https://kontakt-eijf.onrender.com/ota/updates",
+      "updateUrl": "https://kuga03.github.io/kontakt/ota.json",
       "statsUrl": "",
       "appReadyTimeout": 20000,
       "responseTimeout": 30000,
