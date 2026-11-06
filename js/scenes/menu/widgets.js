@@ -216,36 +216,67 @@ export function _drawBtnIcon(g, id, x, y, s, color) {
     const u = s / 11;
     switch (id) {
       case 'cart': // тележка магазина
-        g.lineBetween(x - 9 * u, y - 6 * u, x + 9 * u, y - 6 * u);
-        g.lineBetween(x - 7 * u, y - 6 * u, x - 4 * u, y + 5 * u);
-        g.lineBetween(x - 4 * u, y + 5 * u, x + 7 * u, y + 5 * u);
-        g.lineBetween(x + 9 * u, y - 6 * u, x + 7 * u, y + 5 * u);
-        g.fillCircle(x - 2 * u, y + 8 * u, 1.8 * u);
-        g.fillCircle(x + 5 * u, y + 8 * u, 1.8 * u);
+        // Основная рама
+        g.strokeRoundedRect(x - 8 * u, y - 6 * u, 16 * u, 10 * u, 2 * u);
+        // Ручка
+        g.lineBetween(x - 6 * u, y - 6 * u, x - 6 * u, y - 8 * u);
+        g.lineBetween(x + 6 * u, y - 6 * u, x + 6 * u, y - 8 * u);
+        g.lineBetween(x - 6 * u, y - 8 * u, x + 6 * u, y - 8 * u);
+        // Колеса
+        g.fillCircle(x - 5 * u, y + 4 * u, 1.8 * u);
+        g.fillCircle(x + 5 * u, y + 4 * u, 1.8 * u);
+        // Декоративные линии
+        g.lineStyle(1, color, 0.6);
+        g.lineBetween(x - 6 * u, y - 2 * u, x + 6 * u, y - 2 * u);
+        g.lineBetween(x - 6 * u, y + 1 * u, x + 6 * u, y + 1 * u);
         break;
       case 'backpack': // рюкзак инвентаря
+        // Основной корпус
         g.strokeRoundedRect(x - 7 * u, y - 5 * u, 14 * u, 13 * u, 4 * u);
+        // Карман
         g.strokeRoundedRect(x - 3 * u, y + 1 * u, 6 * u, 5 * u, 2 * u);
+        // Ручка
         g.lineBetween(x - 3 * u, y - 5 * u, x - 3 * u, y - 9 * u);
         g.lineBetween(x + 3 * u, y - 5 * u, x + 3 * u, y - 9 * u);
         g.lineBetween(x - 3 * u, y - 9 * u, x + 3 * u, y - 9 * u);
+        // Декоративные линии
+        g.lineStyle(1, color, 0.6);
+        g.lineBetween(x - 5 * u, y - 2 * u, x + 5 * u, y - 2 * u);
+        g.lineBetween(x - 5 * u, y + 5 * u, x + 5 * u, y + 5 * u);
         break;
       case 'star': { // звезда навыков
         const pts = [];
+        // Внешние точки
         for (let i = 0; i < 10; i++) {
           const ang = -Math.PI / 2 + i * Math.PI / 5;
           const rad = (i % 2 === 0 ? 10 : 4.2) * u;
           pts.push(new Phaser.Geom.Point(x + Math.cos(ang) * rad, y + Math.sin(ang) * rad));
         }
         g.fillPoints(pts, true);
+        // Внутренний круг
+        g.fillStyle(color, 0.3);
+        g.fillCircle(x, y, 3 * u);
+        // Лучи
+        g.lineStyle(1, color, 0.6);
+        for (let i = 0; i < 5; i++) {
+          const ang = -Math.PI / 2 + i * Math.PI * 2 / 5;
+          g.lineBetween(x, y, x + Math.cos(ang) * 8 * u, y + Math.sin(ang) * 8 * u);
+        }
         break;
       }
       case 'dna': // спираль генома
+        // Основные линии
         g.lineBetween(x - 6 * u, y - 9 * u, x + 6 * u, y - 9 * u);
         g.lineBetween(x + 6 * u, y - 3 * u, x - 6 * u, y + 3 * u);
         g.lineBetween(x - 6 * u, y + 9 * u, x + 6 * u, y + 9 * u);
+        // Вертикальные линии
         g.lineBetween(x - 6 * u, y - 9 * u, x - 6 * u, y - 5 * u);
         g.lineBetween(x + 6 * u, y + 5 * u, x + 6 * u, y + 9 * u);
+        // Декоративные круги
+        g.fillStyle(color, 0.3);
+        g.fillCircle(x, y - 6 * u, 1.5 * u);
+        g.fillCircle(x, y, 1.5 * u);
+        g.fillCircle(x, y + 6 * u, 1.5 * u);
         break;
       case 'case': // ящик кейсов
         g.strokeRect(x - 8 * u, y - 5 * u, 16 * u, 12 * u);
