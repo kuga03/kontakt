@@ -279,15 +279,42 @@ export function _drawBtnIcon(g, id, x, y, s, color) {
         g.fillCircle(x, y + 6 * u, 1.5 * u);
         break;
       case 'case': // ящик кейсов
-        g.strokeRect(x - 8 * u, y - 5 * u, 16 * u, 12 * u);
+        // Основной корпус
+        g.strokeRoundedRect(x - 8 * u, y - 5 * u, 16 * u, 12 * u, 2 * u);
+        // Декоративные линии
+        g.lineStyle(1, color, 0.6);
         g.lineBetween(x - 8 * u, y - 1 * u, x + 8 * u, y - 1 * u);
         g.lineBetween(x, y - 5 * u, x, y - 1 * u);
+        // Металлические уголки
+        g.lineStyle(2, color, 1);
+        g.lineBetween(x - 8 * u, y - 5 * u, x - 6 * u, y - 5 * u);
+        g.lineBetween(x - 8 * u, y - 5 * u, x - 8 * u, y - 3 * u);
+        g.lineBetween(x + 8 * u, y - 5 * u, x + 6 * u, y - 5 * u);
+        g.lineBetween(x + 8 * u, y - 5 * u, x + 8 * u, y - 3 * u);
+        g.lineBetween(x - 8 * u, y + 7 * u, x - 6 * u, y + 7 * u);
+        g.lineBetween(x - 8 * u, y + 7 * u, x - 8 * u, y + 5 * u);
+        g.lineBetween(x + 8 * u, y + 7 * u, x + 6 * u, y + 7 * u);
+        g.lineBetween(x + 8 * u, y + 7 * u, x + 8 * u, y + 5 * u);
+        // Замок
+        g.fillStyle(color, 1);
+        g.fillCircle(x, y + 3 * u, 1.2 * u);
+        g.lineBetween(x, y + 3 * u, x, y + 5 * u);
         break;
       case 'swords': // скрещенные мечи
+        // Основные клинки
+        g.lineStyle(2, color, 1);
         g.lineBetween(x - 7 * u, y - 7 * u, x + 7 * u, y + 7 * u);
         g.lineBetween(x + 7 * u, y - 7 * u, x - 7 * u, y + 7 * u);
+        // Рукояти
+        g.lineStyle(1.5, color, 1);
         g.lineBetween(x - 7 * u, y - 3 * u, x - 3 * u, y - 7 * u);
         g.lineBetween(x + 7 * u, y - 3 * u, x + 3 * u, y - 7 * u);
+        // Декоративные элементы
+        g.fillStyle(color, 0.3);
+        g.fillCircle(x, y, 3 * u);
+        g.lineStyle(1, color, 0.6);
+        g.lineBetween(x - 2 * u, y - 2 * u, x + 2 * u, y + 2 * u);
+        g.lineBetween(x + 2 * u, y - 2 * u, x - 2 * u, y + 2 * u);
         break;
       case 'single': // одиночная игра (фолбэк — те же мечи)
         g.lineBetween(x - 7 * u, y - 7 * u, x + 7 * u, y + 7 * u);
@@ -305,10 +332,27 @@ export function _drawBtnIcon(g, id, x, y, s, color) {
         g.fillTriangle(x - 5 * u, y - 9 * u, x + 8 * u, y - 5 * u, x - 5 * u, y - 1 * u);
         break;
       case 'skull': // испытание
+        // Основной череп
         g.strokeCircle(x, y - 2 * u, 6 * u);
+        // Глазницы
+        g.fillStyle(color, 0.8);
         g.fillCircle(x - 2.4 * u, y - 2.5 * u, 1.4 * u);
         g.fillCircle(x + 2.4 * u, y - 2.5 * u, 1.4 * u);
-        g.strokeRect(x - 3.5 * u, y + 3 * u, 7 * u, 5 * u);
+        // Носовая кость
+        g.lineStyle(1.5, color, 1);
+        g.lineBetween(x - 1 * u, y, x + 1 * u, y);
+        g.lineBetween(x, y - 1 * u, x, y + 1 * u);
+        // Челюсть
+        g.strokeRoundedRect(x - 3.5 * u, y + 3 * u, 7 * u, 5 * u, 1 * u);
+        // Зубы
+        g.lineStyle(1, color, 1);
+        for (let i = -2; i <= 2; i++) {
+          g.lineBetween(x + i * 1.5 * u, y + 3 * u, x + i * 1.5 * u, y + 5 * u);
+        }
+        // Трещины
+        g.lineStyle(1, color, 0.6);
+        g.lineBetween(x - 4 * u, y - 4 * u, x - 2 * u, y - 1 * u);
+        g.lineBetween(x + 4 * u, y - 4 * u, x + 2 * u, y - 1 * u);
         break;
       case 'medal': // рейтинг
         g.strokeCircle(x, y + 2 * u, 6 * u);
