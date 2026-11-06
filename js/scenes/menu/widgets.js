@@ -632,10 +632,8 @@ export function createGearButton(x, y) {
   }
 
 export function createFullscreenButton(x, y) {
-    const pngKey = 'значок во весь экран';
     const g = this.add.graphics();
     let hover = false;
-    let iconImg = null;
     const drawArrow = (x1, y1, x2, y2) => {
       const ang = Math.atan2(y2 - y1, x2 - x1);
       const h = 5;
@@ -645,25 +643,6 @@ export function createFullscreenButton(x, y) {
     };
 
     const draw = (full) => {
-      g.clear();
-      if (this.textures.exists(pngKey)) {
-        if (!iconImg) {
-          iconImg = this.add.image(x, y, pngKey);
-        }
-        try {
-          const src = this.textures.get(pngKey).getSourceImage();
-          if (src && src.width && src.height) {
-            iconImg.setScale(Math.min(30 / src.width, 30 / src.height));
-          } else {
-            iconImg.setDisplaySize(30, 30);
-          }
-        } catch (e) {
-          iconImg.setDisplaySize(30, 30);
-        }
-        iconImg.setTint(hover ? 0xffff55 : 0xffffff);
-        return;
-      }
-      if (iconImg) iconImg.setVisible(false);
       g.clear();
       const color = hover ? 0xffff55 : 0xffffff;
       g.lineStyle(3, color, 1);
