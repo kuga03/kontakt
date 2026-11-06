@@ -397,14 +397,14 @@ export function _donutLevels(x, y) {
     zone.on('pointerdown', () => this.scene.start('MyLevelsScene'));
   }
 
-export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniTh, fontPx, icon, marker) {    let fs = fontPx || 22;
+export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniTh, fontPx, icon, marker) {
+    let fs = fontPx || 22;
     const txt = this.add.text(0, 0, label, {
       fontSize: fs + 'px',
       color: '#ffffff'
     }).setOrigin(0.5);
 
-    // Размер единый для всех кнопок (приходит снаружи); масштаб строго
-    // равномерный — арт не плющится и не тянется.
+    // Размер единый для всех кнопок (приходит снаружи); растягиваем арт под размер кнопки.
     const padX = 48;
     const padY = 12;
     let tw = uniTw || (txt.displayWidth + padX * 2);
@@ -412,45 +412,90 @@ export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniT
 
     const container = this.add.container(x, y);
 
-    let bgImg = null;
-    let bgPress = null;
-    if (this.textures.exists('fon_btn')) {
-      const src = this.textures.get('fon_btn').getSourceImage();
-      const sw = Math.max(1, (src && src.width) || 1);
-      const sh = Math.max(1, (src && src.height) || 1);
-      // Единый равномерный масштаб: min — вписать, без искажений.
-      // tw/th уже в пропорциях арта, так что sc одинаков по осям.
-      // setDisplaySize тут НЕ зовём: он плющил бы арт у саб-кнопок
-      // (у них высота 0.62 от ширины) — только letterbox-масштаб.
-      const sc = Math.min(tw / sw, th / sh);
-      bgImg = this.add.image(0, 0, 'fon_btn');
-      bgImg.setScale(sc);
-      container.add(bgImg);
-      if (this.textures.exists('fon_btn_pressed')) {
-        const src2 = this.textures.get('fon_btn_pressed').getSourceImage();
-        // Тот же габарит, что у обычной кнопки: иначе при наведении
-        // арт «прыгает» размером.
-        bgPress = this.add.image(0, 0, 'fon_btn_pressed');
-        bgPress.setScale(sc);
-        bgPress.setVisible(false);
-        container.add(bgPress);
+    const btnGfx = this.add.graphics();
+    container.add(btnGfx);
+
+    const drawBtnBg = (state) => {
+      btnGfx.clear();
+      const halfW = tw / 2;
+      const halfH = th / 2;
+      const r = 8;
+
+      if (locked) {
+        // Заблокированная кнопка
+        btnGfx.fillStyle(0x0c0f1a, 0.75);
+        btnGfx.fillRoundedRect(-halfW, -halfH, tw, th, r);
+        btnGfx.lineStyle(1, 0x222a3d, 0.7);
+        btnGfx.strokeRoundedRect(-halfW, -halfH, tw, th, r);
+        return;
       }
-    } else {
-      bgImg = this.add.rectangle(0, 0, tw, th, 0x252560);
-      container.add(bgImg);
-    }
+
+      if (state === 'hover') {
+        // Подсветка при наведении: глубокий тактический фон с янтарно-золотым акцентом
+        btnGfx.fillStyle(0x19223a, 0.98);
+        btnGfx.fillRoundedRect(-halfW, -halfH, tw, th, r);
+
+        // Верхний мягкий золотистый блик
+        btnGfx.fillStyle(0xffd24a, 0.12);
+        btnGfx.fillRoundedRect(-halfW + 2, -halfH + 2, tw - 4, Math.floor(th / 2) - 2, { tl: 6, tr: 6, bl: 0, br: 0 });
+
+        // Левая светящаяся полоска-акцент
+        btnGfx.fillStyle(0xffd24a, 1);
+        btnGfx.fillRoundedRect(-halfW + 3, -halfH + 5, 3.5, th - 10, 1.5);
+
+        // Золотая рамка
+        btnGfx.lineStyle(1.8, 0xffd24a, 0.95);
+        btnGfx.strokeRoundedRect(-halfW, -halfH, tw, th, r);
+
+        // Тактические угловые засечки
+        btnGfx.lineStyle(2, 0xffea77, 1);
+        const cLen = 8;
+        btnGfx.lineBetween(-halfW, -halfH + cLen, -halfW, -halfH + 2);
+        btnGfx.lineBetween(-halfW + 2, -halfH, -halfW + cLen, -halfH);
+        btnGfx.lineBetween(halfW - cLen, halfH, halfW - 2, halfH);
+        btnGfx.lineBetween(halfW, halfH - cLen, halfW, halfH - 2);
+      } else if (state === 'pressed') {
+        // Состояние нажатия
+        btnGfx.fillStyle(0x13192c, 1);
+        btnGfx.fillRoundedRect(-halfW, -halfH, tw, th, r);
+        btnGfx.lineStyle(1.8, 0xd8a920, 1);
+        btnGfx.strokeRoundedRect(-halfW, -halfH, tw, th, r);
+      } else {
+        // Обычное состояние: тактический стиль главного меню
+        btnGfx.fillStyle(0x101526, 0.94);
+        btnGfx.fillRoundedRect(-halfW, -halfH, tw, th, r);
+
+        // Легкий верхний стеклянный блик
+        btnGfx.fillStyle(0xffffff, 0.05);
+        btnGfx.fillRoundedRect(-halfW + 2, -halfH + 2, tw - 4, Math.floor(th / 2) - 2, { tl: 6, tr: 6, bl: 0, br: 0 });
+
+        // Левый тактический маркер (сине-голубой)
+        btnGfx.fillStyle(0x4da6ff, 0.75);
+        btnGfx.fillRoundedRect(-halfW + 3, -halfH + 6, 3, th - 12, 1.5);
+
+        // Внешняя аккуратная рамка
+        btnGfx.lineStyle(1.2, 0x334160, 0.9);
+        btnGfx.strokeRoundedRect(-halfW, -halfH, tw, th, r);
+
+        // Тонкие тактические скобки на углах
+        btnGfx.lineStyle(1.5, 0x8a6a10, 0.65);
+        btnGfx.lineBetween(-halfW, -halfH + 6, -halfW, -halfH + 2);
+        btnGfx.lineBetween(-halfW + 2, -halfH, -halfW + 6, -halfH);
+        btnGfx.lineBetween(halfW - 6, halfH, halfW - 2, halfH);
+        btnGfx.lineBetween(halfW, halfH - 6, halfW, halfH - 2);
+      }
+    };
+    drawBtnBg(locked ? 'locked' : 'normal');
 
     container.add(txt);
 
-    // Всё позиционируем от ширины АРТА (aw), а не контейнера: у сабок
-    // арт у́же tw (letterbox) — иначе иконка/маркер/замок висят за краями,
-    // а текст вылезает из плашки.
-    const aw = (bgImg && bgImg.displayWidth) || tw;
+    // Всё позиционируем от полной ширины плашки (aw = tw)
+    const aw = tw;
     // Размер значка от высоты кнопки: низким — компактный, иначе текст не влезет.
     const compactIcon = th < 70;
-    const iconR = compactIcon ? 20 : 25;
-    const iconX = -aw / 2 + (compactIcon ? 34 : 37);
-    const iconPx = compactIcon ? 28 : 36;
+    const iconR = compactIcon ? 17 : 22;
+    const iconX = -aw / 2 + (compactIcon ? 28 : 34);
+    const iconPx = compactIcon ? 24 : 32;
     // Маркер справа внутри кнопки (стрелка секции ▾/▸).
     let rightW = 12;
     if (marker) {
@@ -463,30 +508,31 @@ export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniT
 
     if (locked) {
       txt.setColor('#667788');
-      if (bgImg) bgImg.setAlpha(0.5);
     }
 
     // Замок — до замера текста, чтобы учесть его ширину в лимите.
     let lockTxt = null;
     if (locked) {
       const lockLabel = lockMsg ? ` 🔒 ${lockMsg}` : ' 🔒';
-      lockTxt = this.add.text(aw / 2 - 6, 0, lockLabel, {
-        fontSize: '10px',
+      lockTxt = this.add.text(aw / 2 - 8, 0, lockLabel, {
+        fontSize: '11px',
         color: '#889999'
       }).setOrigin(1, 0.5);
       container.add(lockTxt);
-      rightW = lockTxt.displayWidth + 12;
+      rightW = lockTxt.displayWidth + 14;
     }
 
-    // Текст строго внутри арта: поля под иконку слева и маркер/замок
-    // справа; центр — по свободной зоне. Зона иконки с запасом (бейдж
-    // + зазор + сдвиг от края), чтобы текст никогда не залезал под значок.
-    // У низких кнопок значок компактный — зона уже.
-    const iconW = icon ? (compactIcon ? 62 : 74) : 12;
-    const lim = aw - iconW - rightW - 12;
-    while (txt.displayWidth > lim && fs > 12) {
-      fs -= 2;
+    // Текст строго внутри арта: поля под иконку слева и маркер/замок справа.
+    // Центр — по свободной зоне. Уменьшаем размер шрифта и масштабируем при необходимости,
+    // чтобы текст никогда не вылезал за границы кнопки.
+    const iconW = icon ? (compactIcon ? 54 : 64) : 12;
+    const lim = Math.max(30, aw - iconW - rightW - 10);
+    while (txt.displayWidth > lim && fs > 11) {
+      fs -= 1;
       txt.setFontSize(fs);
+    }
+    if (txt.displayWidth > lim && txt.displayWidth > 0) {
+      txt.scaleX *= (lim / txt.displayWidth);
     }
     txt.setX((iconW - rightW) / 2);
 
@@ -496,20 +542,15 @@ export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniT
     let iconGfx = null;
     let iconImg = null;
     let iconBg = null;
-    const paintIcon = (color) => {
+    const paintIcon = (color, isHover = false) => {
       if (!icon) return;
       const png = BTN_ICON_PNG[icon];
       if (png && this.textures.exists(png)) {
         if (!iconImg) {
           iconBg = this.add.graphics();
-          iconBg.fillStyle(0x0a0a1a, 0.8);
-          iconBg.fillCircle(iconX, 0, iconR);
-          iconBg.lineStyle(1.5, 0xffffff, 0.35);
-          iconBg.strokeCircle(iconX, 0, iconR);
           container.add(iconBg);
           iconImg = this.add.image(iconX, 0, png);
-          // Фит с сохранением пропорций: setDisplaySize(iconPx, iconPx)
-          // плющил неквадратные PNG в квадрат (череп 443×618, геном 601×309).
+          // Фит с сохранением пропорций
           try {
             const src = this.textures.get(png).getSourceImage();
             const sw = Math.max(1, (src && src.width) || 1);
@@ -517,6 +558,13 @@ export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniT
             iconImg.setScale(Math.min(iconPx / sw, iconPx / sh));
           } catch (e) { iconImg.setDisplaySize(iconPx, iconPx); }
           container.add(iconImg);
+        }
+        if (iconBg) {
+          iconBg.clear();
+          iconBg.fillStyle(isHover ? 0x1f2742 : 0x090c18, 0.9);
+          iconBg.fillCircle(iconX, 0, iconR);
+          iconBg.lineStyle(1.5, isHover ? 0xffd24a : 0x2e3b58, 0.85);
+          iconBg.strokeCircle(iconX, 0, iconR);
         }
         iconImg.setTint(color);
         if (iconGfx) iconGfx.clear();
@@ -528,15 +576,8 @@ export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniT
       }
       this._drawBtnIcon(iconGfx, icon, iconX, 0, compactIcon ? 12 : 15, color);
     };
-    paintIcon(locked ? 0x667788 : 0xdfe8ff);
-    container._paintIcon = paintIcon;
-
-    const showPressed = (on) => {
-      if (bgPress) {
-        bgPress.setVisible(on);
-        if (bgImg) bgImg.setVisible(!on);
-      }
-    };
+    paintIcon(locked ? 0x667788 : 0xdfe8ff, false);
+    container._paintIcon = (col) => paintIcon(col, false);
 
     container.setSize(tw, th);
 
@@ -546,32 +587,32 @@ export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniT
       container.on('pointerover', () => {
         txt.setColor('#ffff55');
         txt.setY(1);
-        paintIcon(0xffff55);
+        paintIcon(0xffff55, true);
+        drawBtnBg('hover');
         try {
           if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
             this.sound.play('sfx_hover', { volume: 0.2 });
           }
         } catch (e) { /* noop */ }
-        showPressed(true);
       });
 
       container.on('pointerout', () => {
         txt.setColor('#ffffff');
         txt.setY(0);
-        paintIcon(0xdfe8ff);
-        showPressed(false);
+        paintIcon(0xdfe8ff, false);
+        drawBtnBg('normal');
       });
 
       container.on('pointerdown', () => {
         txt.setColor('#ffffff');
         txt.setY(0);
-        showPressed(false);
+        drawBtnBg('pressed');
         callback();
       });
     }
 
     container._btnTxt = txt;
-    container._btnBg = bgImg;
+    container._btnBg = btnGfx;
     return container;
   }
 
