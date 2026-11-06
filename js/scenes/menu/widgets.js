@@ -26,22 +26,7 @@ let openSection = 'single';
 
 // Авторские PNG-значки для кнопок (id иконки → ключ текстуры).
 // Нет файла — рисуется вектор из _drawBtnIcon.
-const BTN_ICON_PNG = {
-  cart: 'значок магазин',
-  backpack: 'значок инвентарь',
-  star: 'значок дерево навыков',
-  dna: 'значок геном',
-  case: 'значок кейсы',
-  list: 'значок выбрать матч',
-  friends: 'значок друзья',
-  swords: 'значок свободная игра',
-  globe: 'значок онлайн',
-  flag: 'значок компания',
-  skull: 'значок испытание',
-  medal: 'значок рейтинг',
-  bolt: 'значок быстрая игра',
-  single: 'значок одиночная игра'
-};
+const BTN_ICON_PNG = {};
 
 export function _panel(cx, top, w, h, title) {
     const x0 = cx - w / 2;
@@ -617,31 +602,10 @@ export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniT
   }
 
 export function createGearButton(x, y) {
-    const pngKey = 'значок настройки';
     const g = this.add.graphics();
     let hover = false;
-    let iconImg = null;
 
     const draw = () => {
-      g.clear();
-      if (this.textures.exists(pngKey)) {
-        if (!iconImg) {
-          iconImg = this.add.image(x, y, pngKey);
-        }
-        try {
-          const src = this.textures.get(pngKey).getSourceImage();
-          if (src && src.width && src.height) {
-            iconImg.setScale(Math.min(30 / src.width, 30 / src.height));
-          } else {
-            iconImg.setDisplaySize(30, 30);
-          }
-        } catch (e) {
-          iconImg.setDisplaySize(30, 30);
-        }
-        iconImg.setTint(hover ? 0xffff55 : 0xffffff);
-        return;
-      }
-      if (iconImg) iconImg.setVisible(false);
       g.clear();
       const color = hover ? 0xffff55 : 0xffffff;
       g.lineStyle(3, color, 1);
