@@ -762,6 +762,9 @@ export default class FriendsScene extends Phaser.Scene {
   }
 
   update() {
+    // Превью профиля — дорогой updateBars/updateGun. Троттлим до ~15 Гц.
+    this._prevTick = ((this._prevTick | 0) + 1) % 4;
+    if (this._prevTick !== 0) return;
     const p = this._profilePreview;
     if (p && p.active && !p.dead) {
       try {

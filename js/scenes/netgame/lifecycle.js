@@ -15,6 +15,7 @@ import Sniper from '../../entities/Sniper.js';
 
 import { createTouchControls, destroyTouchControls } from '../../ui/touch.js';
 import { gameW } from '../../ui/layout.js';
+import { setGameResolution } from '../../game.js';
 
 const CLASSES = { Assault, Tank, Medic, Sniper };
 
@@ -31,6 +32,7 @@ const NETG_BUILD = 94;
 // Чужие — марионетки на снапшотах 15Гц + интерполяция.
 // Вход — по started из NetLobbyScene: { net, room, mode, players, myId }.
 export function create(data) {
+    try { setGameResolution('auto'); } catch (e) {}
     this.cameras.main.setBackgroundColor('#0a0a2a');
     this.net = (data && data.net) || null;
     this.roomName = (data && data.room) || '?';
@@ -473,6 +475,7 @@ export function create(data) {
   }
 
 export function _leaveToLobby() {
+    try { setGameResolution(1); } catch (e) {}
     try { this.net.close(); } catch (e) {}
     try { this.net.onclose = null; } catch (e) {}
     this.scene.start('NetLobbyScene');

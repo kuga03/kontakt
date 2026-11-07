@@ -258,65 +258,104 @@ export function _countUpCoins(amount, done) {
   // Не забрано — подсвечивается; клик — окно наград в 2 раза меньше меню.
 export function createDailyGift(x, y, size) {
     const d = this.dailyAvailable();
-    const CW = 216;
+    const streak = d.avail ? d.streak : (gameState.dailyStreak | 0);
+    const CW = 222;
     const CH = 52;
-    const card = this.add.container(x, y);
 
+    // Используем Graphics напрямую в координатах сцены (не контейнер),
+    // чтобы дочерние объекты не влияли на hit-область.
     const bg = this.add.graphics();
-    bg.fillStyle(d.avail ? 0x221808 : 0x101424, 0.95);
-    bg.fillRoundedRect(-CW / 2, -CH / 2, CW, CH, 8);
-    bg.lineStyle(d.avail ? 1.5 : 1, d.avail ? 0xffd24a : 0x3a4868, 0.9);
-    bg.strokeRoundedRect(-CW / 2, -CH / 2, CW, CH, 8);
-    card.add(bg);
 
-    // Золотая иконка подарка слева
-    const iconX = -CW / 2 + 28;
+    // Перерисовывает фон карточки в зависимости от состояния.
+    const drawBg = (state) => {
+      bg.clear();
+      if (state === 'hover') {
+        bg.fillStyle(0x19223a, 0.98);
+        bg.fillRoundedRect(x - CW / 2, y - CH / 2, CW, CH, 8);
+        bg.fillStyle(0xffd24a, 0.12);
+        bg.fillRoundedRect(x - CW / 2 + 2, y - CH / 2 + 2, CW - 4, Math.floor(CH / 2) - 2, { tl: 6, tr: 6, bl: 0, br: 0 });
+        bg.fillStyle(0xffd24a, 1);
+        bg.fillRoundedRect(x - CW / 2 + 3, y - CH / 2 + 5, 3.5, CH - 10, 1.5);
+        bg.lineStyle(1.8, 0xffd24a, 0.95);
+        bg.strokeRoundedRect(x - CW / 2, y - CH / 2, CW, CH, 8);
+        bg.lineStyle(2, 0xffea77, 1);
+        const cL = 8;
+        bg.lineBetween(x - CW / 2, y - CH / 2 + cL, x - CW / 2, y - CH / 2 + 2);
+        bg.lineBetween(x - CW / 2 + 2, y - CH / 2, x - CW / 2 + cL, y - CH / 2);
+        bg.lineBetween(x + CW / 2 - cL, y + CH / 2, x + CW / 2 - 2, y + CH / 2);
+        bg.lineBetween(x + CW / 2, y + CH / 2 - cL, x + CW / 2, y + CH / 2 - 2);
+      } else {
+        bg.fillStyle(0x101526, 0.94);
+        bg.fillRoundedRect(x - CW / 2, y - CH / 2, CW, CH, 8);
+        bg.fillStyle(0xffffff, 0.05);
+        bg.fillRoundedRect(x - CW / 2 + 2, y - CH / 2 + 2, CW - 4, Math.floor(CH / 2) - 2, { tl: 6, tr: 6, bl: 0, br: 0 });
+        bg.fillStyle(d.avail ? 0xffd24a : 0x4da6ff, 0.75);
+        bg.fillRoundedRect(x - CW / 2 + 3, y - CH / 2 + 6, 3, CH - 12, 1.5);
+        bg.lineStyle(d.avail ? 1.5 : 1.2, d.avail ? 0xffd24a : 0x334160, 0.9);
+        bg.strokeRoundedRect(x - CW / 2, y - CH / 2, CW, CH, 8);
+        bg.lineStyle(1.5, 0x8a6a10, 0.65);
+        bg.lineBetween(x - CW / 2, y - CH / 2 + 6, x - CW / 2, y - CH / 2 + 2);
+        bg.lineBetween(x - CW / 2 + 2, y - CH / 2, x - CW / 2 + 6, y - CH / 2);
+        bg.lineBetween(x + CW / 2 - 6, y + CH / 2, x + CW / 2 - 2, y + CH / 2);
+        bg.lineBetween(x + CW / 2, y + CH / 2 - 6, x + CW / 2, y + CH / 2 - 2);
+      }
+    };
+    drawBg('normal');
+
+    // Иконка подарка — отдельный контейнер вне hit-зоны
+    const iconX = x - CW / 2 + 25;
+    const iconBox = this.add.container(iconX, y);
+
     const iconG = this.add.graphics();
     iconG.fillStyle(d.avail ? 0xffaa00 : 0x556688, 1);
-    iconG.fillRoundedRect(iconX - 16, -16, 32, 32, 6);
+    iconG.fillRoundedRect(-16, -16, 32, 32, 6);
     iconG.lineStyle(1.5, d.avail ? 0xffe066 : 0x8899aa, 1);
-    iconG.strokeRoundedRect(iconX - 16, -16, 32, 32, 6);
-    card.add(iconG);
+    iconG.strokeRoundedRect(-16, -16, 32, 32, 6);
+    iconBox.add(iconG);
 
     if (this.textures.exists('значок подарок дня')) {
-      const img = this.add.image(iconX, 0, 'значок подарок дня');
+      const img = this.add.image(0, 0, 'значок подарок дня');
       img.setDisplaySize(24, 24);
-      card.add(img);
+      iconBox.add(img);
     } else {
-      // Геометрический бантик
       const bow = this.add.graphics();
       bow.fillStyle(0xffffff, 1);
-      bow.fillRect(iconX - 12, -2, 24, 4);
-      bow.fillRect(iconX - 2, -12, 4, 24);
+      bow.fillRect(-12, -2, 24, 4);
+      bow.fillRect(-2, -12, 4, 24);
       bow.fillStyle(0xffd24a, 1);
-      bow.fillCircle(iconX, 0, 3.5);
-      card.add(bow);
+      bow.fillCircle(0, 0, 3.5);
+      iconBox.add(bow);
     }
 
-    // Тексты статуса
-    const title = this.add.text(iconX + 24, -8, 'ЕЖЕДНЕВНЫЙ БОНУС', {
-      fontSize: '11px', color: '#ffd24a', fontStyle: 'bold'
+    // Тексты статуса — тоже напрямую в сцену, не в контейнер
+    const textX = iconX + 22;
+    const title = this.add.text(textX, y - 8, `ЕЖЕДНЕВНЫЙ БОНУС (${streak} ДН.)`, {
+      fontSize: '10.5px', color: '#ffd24a', fontStyle: 'bold'
     }).setOrigin(0, 0.5);
 
-    const subText = d.avail
-      ? `+${d.reward || 700} МОНЕТ · ЗАБРАТЬ!`
-      : 'НАГРАДА ПОЛУЧЕНА ✓';
-    const subColor = d.avail ? '#66ff66' : '#8899bb';
-
-    const sub = this.add.text(iconX + 24, 9, subText, {
-      fontSize: '11px', color: subColor, fontStyle: 'bold'
+    const subText = d.avail ? `+${d.reward || 700} МОНЕТ · ЗАБРАТЬ!` : 'НАГРАДА ПОЛУЧЕНА ✓';
+    const sub = this.add.text(textX, y + 9, subText, {
+      fontSize: '10.5px', color: d.avail ? '#66ff66' : '#8899bb', fontStyle: 'bold'
     }).setOrigin(0, 0.5);
-    card.add([title, sub]);
 
-    card.setSize(CW, CH);
-    card.setInteractive(new Phaser.Geom.Rectangle(-CW / 2, -CH / 2, CW, CH), Phaser.Geom.Rectangle.Contains);
-    card.input.cursor = 'pointer';
-    card.on('pointerdown', () => this._openDailyModal());
+    const maxTextW = (x + CW / 2 - 8) - textX;
+    if (title.displayWidth > maxTextW && title.displayWidth > 0) {
+      title.scaleX *= (maxTextW / title.displayWidth);
+    }
+    if (sub.displayWidth > maxTextW && sub.displayWidth > 0) {
+      sub.scaleX *= (maxTextW / sub.displayWidth);
+    }
 
-    card.on('pointerover', () => {
-      bg.lineStyle(2, 0xffe066, 1);
-      bg.strokeRoundedRect(-CW / 2, -CH / 2, CW, CH, 8);
-      card.setScale(1.03);
+    // Единственный интерактивный объект — Zone точно по размеру карточки.
+    // Zone — это пустой прямоугольник без каких-либо дочерних объектов,
+    // поэтому его hit-область никогда не смещается.
+    const zone = this.add.zone(x, y, CW, CH).setInteractive({ useHandCursor: true });
+
+    zone.on('pointerdown', () => this._openDailyModal());
+
+    zone.on('pointerover', () => {
+      drawBg('hover');
+      iconBox.setScale(1.18);
       try {
         if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
           this.sound.play('sfx_hover', { volume: 0.2 });
@@ -324,18 +363,21 @@ export function createDailyGift(x, y, size) {
       } catch (e) {}
     });
 
-    card.on('pointerout', () => {
-      bg.lineStyle(d.avail ? 1.5 : 1, d.avail ? 0xffd24a : 0x3a4868, 0.9);
-      bg.strokeRoundedRect(-CW / 2, -CH / 2, CW, CH, 8);
-      card.setScale(1);
+    zone.on('pointerout', () => {
+      drawBg('normal');
+      iconBox.setScale(1);
     });
 
     if (d.avail) {
-      this.tweens.add({
-        targets: iconG,
-        scale: { from: 1, to: 1.12 },
+      const pulseTw = this.tweens.add({
+        targets: iconBox,
+        scaleX: { from: 1, to: 1.12 },
+        scaleY: { from: 1, to: 1.12 },
         yoyo: true, repeat: -1, duration: 800, ease: 'Sine.easeInOut'
       });
+
+      zone.on('pointerover', () => { try { pulseTw.pause(); iconBox.setScale(1.18); } catch (e) {} });
+      zone.on('pointerout',  () => { try { iconBox.setScale(1); pulseTw.resume(); } catch (e) {} });
     }
   }
 

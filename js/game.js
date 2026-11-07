@@ -82,12 +82,9 @@ const config = {
     antialias: getQuality() !== 'low',
     roundPixels: false
   },
-  resolution: (function () {
-    // Качество графики (настройки): low=1x, medium=1.5x, high=2x.
-    // Дефолт — авто: мобильный 1x (слабый GPU), ПК 2x (суперсемплинг).
-    var q = getQuality();
-    return q === 'low' ? 1 : (q === 'medium' ? 1.5 : 2);
-  })(),
+  // Меню стартует в 1x — GPU не тратится на суперсемплинг во время простоя.
+  // GameScene поднимает разрешение до нужного при старте через setGameResolution().
+  resolution: 1,
   scale: scaleConfig,
   physics: {
     default: 'arcade',
@@ -224,6 +221,24 @@ Phaser.GameObjects.Text.prototype.setWordWrapWidth = function (w) {
 })();
 
 window.__game = new Phaser.Game(config);
+
+// Динамическая смена разрешения рендера: меню держит 1x (нет смысла
+// суперсэмплить статичный экран), игровые сцены поднимают до нужного.
+// Вызывать ДО первого кадра сцены (в create), чтобы не было рывка.
+export function setGameResolution(r) {
+  try {
+    const g = window.__game;
+    if (!g || !g.renderer) return;
+    const target = r === 'auto'
+      ? (getQuality() === 'low' ? 1 : getQuality() === 'medium' ? 1.5 : 2)
+      : r;
+    if (g.renderer.resolution !== target) {
+      g.renderer.resolution = target;
+      // Размер WebGL framebuffer нужно пересчитать.
+      try { g.renderer.resize(g.scale.width, g.scale.height); } catch (e) {}
+    }
+  } catch (e) {}
+}
 
 // Смена аспекта на лету (поворот, ресайз окна, складной экран):
 // пересчитываем ширину под новый аспект, высота всегда 720.

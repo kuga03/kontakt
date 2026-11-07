@@ -49,9 +49,9 @@ export function createContractsRow() {
     const daysLeft = passDaysLeft();
     this._contractsDays = daysLeft;
 
-    const rowY = 660;
+    const rowY = 654;
     const barW = 460;
-    const barH = 44;
+    const barH = 42;
 
     const barG = this.add.graphics();
     barG.fillStyle(0x0c0f1c, 0.94);
@@ -64,16 +64,24 @@ export function createContractsRow() {
     barG.fillRoundedRect(_cx - barW / 2 + 16, rowY + barH / 2 - 2.5, barW - 32, 2.5, 1);
 
     // Золотой значок слева
+    const starX = _cx - barW / 2 + 24;
     const starG = this.add.graphics();
     starG.fillStyle(0xd8a920, 1);
-    starG.fillCircle(_cx - barW / 2 + 28, rowY, 13);
-    this.add.text(_cx - barW / 2 + 28, rowY, '⭐', { fontSize: '13px' }).setOrigin(0.5);
+    starG.fillCircle(starX, rowY, 12);
+    this.add.text(starX, rowY, '⭐', { fontSize: '12px' }).setOrigin(0.5);
 
-    this._contractsCounter = this.add.text(_cx - 30, rowY, `КОНТРАКТЫ · ${done}/40 · СЕЗОН: ${daysLeft} ДН.`, {
-      fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
-    }).setOrigin(0.5);
+    const btnW = 100;
+    const btnX = _cx + barW / 2 - 12 - btnW / 2;
+    this._contractsBtn = this.createButton(btnX, rowY, 'ОТКРЫТЬ', () => this._openContracts(), false, null, btnW, 30, 13);
 
-    this._contractsBtn = this.createButton(_cx + barW / 2 - 68, rowY, 'ОТКРЫТЬ', () => this._openContracts(), false, null, 110, 32, 14);
+    const textX = starX + 20;
+    const maxTextW = (btnX - btnW / 2) - textX - 10;
+    this._contractsMaxTextW = maxTextW;
+
+    this._contractsCounter = this.add.text(textX, rowY, `КОНТРАКТЫ · ${done}/40 · СЕЗОН: ${daysLeft} ДН.`, {
+      fontSize: '12px', color: '#ffd24a', fontStyle: 'bold'
+    }).setOrigin(0, 0.5);
+
     this._contractsOverlay = null;
     this._refreshContractsGlow();
   }
@@ -89,8 +97,14 @@ export function _refreshContractsGlow() {
       this._contractsDays = passDaysLeft();
       if (this._contractsCounter) {
         let t = `КОНТРАКТЫ · ${passClaimedCount(ps)}/40 · сезон: ${this._contractsDays} дн.`;
-        if (has) t += ' · ЗАБЕРИ НАГРАДУ!';
+        if (has) t += ' · НАГРАДА ЖДЁТ!';
         this._contractsCounter.setText(t);
+        this._contractsCounter.scaleX = 0.5;
+        this._contractsCounter.scaleY = 0.5;
+        const maxW = this._contractsMaxTextW || 270;
+        if (this._contractsCounter.displayWidth > maxW) {
+          this._contractsCounter.scaleX = 0.5 * (maxW / this._contractsCounter.displayWidth);
+        }
       }
       const btn = this._contractsBtn;
       if (!btn) return;
@@ -353,6 +367,7 @@ export function _closeContracts() {
       const i0 = Math.max(1, Math.floor(base / STEP) - 1);
       const i1 = Math.min(PASS_TIERS, Math.ceil((base + viewW) / STEP) + 1);
       const bakedOk = !!this._cstripKey;
+      // Skip re-render if viewport range hasn't changed
       if (bakedOk && this._stripRange[0] === i0 && this._stripRange[1] === i1) return;
       this._stripRange = [i0, i1];
       try { (this._cellTweens || []).forEach(t => { try { t.stop(); } catch (e) {} }); } catch (e) {}

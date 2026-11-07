@@ -17,7 +17,7 @@ export function createShowcase(cx, w, badgeMaxW) {
   const cd = classDefinitions.find(v => v.id === cls) || classDefinitions[0];
 
   // Голографический тактический пьедестал под ногами оперативника
-  const pedY = 378;
+  const pedY = 376;
   const pedG = this.add.graphics();
   // Мягкая внешняя тень платформы
   pedG.fillStyle(0x000000, 0.45);
@@ -89,9 +89,9 @@ export function createShowcase(cx, w, badgeMaxW) {
     try {
       const csrc = this.textures.get('значок очки рейтинга').getSourceImage();
       const csw = Math.max(1, (csrc && csrc.width) || 1);
-      const csh = Math.max(1, (csrc && csh.height) || 1);
+      const csh = Math.max(1, (csrc && csrc.height) || 1);
       cupImg.setScale(Math.min(22 / csw, 22 / csh));
-    } catch (e) { cupImg.setDisplaySize(22, 22); }
+    } catch (e) { cupImg.setDisplaySize(20, 22); }
   } else {
     const cup = this.add.graphics();
     cup.fillStyle(0xffd24a, 1);
@@ -116,7 +116,7 @@ export function createShowcase(cx, w, badgeMaxW) {
     }
     this._showHat = null;
     const Cls = PREVIEW_CLASSES[cls] || PREVIEW_CLASSES.Assault;
-    const hx = cx - 10, hy = 308;
+    const hx = cx - 10, hy = 264;
     const p = new Cls(this, hx, hy, { name: 'showcase', team: 'blue', noDefaults: true });
     p.previewScale(1.85);
     try {
@@ -147,23 +147,34 @@ export function createShowcase(cx, w, badgeMaxW) {
     this._showHat = null;
   } catch (e) { /* витрина не роняет меню */ }
 
-  // Кнопка статистики под пьедесталом
-  const statBtn = this.add.text(cx, 404, '📊 СТАТИСТИКА', {
-    fontSize: '12px',
+  // Кнопка статистики под пьедесталом.
+  // Используем Zone как единственный интерактивный объект — Container с текстовым
+  // дочерним элементом смещает hit-область вверх из-за пересчёта getBounds().
+  const sbCx = cx, sbCy = 422;
+  const sbW = 126, sbH = 28;
+  const sbBg = this.add.graphics();
+  const paintSb = (hover) => {
+    sbBg.clear();
+    sbBg.fillStyle(hover ? 0x241d0c : 0x111628, 0.95);
+    sbBg.fillRoundedRect(sbCx - sbW / 2, sbCy - sbH / 2, sbW, sbH, 6);
+    sbBg.lineStyle(1.2, hover ? 0xffd24a : 0x8a6a10, 0.9);
+    sbBg.strokeRoundedRect(sbCx - sbW / 2, sbCy - sbH / 2, sbW, sbH, 6);
+  };
+  paintSb(false);
+  const sbTxt = this.add.text(sbCx, sbCy, '📊 СТАТИСТИКА', {
+    fontSize: '11px',
     color: '#ffd24a',
-    fontStyle: 'bold',
-    backgroundColor: '#121628ee',
-    padding: { left: 14, right: 14, top: 5, bottom: 5 }
+    fontStyle: 'bold'
   }).setOrigin(0.5);
-  statBtn.setInteractive({ useHandCursor: true });
+  const statBtn = this.add.zone(sbCx, sbCy, sbW, sbH).setInteractive({ useHandCursor: true });
   statBtn.on('pointerdown', () => this._openStatsModal());
   statBtn.on('pointerover', () => {
-    statBtn.setStyle({ color: '#ffffff', backgroundColor: '#8a6a10ee' });
-    statBtn.setScale(1.05);
+    paintSb(true);
+    sbTxt.setColor('#ffffff');
   });
   statBtn.on('pointerout', () => {
-    statBtn.setStyle({ color: '#ffd24a', backgroundColor: '#121628ee' });
-    statBtn.setScale(1);
+    paintSb(false);
+    sbTxt.setColor('#ffd24a');
   });
 }
 
@@ -261,7 +272,14 @@ export function createTopBar() {
   const req = Math.max(1, expRequired(gameState.level));
   const frac = Phaser.Math.Clamp((gameState.experience | 0) / req, 0, 1);
   const bw = 120;
-  const expPillW = 54 + bw + 80;
+
+  // Измеряем текст опыта заранее для точной ширины плашки
+  const expStr = `${gameState.experience | 0}/${req}`;
+  const expProbe = this.add.text(0, 0, expStr, { fontSize: '11px', fontStyle: 'bold' });
+  const expTxtW = expProbe.displayWidth;
+  expProbe.destroy();
+
+  const expPillW = 54 + bw + 10 + expTxtW + 12;
 
   const expPill = this.add.graphics();
   expPill.fillStyle(0x101322, 0.92);
@@ -291,13 +309,13 @@ export function createTopBar() {
   barG.lineStyle(1, 0x404d70, 0.8);
   barG.strokeRoundedRect(barX, 15, bw, 12, 5);
 
-  this.add.text(barX + bw + 10, 21, `${gameState.experience | 0}/${req}`, {
+  this.add.text(barX + bw + 10, 21, expStr, {
     fontSize: '11px', color: '#c4d0ec', fontStyle: 'bold'
-  }).setOrigin(0.5);
+  }).setOrigin(0, 0.5);
 
   // Правая группа элементов (утилиты, магазин, настройки)
   // Донат-витрина (пончик)
-  const donutBtn = this.add.container(W - 320, 6);
+  const donutBtn = this.add.container(W - 340, 6);
   const donBg = this.add.graphics();
   donBg.fillStyle(0x221a08, 0.95);
   donBg.fillRoundedRect(0, 0, 100, 30, 8);
@@ -328,8 +346,8 @@ export function createTopBar() {
     donutBtn.setScale(1);
   });
 
-  // Кнопка быстрого перехода в Профиль
-  const profTextBtn = this.add.container(W - 210, 6);
+  // Кнопка быстрого перехода в Профиль (с комфортным отступом от истории боёв)
+  const profTextBtn = this.add.container(W - 228, 6);
   const ptBg = this.add.graphics();
   ptBg.fillStyle(0x131a30, 0.92);
   ptBg.fillRoundedRect(0, 0, 82, 30, 8);

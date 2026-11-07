@@ -34,6 +34,8 @@ import * as News from './menu/news.js';
 export default class MenuScene extends Phaser.Scene {
   constructor() {
     super('MenuScene');
+    this._showPreviewNext = 0;
+    this._contractsStripNext = 0;
   }
 
   create() {
@@ -181,13 +183,13 @@ export default class MenuScene extends Phaser.Scene {
 
     // Кнопки Арсенала
     const btnW = 222;
-    const btnH = 46;
-    const btnGap = 58;
-    const START_BTN_Y = PANEL_TOP + 56;
+    const btnH = 44;
+    const btnGap = 52;
+    const START_BTN_Y = PANEL_TOP + 68;
 
     leftBtns.forEach((item, i) => {
       const by = START_BTN_Y + i * btnGap;
-      const btn = this.createButton(COL_LEFT, by, item.label, item.cb, item.locked, item.lockMsg, btnW, btnH, 17, item.icon);
+      const btn = this.createButton(COL_LEFT, by, item.label, item.cb, item.locked, item.lockMsg, btnW, btnH, 16, item.icon);
       if (item.glow && btn && btn._btnTxt) {
         btn._btnTxt.setColor('#ffdd44');
         if (btn._paintIcon) btn._paintIcon(0xffdd44);
@@ -208,18 +210,18 @@ export default class MenuScene extends Phaser.Scene {
     const pEq = getEquipment(pCls);
     const gunName = (pEq && pEq.primary) || 'АК-47';
 
-    const eqCardY = START_BTN_Y + 5 * btnGap + 10;
+    const eqCardY = START_BTN_Y + 5 * btnGap + 14;
     const eqCard = this.add.graphics();
     eqCard.fillStyle(0x101526, 0.92);
-    eqCard.fillRoundedRect(COL_LEFT - btnW / 2, eqCardY - 26, btnW, 54, 8);
+    eqCard.fillRoundedRect(COL_LEFT - btnW / 2, eqCardY - 26, btnW, 52, 8);
     eqCard.lineStyle(1, 0x3a4868, 0.85);
-    eqCard.strokeRoundedRect(COL_LEFT - btnW / 2, eqCardY - 26, btnW, 54, 8);
+    eqCard.strokeRoundedRect(COL_LEFT - btnW / 2, eqCardY - 26, btnW, 52, 8);
 
-    this.add.text(COL_LEFT, eqCardY - 12, `${pCd.label.toUpperCase()} · ${gunName.toUpperCase()}`, {
+    this.add.text(COL_LEFT, eqCardY - 11, `${pCd.label.toUpperCase()} · ${gunName.toUpperCase()}`, {
       fontSize: '11px', color: '#ffd24a', fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    this.add.text(COL_LEFT, eqCardY + 10, 'БОЕКОМПЛЕКТ ГОТОВ К БОЮ', {
+    this.add.text(COL_LEFT, eqCardY + 11, 'БОЕКОМПЛЕКТ ГОТОВ К БОЮ', {
       fontSize: '10px', color: '#8fb8ff'
     }).setOrigin(0.5);
 
@@ -229,7 +231,7 @@ export default class MenuScene extends Phaser.Scene {
     // Кнопки Штаба
     rightBtns.forEach((item, i) => {
       const by = START_BTN_Y + i * btnGap;
-      const btn = this.createButton(COL_RIGHT, by, item.label, item.cb, item.locked, item.lockMsg, btnW, btnH, 17, item.icon);
+      const btn = this.createButton(COL_RIGHT, by, item.label, item.cb, item.locked, item.lockMsg, btnW, btnH, 16, item.icon);
       if (item.glow && btn && btn._btnTxt) {
         btn._btnTxt.setColor('#ffdd44');
         if (btn._paintIcon) btn._paintIcon(0xffdd44);
@@ -249,8 +251,8 @@ export default class MenuScene extends Phaser.Scene {
     // Карточка ежедневного подарка в правом крыле
     this.createDailyGift(COL_RIGHT, START_BTN_Y + 3 * btnGap + 18, 52);
 
-    // Сводка клана и серии в правом крыле
-    const clanCardY = START_BTN_Y + 4 * btnGap + 36;
+    // Сводка клана и серии входа в правом крыле
+    const clanCardY = START_BTN_Y + 4 * btnGap + 38;
     const clanCard = this.add.graphics();
     clanCard.fillStyle(0x101526, 0.92);
     clanCard.fillRoundedRect(COL_RIGHT - btnW / 2, clanCardY - 24, btnW, 50, 8);
@@ -264,8 +266,8 @@ export default class MenuScene extends Phaser.Scene {
       fontSize: '11px', color: '#ffd24a', fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    this.add.text(COL_RIGHT, clanCardY + 10, `СЕРИЯ ДНЕЙ: ${gameState.dailyStreak | 0} ДН.`, {
-      fontSize: '10px', color: '#c4d4f8'
+    this.add.text(COL_RIGHT, clanCardY + 10, `🔥 СЕРИЯ ВХОДОВ В ИГРУ: ${gameState.dailyStreak | 0} ДН.`, {
+      fontSize: '10px', color: '#c4d4f8', fontStyle: 'bold'
     }).setOrigin(0.5);
 
     // Центральная витрина героя на голографическом пьедестале
@@ -275,7 +277,7 @@ export default class MenuScene extends Phaser.Scene {
     this._openSection = openSection;
     this.buildCenterPanel({
       cx: COL_CENTER,
-      top: 432,
+      top: 440,
       w: 460,
       singleSubs: centerSubs,
       onlineSubs: onlineSubs
@@ -285,8 +287,8 @@ export default class MenuScene extends Phaser.Scene {
     this.createContractsRow();
 
     // Кнопки под правым крылом: Новости и Мои Уровни
-    this.createButton(UX(this, 1035), 656, 'НОВОСТИ', () => this._openNewsModal(), false, null, 116, 36, 14);
-    try { this._donutLevels(UX(this, 1165), 656); } catch (e) {}
+    this.createButton(UX(this, 1035), 650, 'НОВОСТИ', () => this._openNewsModal(), false, null, 116, 34, 13);
+    try { this._donutLevels(UX(this, 1165), 648); } catch (e) {}
 
     // Тост достижений
     const unclaimed = completedAchievements().filter(a => !(gameState.achievements || []).includes(a.id));
@@ -339,7 +341,7 @@ export default class MenuScene extends Phaser.Scene {
     const cx = o.cx;
     const top = o.top;
     const w = o.w;
-    const h = 182;
+    const h = 192;
     const open = this._openSection || 'single';
 
     // Фоновая панель центрального хаба
@@ -359,24 +361,126 @@ export default class MenuScene extends Phaser.Scene {
     track.push(g);
 
     // Вкладки режимов: [ ОДИНОЧНАЯ ИГРА ] | [ СЕТЕВАЯ ИГРА ]
-    const tabY = top + 24;
+    const tabY = top + 26;
     const tabW = Math.round(w / 2 - 14);
-    const tabH = 32;
+    const tabH = 42;
 
     const createTab = (tabId, label, tabX) => {
       const active = open === tabId;
+      const isSingle = tabId === 'single';
       const tg = this.add.graphics();
-      tg.fillStyle(active ? 0x221a08 : 0x121628, 0.95);
-      tg.fillRoundedRect(tabX - tabW / 2, tabY - tabH / 2, tabW, tabH, 6);
-      tg.lineStyle(active ? 1.5 : 1, active ? 0xffd24a : 0x2e3852, 1);
-      tg.strokeRoundedRect(tabX - tabW / 2, tabY - tabH / 2, tabW, tabH, 6);
+
       if (active) {
-        tg.fillStyle(0xd8a920, 1);
-        tg.fillRoundedRect(tabX - tabW / 2 + 8, tabY + tabH / 2 - 2, tabW - 16, 2, 1);
+        // Активная вкладка: насыщенный тёмно-янтарный фон с золотой рамкой
+        tg.fillStyle(0x1e1608, 0.98);
+        tg.fillRoundedRect(tabX - tabW / 2, tabY - tabH / 2, tabW, tabH, 8);
+        // Верхний блик
+        tg.fillStyle(0xffd24a, 0.1);
+        tg.fillRoundedRect(tabX - tabW / 2 + 2, tabY - tabH / 2 + 2, tabW - 4, Math.floor(tabH / 2) - 2, { tl: 6, tr: 6, bl: 0, br: 0 });
+        // Левая акцентная полоска
+        tg.fillStyle(0xffd24a, 1);
+        tg.fillRoundedRect(tabX - tabW / 2 + 3, tabY - tabH / 2 + 5, 3, tabH - 10, 1.5);
+        // Рамка
+        tg.lineStyle(1.8, 0xffd24a, 0.95);
+        tg.strokeRoundedRect(tabX - tabW / 2, tabY - tabH / 2, tabW, tabH, 8);
+        // Золотая полоска снизу (индикатор активной вкладки)
+        tg.fillStyle(0xffd24a, 1);
+        tg.fillRoundedRect(tabX - tabW / 2 + 10, tabY + tabH / 2 - 3, tabW - 20, 3, 1.5);
+        // Угловые засечки
+        tg.lineStyle(2, 0xffea77, 1);
+        const cL = 7;
+        tg.lineBetween(tabX + tabW / 2 - cL, tabY + tabH / 2, tabX + tabW / 2 - 2, tabY + tabH / 2);
+        tg.lineBetween(tabX + tabW / 2, tabY + tabH / 2 - cL, tabX + tabW / 2, tabY + tabH / 2 - 2);
+      } else {
+        // Неактивная вкладка: приглушённый фон
+        tg.fillStyle(0x0e1120, 0.92);
+        tg.fillRoundedRect(tabX - tabW / 2, tabY - tabH / 2, tabW, tabH, 8);
+        tg.lineStyle(1, 0x2a3550, 1);
+        tg.strokeRoundedRect(tabX - tabW / 2, tabY - tabH / 2, tabW, tabH, 8);
       }
-      const tt = this.add.text(tabX, tabY, label, {
-        fontSize: '12px', color: active ? '#ffd24a' : '#8899bb', fontStyle: 'bold'
-      }).setOrigin(0.5);
+
+      // --- Иконка ---
+      const iconX = tabX - tabW / 2 + 22;
+      const iconY = tabY;
+      const ic = tg; // рисуем прямо в tg — нет children, нет проблем с bounds
+
+      if (isSingle) {
+        // Скрещённые мечи (compact, вписан в ~14×14px)
+        const col = active ? 0xffe066 : 0x5a6e94;
+        const hi  = active ? 0xfff4a0 : 0x8fb8ff;
+        const acc = active ? 0xff6644 : 0x3a4a68;
+        // Сечение лезвия — два треугольника крест-накрест
+        const S = 7; // полуразмах
+        ic.fillStyle(active ? 0xd0e8ff : 0x3a4e70, 1);
+        ic.beginPath();
+        ic.moveTo(iconX - S,     iconY - S);
+        ic.lineTo(iconX - S + 2, iconY - S);
+        ic.lineTo(iconX + S,     iconY + S);
+        ic.lineTo(iconX + S - 2, iconY + S);
+        ic.closePath(); ic.fillPath();
+        ic.beginPath();
+        ic.moveTo(iconX + S,     iconY - S);
+        ic.lineTo(iconX + S - 2, iconY - S);
+        ic.lineTo(iconX - S,     iconY + S);
+        ic.lineTo(iconX - S + 2, iconY + S);
+        ic.closePath(); ic.fillPath();
+        // Блик на лезвиях
+        ic.fillStyle(hi, active ? 0.6 : 0.25);
+        ic.fillRect(iconX - S + 0.5, iconY - S + 0.5, 1, S * 2 - 1);
+        ic.fillRect(iconX + S - 1.5, iconY - S + 0.5, 1, S * 2 - 1);
+        // Гарды
+        ic.lineStyle(active ? 2.2 : 1.6, col, 1);
+        ic.lineBetween(iconX - S + 1, iconY - 2.5, iconX - 2.5, iconY - S + 1);
+        ic.lineBetween(iconX + S - 1, iconY - 2.5, iconX + 2.5, iconY - S + 1);
+        // Рукояти
+        ic.lineStyle(active ? 2.4 : 1.8, acc, 1);
+        ic.lineBetween(iconX - S - 1, iconY - S - 1, iconX - S + 3, iconY - S + 3);
+        ic.lineBetween(iconX + S + 1, iconY - S - 1, iconX + S - 3, iconY - S + 3);
+        // Центральная искра
+        ic.fillStyle(hi, active ? 0.95 : 0.4);
+        ic.fillCircle(iconX, iconY, active ? 2.2 : 1.4);
+        ic.fillStyle(acc, active ? 0.9 : 0.3);
+        ic.fillCircle(iconX, iconY, active ? 1.1 : 0.7);
+      } else {
+        // Глобус: окружность + меридиан + параллель + онлайн-точка
+        const col = active ? 0xffe066 : 0x5a6e94;
+        const hi  = active ? 0xfff4a0 : 0x8fb8ff;
+        const acc = active ? 0x46ffb0 : 0x2a6a50;
+        const R2  = 7;
+        ic.fillStyle(active ? 0x0d2a44 : 0x0a1828, 1);
+        ic.fillCircle(iconX, iconY, R2);
+        ic.lineStyle(active ? 1.8 : 1.2, col, active ? 0.95 : 0.6);
+        ic.strokeCircle(iconX, iconY, R2);
+        // Вертикальный меридиан (эллипс)
+        ic.lineStyle(active ? 1.3 : 1, col, active ? 0.7 : 0.4);
+        ic.strokeEllipse(iconX, iconY, R2 * 0.85, R2 * 2);
+        // Горизонтальная параллель (экватор)
+        ic.lineBetween(iconX - R2, iconY, iconX + R2, iconY);
+        // Верхняя параллель (дуга)
+        ic.beginPath();
+        ic.arc(iconX, iconY - 2.8, R2 - 0.5, 0.18 * Math.PI, 0.82 * Math.PI, false);
+        ic.strokePath();
+        // Онлайн-точка (правый верх)
+        ic.fillStyle(acc, active ? 1 : 0.5);
+        ic.fillCircle(iconX + 5.2, iconY - 5, 2);
+        ic.fillStyle(hi, active ? 0.9 : 0.3);
+        ic.fillCircle(iconX + 4.8, iconY - 5.4, 0.7);
+      }
+
+      // Метка
+      const labelX = iconX + 14;
+      const tt = this.add.text(labelX, tabY, label, {
+        fontSize: active ? '13px' : '12px',
+        color: active ? '#ffd24a' : '#6a7ea8',
+        fontStyle: 'bold'
+      }).setOrigin(0, 0.5);
+
+      // Подгоняем текст под доступную ширину
+      const maxLabelW = tabX + tabW / 2 - 8 - labelX;
+      if (tt.displayWidth > maxLabelW && tt.displayWidth > 0) {
+        tt.scaleX *= (maxLabelW / tt.displayWidth);
+      }
+
       const hit = this.add.zone(tabX, tabY, tabW, tabH).setInteractive({ useHandCursor: true });
       hit.on('pointerdown', () => {
         this._openSection = tabId;
@@ -384,16 +488,16 @@ export default class MenuScene extends Phaser.Scene {
         this.buildCenterPanel(o);
       });
       hit.on('pointerover', () => {
-        if (!active) tt.setColor('#ffffff');
+        if (!active) tt.setColor('#c8d8f8');
       });
       hit.on('pointerout', () => {
-        if (!active) tt.setColor('#8899bb');
+        if (!active) tt.setColor('#6a7ea8');
       });
       track.push(tg, tt, hit);
     };
 
-    createTab('single', '⚔ ОДИНОЧНАЯ ИГРА', cx - tabW / 2 - 3);
-    createTab('online', '🌐 СЕТЕВАЯ ИГРА', cx + tabW / 2 + 3);
+    createTab('single', 'ОДИНОЧНАЯ ИГРА', cx - tabW / 2 - 3);
+    createTab('online', 'СЕТЕВАЯ ИГРА',   cx + tabW / 2 + 3);
 
     const btnY1 = top + 74;
     const btnY2 = top + 134;
@@ -431,6 +535,29 @@ export default class MenuScene extends Phaser.Scene {
   createGearButton(x, y) { return Widgets.createGearButton.call(this, x, y); }
   createFullscreenButton(x, y) { return Widgets.createFullscreenButton.call(this, x, y); }
 
+  shutdown() {
+    // Останавливаем все твины сцены — иначе при каждом заходе в меню
+    // накапливаются бесконечные твины (glow/pulse) и тормозят рендер.
+    try { this.tweens.killAll(); } catch (e) {}
+    // Уничтожаем живой риг персонажа в витрине: это полноценный physics entity,
+    // держать его в памяти между сценами незачем.
+    try {
+      if (this._showPreview) {
+        this._showPreview.destroy();
+        this._showPreview = null;
+      }
+    } catch (e) {}
+    // Убираем колесо прокрутки контрактов.
+    try {
+      if (this._contractsWheel) {
+        this.input.off('wheel', this._contractsWheel);
+        this._contractsWheel = null;
+      }
+    } catch (e) {}
+    // Сбрасываем RenderTexture-кэш иконок кнопок, чтобы не текли текстуры.
+    try { Widgets._clearBtnIconCache(this); } catch (e) {}
+  }
+
   update() {
     if (this._contractsOverlay && this._contractsStrip) {
       try {
@@ -446,19 +573,17 @@ export default class MenuScene extends Phaser.Scene {
         const nx = passScrollX + (tgt - passScrollX) * Math.min(1, dt * 12);
         passScrollX = Math.abs(tgt - nx) < 0.5 ? tgt : nx;
         this._contractsStrip.x = this._contractsViewL - passScrollX;
-        try { if (this._renderContractsStrip) this._renderContractsStrip(); } catch (e) {}
+        // Стриминг ленты контрактов: полный рендер дорогой — только ~15 Гц.
+        const nowC = this.time.now | 0;
+        if (!this._contractsStripNext || nowC >= this._contractsStripNext) {
+          this._contractsStripNext = nowC + 66;
+          try { if (this._renderContractsStrip) this._renderContractsStrip(); } catch (e) {}
+        }
       } catch (e) {}
     }
 
     const sp = this._showPreview;
     if (sp && sp.active && !sp.dead) {
-      try {
-        sp.updateBars();
-        if (sp.updateGun) sp.updateGun();
-        sp.healthBar.setVisible(false);
-        sp.armorBar.setVisible(false);
-        sp.nameText.setVisible(false);
-      } catch (e) {}
       try {
         const br = Math.sin((this.time.now / 1000) * Math.PI * 2 * 0.25);
         if (sp._breathY == null) sp._breathY = sp.y;
@@ -466,15 +591,36 @@ export default class MenuScene extends Phaser.Scene {
         sp.y = sp._breathY + br * 1.5;
         if (sp.torso && sp._breathTsy) sp.torso.scaleY = sp._breathTsy * (1 + br * 0.02);
       } catch (e) {}
+      // Полный пересчёт рига/ствола дорогой — в превью меню достаточно ~15 Гц.
+      const now = this.time.now | 0;
+      if (!this._showPreviewNext || now >= this._showPreviewNext) {
+        this._showPreviewNext = now + 66;
+        try {
+          sp.updateBars();
+          if (sp.updateGun) sp.updateGun();
+          if (sp.healthBar && sp.healthBar.visible) sp.healthBar.setVisible(false);
+          if (sp.armorBar && sp.armorBar.visible) sp.armorBar.setVisible(false);
+          if (sp.nameText && sp.nameText.visible) sp.nameText.setVisible(false);
+        } catch (e) {}
+      }
     }
 
     if (!this.bg) return;
     const p = this.input.activePointer;
-    const nx = (p.x / this.cameras.main.width - 0.5) * 2;
-    const ny = (p.y / this.cameras.main.height - 0.5) * 2;
+    // Пропускаем пересчёт, если мышь не сдвинулась значимо (>2px).
+    const px = p.x, py = p.y;
+    if (Math.abs(px - (this._bgLastPx || 0)) < 2 &&
+        Math.abs(py - (this._bgLastPy || 0)) < 2) return;
+    this._bgLastPx = px;
+    this._bgLastPy = py;
+    const nx = (px / this.cameras.main.width - 0.5) * 2;
+    const ny = (py / this.cameras.main.height - 0.5) * 2;
     const maxX = 32;
     const maxY = 18;
-    this.bg.x = gameW(this) / 2 + nx * maxX;
-    this.bg.y = (720 - this.bg.displayHeight / 2) + ny * maxY;
+    const tx = gameW(this) / 2 + nx * maxX;
+    const ty = (720 - this.bg.displayHeight / 2) + ny * maxY;
+    const dt = Math.min(0.06, (this.game.loop.delta || 16.7) / 1000);
+    this.bg.x += (tx - this.bg.x) * Math.min(1, dt * 8);
+    this.bg.y += (ty - this.bg.y) * Math.min(1, dt * 8);
   }
 }

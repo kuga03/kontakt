@@ -211,211 +211,535 @@ export function _closeStatsModal() {
   // Перестройка без рестарта сцены. Возвращает низ панели.
 export function _drawBtnIcon(g, id, x, y, s, color) {
     g.clear();
-    g.lineStyle(2, color, 1);
-    g.fillStyle(color, 1);
     const u = s / 11;
+    const locked = color === 0x667788;
+    const hover = color === 0xffff55 || color === 0xffe066 || color === 0xffdd44;
+    // Палитра: в обычном/hover состоянии — цветные иконки; в locked — приглушённые серые.
+    // Тёмный контур добавляется почти везде для читаемости на синей подложке кнопки.
+    const pal = (base, light, dark, accent) => {
+      if (locked) {
+        const m = 0x6b7788;
+        return { a: m, b: 0x8894a3, c: 0x4f5a68, hi: 0xaab4c2, acc: 0x7b8796, glow: 0x9aa6b5 };
+      }
+      if (hover) {
+        // На наведении сохраняем характер цвета, но делаем теплее/ярче.
+        return { a: light, b: base, c: dark, hi: 0xffffff, acc: accent || 0xffe066, glow: 0xfff2a8 };
+      }
+      return { a: base, b: light, c: dark, hi: 0xffffff, acc: accent || 0xfff0a0, glow: light };
+    };
+    const outline = (w = 1.4, a = 0.95) => g.lineStyle(w, locked ? 0x3a4352 : 0x0b1020, a);
+
     switch (id) {
-      case 'cart': // тележка магазина
-        // Основная рама
-        g.strokeRoundedRect(x - 8 * u, y - 6 * u, 16 * u, 10 * u, 2 * u);
-        // Ручка
-        g.lineBetween(x - 6 * u, y - 6 * u, x - 6 * u, y - 8 * u);
-        g.lineBetween(x + 6 * u, y - 6 * u, x + 6 * u, y - 8 * u);
-        g.lineBetween(x - 6 * u, y - 8 * u, x + 6 * u, y - 8 * u);
-        // Колеса
-        g.fillCircle(x - 5 * u, y + 4 * u, 1.8 * u);
-        g.fillCircle(x + 5 * u, y + 4 * u, 1.8 * u);
-        // Декоративные линии
-        g.lineStyle(1, color, 0.6);
-        g.lineBetween(x - 6 * u, y - 2 * u, x + 6 * u, y - 2 * u);
-        g.lineBetween(x - 6 * u, y + 1 * u, x + 6 * u, y + 1 * u);
-        break;
-      case 'backpack': // рюкзак инвентаря
-        // Основной корпус
-        g.strokeRoundedRect(x - 7 * u, y - 5 * u, 14 * u, 13 * u, 4 * u);
-        // Карман
-        g.strokeRoundedRect(x - 3 * u, y + 1 * u, 6 * u, 5 * u, 2 * u);
-        // Ручка
-        g.lineBetween(x - 3 * u, y - 5 * u, x - 3 * u, y - 9 * u);
-        g.lineBetween(x + 3 * u, y - 5 * u, x + 3 * u, y - 9 * u);
-        g.lineBetween(x - 3 * u, y - 9 * u, x + 3 * u, y - 9 * u);
-        // Декоративные линии
-        g.lineStyle(1, color, 0.6);
-        g.lineBetween(x - 5 * u, y - 2 * u, x + 5 * u, y - 2 * u);
-        g.lineBetween(x - 5 * u, y + 5 * u, x + 5 * u, y + 5 * u);
-        break;
-      case 'star': { // звезда навыков
-        const pts = [];
-        // Внешние точки
-        for (let i = 0; i < 10; i++) {
-          const ang = -Math.PI / 2 + i * Math.PI / 5;
-          const rad = (i % 2 === 0 ? 10 : 4.2) * u;
-          pts.push(new Phaser.Geom.Point(x + Math.cos(ang) * rad, y + Math.sin(ang) * rad));
+      case 'cart': { // тележка магазина (супермаркет) — стальная с золотыми акцентами
+        const p = pal(0xf0b52a, 0xffd966, 0xb87410, 0xff8a3d);
+        // Рукоять (горизонтальная перекладина сверху-справа)
+        g.lineStyle(2.4, locked ? 0x8894a3 : p.b, 1);
+        g.lineBetween(x - 2 * u, y - 8.2 * u, x + 9.2 * u, y - 8.2 * u);
+        // Наклонная стойка от рукояти вниз к корзине
+        g.lineStyle(2.2, locked ? 0x8894a3 : p.a, 1);
+        g.lineBetween(x - 2 * u, y - 8.2 * u, x - 7.2 * u, y - 1.2 * u);
+        // Горизонтальное дно корзины (основа)
+        g.lineStyle(2.4, locked ? 0x6b7788 : p.a, 1);
+        g.lineBetween(x - 7.4 * u, y - 1.2 * u, x + 7 * u, y - 1.2 * u);
+        // Задняя стенка корзины (вертикальная, левая)
+        g.lineStyle(2.2, locked ? 0x6b7788 : p.a, 1);
+        g.lineBetween(x - 7.4 * u, y - 1.2 * u, x - 6.4 * u, y - 7.4 * u);
+        // Передняя стенка корзины (вертикальная, правая — короче)
+        g.lineStyle(2.2, locked ? 0x6b7788 : p.a, 1);
+        g.lineBetween(x + 7 * u, y - 1.2 * u, x + 6.2 * u, y - 5.8 * u);
+        // Верхний край корзины
+        g.lineStyle(2.2, locked ? 0x6b7788 : p.b, 1);
+        g.lineBetween(x - 6.4 * u, y - 7.4 * u, x + 6.2 * u, y - 5.8 * u);
+        // Две вертикальные прутья внутри корзины
+        g.lineStyle(1.2, locked ? 0x4f5a68 : p.c, 0.85);
+        g.lineBetween(x - 1.8 * u, y - 1.2 * u, x - 1.3 * u, y - 7 * u);
+        g.lineBetween(x + 2.6 * u, y - 1.2 * u, x + 2.8 * u, y - 6.5 * u);
+        // Золотой акцент-маркер на рукояти
+        if (!locked) {
+          g.fillStyle(p.acc, 0.85);
+          g.fillCircle(x + 9.2 * u, y - 8.2 * u, 1.4 * u);
         }
-        g.fillPoints(pts, true);
-        // Внутренний круг
-        g.fillStyle(color, 0.3);
-        g.fillCircle(x, y, 3 * u);
-        // Лучи
-        g.lineStyle(1, color, 0.6);
+        // Колёса
+        g.fillStyle(locked ? 0x46515f : 0x1b2436, 1);
+        g.fillCircle(x - 4.2 * u, y + 3.2 * u, 2.6 * u);
+        g.fillCircle(x + 4.6 * u, y + 3.2 * u, 2.6 * u);
+        g.fillStyle(locked ? 0x8894a3 : p.acc, 1);
+        g.fillCircle(x - 4.2 * u, y + 3.2 * u, 1.1 * u);
+        g.fillCircle(x + 4.6 * u, y + 3.2 * u, 1.1 * u);
+        outline(1.1, 0.8);
+        g.strokeCircle(x - 4.2 * u, y + 3.2 * u, 2.6 * u);
+        g.strokeCircle(x + 4.6 * u, y + 3.2 * u, 2.6 * u);
+        break;
+      }
+      case 'backpack': { // рюкзак в профиль: лямки слева, корпус справа
+        const p = pal(0x43b86b, 0x74dc95, 0x237542, 0xff9a3c);
+        const bx = x + 1.5 * u; // сдвиг центра чуть вправо, чтобы лямки влезли
+
+        // Корпус рюкзака (правая часть)
+        g.fillStyle(p.c, 1);
+        g.fillRoundedRect(bx - 3.8 * u, y - 8.6 * u, 11.2 * u, 17.2 * u, 2.8 * u);
+        g.fillStyle(p.a, 1);
+        g.fillRoundedRect(bx - 3 * u, y - 7.8 * u, 9.8 * u, 15.6 * u, 2.4 * u);
+        // Блик сверху-справа
+        g.fillStyle(p.hi, locked ? 0.08 : 0.22);
+        g.fillRoundedRect(bx + 1.4 * u, y - 7.2 * u, 3.6 * u, 6.8 * u, 1.6 * u);
+        outline(1.5); g.strokeRoundedRect(bx - 3.6 * u, y - 8.4 * u, 10.8 * u, 16.8 * u, 2.6 * u);
+
+        // Передний карман (снизу корпуса)
+        g.fillStyle(p.b, 0.9);
+        g.fillRoundedRect(bx - 2.4 * u, y + 3.4 * u, 8 * u, 4.2 * u, 1.6 * u);
+        outline(1, 0.8); g.strokeRoundedRect(bx - 2.2 * u, y + 3.6 * u, 7.6 * u, 3.8 * u, 1.4 * u);
+        // Пряжка кармана
+        g.fillStyle(p.acc, 1);
+        g.fillRoundedRect(bx + 0.6 * u, y + 4.4 * u, 2.6 * u, 1.8 * u, 0.5 * u);
+        g.fillStyle(locked ? 0x5d6978 : 0x6b3208, 1);
+        g.fillCircle(bx + 1.9 * u, y + 5.3 * u, 0.5 * u);
+
+        // Две лямки слева (вертикальные полосы)
+        const sx = bx - 3.8 * u; // правый край лямок = левый край корпуса
+        g.fillStyle(locked ? 0x7b8796 : p.acc, 1);
+        // Верхняя лямка
+        g.fillRoundedRect(sx - 4.2 * u, y - 7.4 * u, 2.2 * u, 9.4 * u, 1 * u);
+        outline(1, 0.75); g.strokeRoundedRect(sx - 4.2 * u, y - 7.4 * u, 2.2 * u, 9.4 * u, 1 * u);
+        // Нижняя лямка (чуть уже)
+        g.fillStyle(locked ? 0x7b8796 : p.acc, 1);
+        g.fillRoundedRect(sx - 3.8 * u, y + 2.2 * u, 2 * u, 5.8 * u, 1 * u);
+        outline(1, 0.75); g.strokeRoundedRect(sx - 3.8 * u, y + 2.2 * u, 2 * u, 5.8 * u, 1 * u);
+        // Пряжки лямок (маленькие прямоугольники)
+        g.fillStyle(locked ? 0x8894a3 : 0xffd080, 1);
+        g.fillRoundedRect(sx - 4.4 * u, y + 1 * u, 2.6 * u, 1.4 * u, 0.5 * u);
+        g.fillRoundedRect(sx - 4.2 * u, y + 7.6 * u, 2.4 * u, 1.4 * u, 0.5 * u);
+        break;
+      }
+      case 'star': { // звезда навыков — яркое золото с сиянием
+        const p = pal(0xffc933, 0xffe37a, 0xd88e00, 0xff6a2a);
+        // Мягкое свечение позади
+        if (!locked) {
+          g.fillStyle(p.glow, hover ? 0.22 : 0.14);
+          g.fillCircle(x, y, 10.5 * u);
+        }
+        const outer = [];
+        const inner = [];
         for (let i = 0; i < 5; i++) {
-          const ang = -Math.PI / 2 + i * Math.PI * 2 / 5;
-          g.lineBetween(x, y, x + Math.cos(ang) * 8 * u, y + Math.sin(ang) * 8 * u);
+          const a1 = -Math.PI / 2 + i * Math.PI * 2 / 5;
+          const a2 = a1 + Math.PI / 5;
+          outer.push(new Phaser.Geom.Point(x + Math.cos(a1) * 10.2 * u, y + Math.sin(a1) * 10.2 * u));
+          inner.push(new Phaser.Geom.Point(x + Math.cos(a2) * 4.4 * u, y + Math.sin(a2) * 4.4 * u));
+        }
+        const pts = [];
+        for (let i = 0; i < 5; i++) { pts.push(outer[i], inner[i]); }
+        g.fillStyle(p.c, 1); g.fillPoints(pts, true);
+        g.fillStyle(p.a, 1);
+        const pts2 = pts.map(pt => new Phaser.Geom.Point(x + (pt.x - x) * 0.9, y + (pt.y - y) * 0.9));
+        g.fillPoints(pts2, true);
+        // Грань-блик
+        g.fillStyle(p.hi, locked ? 0.12 : 0.3);
+        g.fillTriangle(x, y - 8.8 * u, x - 3.6 * u, y - 2.4 * u, x + 0.4 * u, y - 2.8 * u);
+        outline(1.4); g.fillStyle(0, 0); g.fillPoints(pts, true);
+        g.lineStyle(1.4, locked ? 0x3a4352 : 0x0b1020, 0.95); g.strokePoints(pts, true);
+        // Ядро
+        g.fillStyle(p.acc, 1);
+        g.fillCircle(x, y + 0.4 * u, 2.4 * u);
+        g.fillStyle(p.hi, locked ? 0.2 : 0.7);
+        g.fillCircle(x - 0.5 * u, y - 0.1 * u, 0.9 * u);
+        break;
+      }
+      case 'dna': { // ДНК — бирюзовый и фиолетовый, контрастно на синем фоне
+        const p = pal(0x2fd4c2, 0x7cf3e6, 0x149184, 0xc06cff);
+        if (!locked) { g.fillStyle(0x29d4c4, 0.08); g.fillCircle(x, y, 10 * u); }
+        // Две цепи
+        const left = []; const right = [];
+        for (let i = 0; i <= 12; i++) {
+          const ty = -9 * u + i * 1.5 * u;
+          const ph = (i / 12) * Math.PI * 2;
+          const dx = Math.sin(ph) * 5.8 * u;
+          left.push({ px: x - dx, py: y + ty }); right.push({ px: x + dx, py: y + ty });
+        }
+        g.lineStyle(2.6, p.c, 1); g.beginPath(); g.moveTo(left[0].px, left[0].py);
+        left.forEach(pt => g.lineTo(pt.px, pt.py)); g.strokePath();
+        g.lineStyle(2.6, locked ? 0x7b8796 : 0xa24ce6, 1); g.beginPath(); g.moveTo(right[0].px, right[0].py);
+        right.forEach(pt => g.lineTo(pt.px, pt.py)); g.strokePath();
+        g.lineStyle(1.8, p.a, 1); g.beginPath(); g.moveTo(left[0].px, left[0].py);
+        left.forEach(pt => g.lineTo(pt.px, pt.py)); g.strokePath();
+        g.lineStyle(1.8, locked ? 0x98a5b4 : 0xd08cff, 1); g.beginPath(); g.moveTo(right[0].px, right[0].py);
+        right.forEach(pt => g.lineTo(pt.px, pt.py)); g.strokePath();
+        // Перемычки
+        for (let i = 1; i < 12; i += 2) {
+          g.lineStyle(1.5, p.hi, locked ? 0.35 : 0.55);
+          g.lineBetween(left[i].px, left[i].py, right[i].px, right[i].py);
+          g.fillStyle(i % 4 === 1 ? p.b : (locked ? 0xaab4c2 : 0xe0b0ff), 1);
+          g.fillCircle((left[i].px + right[i].px) / 2, left[i].py, 1.15 * u);
         }
         break;
       }
-      case 'dna': // спираль генома
-        // Основные линии
-        g.lineBetween(x - 6 * u, y - 9 * u, x + 6 * u, y - 9 * u);
-        g.lineBetween(x + 6 * u, y - 3 * u, x - 6 * u, y + 3 * u);
-        g.lineBetween(x - 6 * u, y + 9 * u, x + 6 * u, y + 9 * u);
-        // Вертикальные линии
-        g.lineBetween(x - 6 * u, y - 9 * u, x - 6 * u, y - 5 * u);
-        g.lineBetween(x + 6 * u, y + 5 * u, x + 6 * u, y + 9 * u);
-        // Декоративные круги
-        g.fillStyle(color, 0.3);
-        g.fillCircle(x, y - 6 * u, 1.5 * u);
-        g.fillCircle(x, y, 1.5 * u);
-        g.fillCircle(x, y + 6 * u, 1.5 * u);
-        break;
-      case 'case': // ящик кейсов
-        // Основной корпус
-        g.strokeRoundedRect(x - 8 * u, y - 5 * u, 16 * u, 12 * u, 2 * u);
-        // Декоративные линии
-        g.lineStyle(1, color, 0.6);
-        g.lineBetween(x - 8 * u, y - 1 * u, x + 8 * u, y - 1 * u);
-        g.lineBetween(x, y - 5 * u, x, y - 1 * u);
-        // Металлические уголки
-        g.lineStyle(2, color, 1);
-        g.lineBetween(x - 8 * u, y - 5 * u, x - 6 * u, y - 5 * u);
-        g.lineBetween(x - 8 * u, y - 5 * u, x - 8 * u, y - 3 * u);
-        g.lineBetween(x + 8 * u, y - 5 * u, x + 6 * u, y - 5 * u);
-        g.lineBetween(x + 8 * u, y - 5 * u, x + 8 * u, y - 3 * u);
-        g.lineBetween(x - 8 * u, y + 7 * u, x - 6 * u, y + 7 * u);
-        g.lineBetween(x - 8 * u, y + 7 * u, x - 8 * u, y + 5 * u);
-        g.lineBetween(x + 8 * u, y + 7 * u, x + 6 * u, y + 7 * u);
-        g.lineBetween(x + 8 * u, y + 7 * u, x + 8 * u, y + 5 * u);
+      case 'case': { // кейс — стальной с янтарными акцентами
+        const p = pal(0x8fb3d9, 0xc7ddf5, 0x4a6488, 0xffb020);
+        // Тень/основание
+        g.fillStyle(0x000000, locked ? 0.15 : 0.22);
+        g.fillRoundedRect(x - 7.6 * u, y - 3.8 * u, 15.2 * u, 12.2 * u, 2.2 * u);
+        // Корпус
+        g.fillStyle(p.c, 1);
+        g.fillRoundedRect(x - 8.2 * u, y - 5.4 * u, 16.4 * u, 11.8 * u, 2.2 * u);
+        g.fillStyle(p.a, 1);
+        g.fillRoundedRect(x - 7.6 * u, y - 4.8 * u, 15.2 * u, 10.4 * u, 1.8 * u);
+        g.fillStyle(p.hi, locked ? 0.1 : 0.22);
+        g.fillRoundedRect(x - 6.8 * u, y - 4.3 * u, 13.6 * u, 2.8 * u, 1 * u);
+        outline(1.6); g.strokeRoundedRect(x - 8 * u, y - 5.2 * u, 16 * u, 11.4 * u, 2 * u);
+        // Разделение крышки
+        g.lineStyle(1.8, p.c, 1);
+        g.lineBetween(x - 7.4 * u, y - 0.8 * u, x + 7.4 * u, y - 0.8 * u);
+        g.lineStyle(1, p.hi, locked ? 0.15 : 0.35);
+        g.lineBetween(x - 7 * u, y - 1.3 * u, x + 7 * u, y - 1.3 * u);
+        // Усилители по углам
+        const corner = (cx2, cy2, sx, sy) => {
+          g.fillStyle(p.b, 0.9);
+          g.fillTriangle(cx2, cy2, cx2 + 3.2 * u * sx, cy2, cx2, cy2 + 3.2 * u * sy);
+        };
+        corner(x - 8 * u, y - 5.2 * u, 1, 1); corner(x + 8 * u, y - 5.2 * u, -1, 1);
+        corner(x - 8 * u, y + 6.2 * u, 1, -1); corner(x + 8 * u, y + 6.2 * u, -1, -1);
         // Замок
-        g.fillStyle(color, 1);
-        g.fillCircle(x, y + 3 * u, 1.2 * u);
-        g.lineBetween(x, y + 3 * u, x, y + 5 * u);
+        g.fillStyle(p.acc, 1);
+        g.fillRoundedRect(x - 2.2 * u, y + 1.2 * u, 4.4 * u, 3.4 * u, 1 * u);
+        outline(1, 0.7); g.strokeRoundedRect(x - 2.2 * u, y + 1.2 * u, 4.4 * u, 3.4 * u, 1 * u);
+        g.fillStyle(locked ? 0x5d6978 : 0x5a3608, 1);
+        g.fillCircle(x, y + 3.3 * u, 0.8 * u);
+        g.lineStyle(1.2, locked ? 0x5d6978 : 0x5a3608, 1);
+        g.strokeCircle(x, y + 2.1 * u, 1 * u);
         break;
-      case 'swords': // скрещенные мечи
-        // Основные клинки
-        g.lineStyle(2, color, 1);
-        g.lineBetween(x - 7 * u, y - 7 * u, x + 7 * u, y + 7 * u);
-        g.lineBetween(x + 7 * u, y - 7 * u, x - 7 * u, y + 7 * u);
+      }
+      case 'swords': // скрещённые мечи — сталь + красные рукояти
+      case 'single': {
+        const p = pal(0xcfe4ff, 0xf3f8ff, 0x6f8db6, 0xff5a4a);
+        if (!locked) { g.fillStyle(0xff7048, hover ? 0.16 : 0.09); g.fillCircle(x, y, 9.8 * u); }
+        const blade = (ax, ay, bx, by, dir) => {
+          const ang = Math.atan2(by - ay, bx - ax);
+          const nx = Math.cos(ang + Math.PI / 2) * 1.15 * u * dir;
+          const ny = Math.sin(ang + Math.PI / 2) * 1.15 * u * dir;
+          g.fillStyle(p.c, 1);
+          g.beginPath(); g.moveTo(ax + nx, ay + ny); g.lineTo(bx, by); g.lineTo(ax - nx, ay - ny); g.closePath(); g.fillPath();
+          g.fillStyle(p.b, 1);
+          g.beginPath(); g.moveTo(ax + nx * 0.45, ay + ny * 0.45); g.lineTo(bx - Math.cos(ang) * 1.2 * u, by - Math.sin(ang) * 1.2 * u); g.lineTo(ax, ay); g.closePath(); g.fillPath();
+          g.lineStyle(1.2, locked ? 0x3a4352 : 0x0b1020, 0.9);
+          g.beginPath(); g.moveTo(ax + nx, ay + ny); g.lineTo(bx, by); g.lineTo(ax - nx, ay - ny); g.closePath(); g.strokePath();
+        };
+        blade(x - 7.2 * u, y - 7.2 * u, x + 7.8 * u, y + 7.8 * u, 1);
+        blade(x + 7.2 * u, y - 7.2 * u, x - 7.8 * u, y + 7.8 * u, -1);
+        // Гарды
+        g.lineStyle(2.4, p.acc, 1);
+        g.lineBetween(x - 7.4 * u, y - 2.8 * u, x - 2.8 * u, y - 7.4 * u);
+        g.lineBetween(x + 7.4 * u, y - 2.8 * u, x + 2.8 * u, y - 7.4 * u);
         // Рукояти
-        g.lineStyle(1.5, color, 1);
-        g.lineBetween(x - 7 * u, y - 3 * u, x - 3 * u, y - 7 * u);
-        g.lineBetween(x + 7 * u, y - 3 * u, x + 3 * u, y - 7 * u);
-        // Декоративные элементы
-        g.fillStyle(color, 0.3);
-        g.fillCircle(x, y, 3 * u);
-        g.lineStyle(1, color, 0.6);
-        g.lineBetween(x - 2 * u, y - 2 * u, x + 2 * u, y + 2 * u);
-        g.lineBetween(x + 2 * u, y - 2 * u, x - 2 * u, y + 2 * u);
+        g.lineStyle(2.6, locked ? 0x7b8796 : 0x8b3a2e, 1);
+        g.lineBetween(x - 8.2 * u, y - 8.2 * u, x - 5.8 * u, y - 5.8 * u);
+        g.lineBetween(x + 8.2 * u, y - 8.2 * u, x + 5.8 * u, y - 5.8 * u);
+        // Центральный блик-искра
+        g.fillStyle(p.hi, locked ? 0.3 : 0.95);
+        g.fillCircle(x, y, 2.1 * u);
+        g.fillStyle(p.acc, locked ? 0.5 : 0.9);
+        g.fillCircle(x, y, 1.1 * u);
+        outline(1, 0.6); g.strokeCircle(x, y, 2.1 * u);
         break;
-      case 'single': // одиночная игра (фолбэк — те же мечи)
-        g.lineBetween(x - 7 * u, y - 7 * u, x + 7 * u, y + 7 * u);
-        g.lineBetween(x + 7 * u, y - 7 * u, x - 7 * u, y + 7 * u);
-        g.lineBetween(x - 7 * u, y - 3 * u, x - 3 * u, y - 7 * u);
-        g.lineBetween(x + 7 * u, y - 3 * u, x + 3 * u, y - 7 * u);
+      }
+      case 'globe': { // онлайн — бирюзовая планета с сеткой
+        const p = pal(0x2ec8ff, 0x8fe7ff, 0x1477b8, 0x46ffb0);
+        if (!locked) { g.fillStyle(0x22b8ff, hover ? 0.18 : 0.1); g.fillCircle(x, y, 10.2 * u); }
+        g.fillStyle(p.c, 1); g.fillCircle(x, y, 8.8 * u);
+        g.fillStyle(p.a, 1); g.fillCircle(x - 1.2 * u, y - 1.2 * u, 8.1 * u);
+        g.fillStyle(p.hi, locked ? 0.12 : 0.22);
+        g.fillCircle(x - 3.2 * u, y - 3.6 * u, 3.4 * u);
+        outline(1.6); g.strokeCircle(x, y, 8.8 * u);
+        // Параллели/меридианы
+        g.lineStyle(1.2, p.b, locked ? 0.45 : 0.75);
+        g.strokeEllipse(x, y, 6.2 * u, 17.6 * u);
+        g.strokeEllipse(x, y, 13.4 * u, 17.6 * u);
+        g.lineBetween(x - 8.6 * u, y, x + 8.6 * u, y);
+        g.beginPath(); g.arc(x, y - 2.8 * u, 8.2 * u, 0.15 * Math.PI, 0.85 * Math.PI, false); g.strokePath();
+        g.beginPath(); g.arc(x, y + 2.8 * u, 8.2 * u, 1.15 * Math.PI, 1.85 * Math.PI, false); g.strokePath();
+        // "Онлайн" точка
+        g.fillStyle(p.acc, 1); g.fillCircle(x + 5.8 * u, y - 5.8 * u, 1.8 * u);
+        g.fillStyle(p.hi, locked ? 0.4 : 0.9); g.fillCircle(x + 5.4 * u, y - 6.2 * u, 0.6 * u);
         break;
-      case 'globe': // онлайн
-        g.strokeCircle(x, y, 9 * u);
-        g.lineBetween(x - 9 * u, y, x + 9 * u, y);
-        g.strokeEllipse(x, y, 10 * u, 18 * u);
+      }
+      case 'flag': { // кампания — красный флаг на древке
+        const p = pal(0xff4d4d, 0xff8080, 0xb81818, 0xffd24a);
+        // Древко
+        g.lineStyle(2.8, locked ? 0x8a97a8 : 0xc8d6ea, 1);
+        g.lineBetween(x - 5.2 * u, y - 9.4 * u, x - 5.2 * u, y + 9.6 * u);
+        g.lineStyle(1.4, locked ? 0x4f5a68 : 0x5b6b84, 1);
+        g.lineBetween(x - 4.4 * u, y - 9.4 * u, x - 4.4 * u, y + 9.6 * u);
+        // Наконечник
+        g.fillStyle(p.acc, 1);
+        g.fillCircle(x - 5.2 * u, y - 9.8 * u, 1.5 * u);
+        // Полотнище (двойной слой + складка)
+        const fx = x - 5 * u, fy = y - 8.6 * u;
+        g.fillStyle(p.c, 1);
+        g.fillTriangle(fx, fy, fx + 13.8 * u, fy + 4.2 * u, fx, fy + 8.8 * u);
+        g.fillStyle(p.a, 1);
+        g.fillTriangle(fx + 0.8 * u, fy + 0.9 * u, fx + 11.8 * u, fy + 4.2 * u, fx + 0.8 * u, fy + 7.7 * u);
+        g.fillStyle(p.b, locked ? 0.18 : 0.35);
+        g.fillTriangle(fx + 0.8 * u, fy + 0.9 * u, fx + 6.4 * u, fy + 4.1 * u, fx + 0.8 * u, fy + 4.2 * u);
+        outline(1.3, 0.9);
+        g.lineStyle(1.3, locked ? 0x3a4352 : 0x0b1020, 0.9);
+        g.strokeTriangle(fx, fy, fx + 13.8 * u, fy + 4.2 * u, fx, fy + 8.8 * u);
+        // Эмблема
+        g.fillStyle(p.hi, locked ? 0.45 : 0.9);
+        g.fillCircle(fx + 5.2 * u, fy + 4.3 * u, 1.2 * u);
         break;
-      case 'flag': // кампания
-        g.lineBetween(x - 5 * u, y - 9 * u, x - 5 * u, y + 9 * u);
-        g.fillTriangle(x - 5 * u, y - 9 * u, x + 8 * u, y - 5 * u, x - 5 * u, y - 1 * u);
+      }
+      case 'skull': { // испытание — череп с красным акцентом опасности
+        const p = pal(0xf2ede2, 0xffffff, 0xbfb29b, 0xff4b4b);
+        if (!locked) { g.fillStyle(0xff5555, hover ? 0.14 : 0.08); g.fillCircle(x, y, 10.2 * u); }
+        // Череп
+        g.fillStyle(p.c, 1); g.fillCircle(x, y - 1.8 * u, 7 * u);
+        g.fillStyle(p.a, 1); g.fillCircle(x - 0.8 * u, y - 2.4 * u, 6.4 * u);
+        g.fillStyle(p.hi, locked ? 0.1 : 0.2); g.fillCircle(x - 2.6 * u, y - 4.8 * u, 2.2 * u);
+        outline(1.5); g.strokeCircle(x, y - 1.8 * u, 7 * u);
+        // Скулы
+        g.fillStyle(p.b, 1);
+        g.fillRoundedRect(x - 5.2 * u, y + 1.4 * u, 10.4 * u, 3.8 * u, 1.2 * u);
+        outline(1.2, 0.8); g.strokeRoundedRect(x - 5.2 * u, y + 1.4 * u, 10.4 * u, 3.8 * u, 1.2 * u);
+        // Глаза (опасный свет)
+        g.fillStyle(locked ? 0x4f5a68 : 0x220606, 1);
+        g.fillEllipse(x - 2.6 * u, y - 2.4 * u, 3.4 * u, 3.8 * u);
+        g.fillEllipse(x + 2.6 * u, y - 2.4 * u, 3.4 * u, 3.8 * u);
+        g.fillStyle(p.acc, locked ? 0.45 : 1);
+        g.fillCircle(x - 2.6 * u, y - 2.4 * u, 1.05 * u);
+        g.fillCircle(x + 2.6 * u, y - 2.4 * u, 1.05 * u);
+        // Нос
+        g.fillStyle(locked ? 0x4f5a68 : 0x2b1b10, 1);
+        g.fillTriangle(x, y - 0.4 * u, x - 1.2 * u, y + 1.6 * u, x + 1.2 * u, y + 1.6 * u);
+        // Челюсть/зубы
+        g.fillStyle(locked ? 0xaab4c2 : 0xe7dfd1, 1);
+        g.fillRoundedRect(x - 4.4 * u, y + 4.8 * u, 8.8 * u, 3.8 * u, 1.2 * u);
+        outline(1.2, 0.8); g.strokeRoundedRect(x - 4.4 * u, y + 4.8 * u, 8.8 * u, 3.8 * u, 1.2 * u);
+        g.lineStyle(1.1, locked ? 0x5d6978 : 0x7a6a56, 0.9);
+        for (let i = -2; i <= 2; i++) g.lineBetween(x + i * 1.55 * u, y + 5 * u, x + i * 1.55 * u, y + 8.2 * u);
+        // Трещина
+        g.lineStyle(1.2, p.acc, locked ? 0.35 : 0.75);
+        g.lineBetween(x + 4.6 * u, y - 5.6 * u, x + 2.8 * u, y - 2.2 * u);
+        g.lineBetween(x + 2.8 * u, y - 2.2 * u, x + 3.8 * u, y - 0.2 * u);
         break;
-      case 'skull': // испытание
-        // Основной череп
-        g.strokeCircle(x, y - 2 * u, 6 * u);
-        // Глазницы
-        g.fillStyle(color, 0.8);
-        g.fillCircle(x - 2.4 * u, y - 2.5 * u, 1.4 * u);
-        g.fillCircle(x + 2.4 * u, y - 2.5 * u, 1.4 * u);
-        // Носовая кость
-        g.lineStyle(1.5, color, 1);
-        g.lineBetween(x - 1 * u, y, x + 1 * u, y);
-        g.lineBetween(x, y - 1 * u, x, y + 1 * u);
-        // Челюсть
-        g.strokeRoundedRect(x - 3.5 * u, y + 3 * u, 7 * u, 5 * u, 1 * u);
-        // Зубы
-        g.lineStyle(1, color, 1);
-        for (let i = -2; i <= 2; i++) {
-          g.lineBetween(x + i * 1.5 * u, y + 3 * u, x + i * 1.5 * u, y + 5 * u);
+      }
+      case 'medal': { // рейтинг — золотая медаль с лентой
+        const p = pal(0xffc933, 0xffe680, 0xd08b00, 0xff5a5a);
+        // Лента
+        g.fillStyle(p.acc, 1);
+        g.fillTriangle(x - 5.8 * u, y - 9.6 * u, x - 0.4 * u, y - 1.4 * u, x - 3.2 * u, y - 9.6 * u);
+        g.fillStyle(locked ? 0x7b8796 : 0x3aa0ff, 1);
+        g.fillTriangle(x + 5.8 * u, y - 9.6 * u, x + 0.4 * u, y - 1.4 * u, x + 3.2 * u, y - 9.6 * u);
+        outline(1, 0.6);
+        g.strokeTriangle(x - 5.8 * u, y - 9.6 * u, x - 0.4 * u, y - 1.4 * u, x - 3.2 * u, y - 9.6 * u);
+        g.strokeTriangle(x + 5.8 * u, y - 9.6 * u, x + 0.4 * u, y - 1.4 * u, x + 3.2 * u, y - 9.6 * u);
+        // Медаль
+        if (!locked) { g.fillStyle(p.glow, hover ? 0.2 : 0.12); g.fillCircle(x, y + 2.8 * u, 8.4 * u); }
+        g.fillStyle(p.c, 1); g.fillCircle(x, y + 2.8 * u, 6.6 * u);
+        g.fillStyle(p.a, 1); g.fillCircle(x, y + 2.8 * u, 5.7 * u);
+        g.fillStyle(p.hi, locked ? 0.12 : 0.28);
+        g.fillCircle(x - 1.8 * u, y + 0.9 * u, 2.2 * u);
+        outline(1.5); g.strokeCircle(x, y + 2.8 * u, 6.6 * u);
+        g.lineStyle(1.2, p.b, locked ? 0.4 : 0.9); g.strokeCircle(x, y + 2.8 * u, 4.4 * u);
+        // Звезда в центре
+        const mpts = [];
+        for (let i = 0; i < 10; i++) {
+          const a = -Math.PI / 2 + i * Math.PI / 5;
+          const r = (i % 2 === 0 ? 2.7 : 1.2) * u;
+          mpts.push(new Phaser.Geom.Point(x + Math.cos(a) * r, y + 2.9 * u + Math.sin(a) * r));
         }
-        // Трещины
-        g.lineStyle(1, color, 0.6);
-        g.lineBetween(x - 4 * u, y - 4 * u, x - 2 * u, y - 1 * u);
-        g.lineBetween(x + 4 * u, y - 4 * u, x + 2 * u, y - 1 * u);
+        g.fillStyle(p.b, 1); g.fillPoints(mpts, true);
         break;
-      case 'medal': // рейтинг
-        g.strokeCircle(x, y + 2 * u, 6 * u);
-        g.fillCircle(x, y + 2 * u, 1.8 * u);
-        g.lineBetween(x - 4 * u, y - 8 * u, x - 1 * u, y - 2 * u);
-        g.lineBetween(x + 4 * u, y - 8 * u, x + 1 * u, y - 2 * u);
+      }
+      case 'bolt': { // быстрый бой — электрическая молния
+        const p = pal(0xffe14a, 0xfff48a, 0xe6a800, 0x53d8ff);
+        if (!locked) { g.fillStyle(p.glow, hover ? 0.22 : 0.12); g.fillCircle(x, y, 10.2 * u); }
+        const bolt = [
+          new Phaser.Geom.Point(x + 2.6 * u, y - 9.8 * u),
+          new Phaser.Geom.Point(x - 4.8 * u, y + 0.6 * u),
+          new Phaser.Geom.Point(x - 0.4 * u, y + 0.6 * u),
+          new Phaser.Geom.Point(x - 2.8 * u, y + 9.8 * u),
+          new Phaser.Geom.Point(x + 4.8 * u, y - 1.2 * u),
+          new Phaser.Geom.Point(x + 0.4 * u, y - 1.2 * u)
+        ];
+        g.fillStyle(p.c, 1); g.fillPoints(bolt, true);
+        const boltIn = bolt.map(pt => new Phaser.Geom.Point(x + (pt.x - x) * 0.86, y + (pt.y - y) * 0.86));
+        g.fillStyle(p.a, 1); g.fillPoints(boltIn, true);
+        g.fillStyle(p.hi, locked ? 0.18 : 0.35);
+        g.fillTriangle(x + 1.2 * u, y - 7.4 * u, x - 2.2 * u, y - 0.4 * u, x - 0.2 * u, y - 0.8 * u);
+        g.lineStyle(1.4, locked ? 0x3a4352 : 0x0b1020, 0.95); g.strokePoints(bolt, true);
+        // искры
+        g.fillStyle(p.acc, locked ? 0.35 : 0.9);
+        g.fillCircle(x - 6.2 * u, y - 3.6 * u, 1 * u);
+        g.fillCircle(x + 6.4 * u, y + 3.4 * u, 0.9 * u);
         break;
-      case 'bolt': // быстрый бой
-        g.fillTriangle(x + 2 * u, y - 9 * u, x - 4 * u, y + 1 * u, x, y + 1 * u);
-        g.fillTriangle(x - 2 * u, y + 9 * u, x + 4 * u, y - 1 * u, x, y - 1 * u);
+      }
+      case 'list': { // список матчей — цветные строки
+        const p = pal(0x63b3ff, 0xa8d7ff, 0x2f6fcb, 0x49e2a0);
+        g.fillStyle(locked ? 0x46515f : 0x15243a, 0.95);
+        g.fillRoundedRect(x - 8.8 * u, y - 8.2 * u, 17.6 * u, 16.4 * u, 2.4 * u);
+        outline(1.4); g.strokeRoundedRect(x - 8.8 * u, y - 8.2 * u, 17.6 * u, 16.4 * u, 2.4 * u);
+        const rows = [
+          { yy: y - 4.2 * u, w: 10.8, c: p.acc },
+          { yy: y + 0.2 * u, w: 13.2, c: p.a },
+          { yy: y + 4.6 * u, w: 8.2, c: locked ? 0x98a5b4 : 0xffc04d }
+        ];
+        rows.forEach(r => {
+          g.fillStyle(r.c, 1); g.fillCircle(x - 5.8 * u, r.yy, 1.15 * u);
+          g.fillStyle(r.c, locked ? 0.45 : 0.22); g.fillRoundedRect(x - 3.6 * u, r.yy - 1.2 * u, r.w * u, 2.4 * u, 1 * u);
+          g.lineStyle(1.4, r.c, 1); g.lineBetween(x - 3.2 * u, r.yy, x - 3.2 * u + (r.w - 0.8) * u, r.yy);
+        });
         break;
-      case 'list': // выбрать матч
-        g.lineBetween(x - 7 * u, y - 5 * u, x + 7 * u, y - 5 * u);
-        g.lineBetween(x - 7 * u, y, x + 7 * u, y);
-        g.lineBetween(x - 7 * u, y + 5 * u, x + 3 * u, y + 5 * u);
+      }
+      case 'layers': { // мои уровни — стопка слоёв
+        const cols = locked ? [0x8894a3, 0x6b7788, 0x556170] : [0xff8f4d, 0x44d2ff, 0x8d7bff];
+        if (!locked) { g.fillStyle(0x6ad8ff, 0.08); g.fillCircle(x, y, 10 * u); }
+        const layer = (yy, col, hi) => {
+          g.fillStyle(col, 1);
+          g.beginPath();
+          g.moveTo(x - 8.4 * u, yy);
+          g.lineTo(x, yy - 4.8 * u);
+          g.lineTo(x + 8.4 * u, yy);
+          g.lineTo(x, yy + 4.8 * u);
+          g.closePath(); g.fillPath();
+          g.fillStyle(hi, locked ? 0.12 : 0.28);
+          g.beginPath();
+          g.moveTo(x - 6.2 * u, yy - 0.2 * u);
+          g.lineTo(x, yy - 3.8 * u);
+          g.lineTo(x + 1.8 * u, yy - 2.6 * u);
+          g.lineTo(x - 4.4 * u, yy + 0.8 * u);
+          g.closePath(); g.fillPath();
+          g.lineStyle(1.2, locked ? 0x3a4352 : 0x0b1020, 0.9);
+          g.beginPath();
+          g.moveTo(x - 8.4 * u, yy);
+          g.lineTo(x, yy - 4.8 * u);
+          g.lineTo(x + 8.4 * u, yy);
+          g.lineTo(x, yy + 4.8 * u);
+          g.closePath(); g.strokePath();
+        };
+        layer(y - 4.2 * u, cols[2], 0xffffff);
+        layer(y + 0.2 * u, cols[1], 0xffffff);
+        layer(y + 4.6 * u, cols[0], 0xffffff);
         break;
-      case 'layers': // мои уровни
-        g.fillTriangle(x - 8 * u, y - 2 * u, x, y - 7 * u, x + 8 * u, y - 2 * u);
-        g.lineBetween(x - 8 * u, y + 2 * u, x, y + 7 * u);
-        g.lineBetween(x + 8 * u, y + 2 * u, x, y + 7 * u);
+      }
+      case 'person': { // персонаж
+        const p = pal(0x5fd4ff, 0xb3ecff, 0x2386b8, 0xffd24a);
+        g.fillStyle(p.c, 1); g.fillCircle(x, y - 4.8 * u, 4.3 * u);
+        g.fillStyle(p.a, 1); g.fillCircle(x - 0.5 * u, y - 5.2 * u, 3.8 * u);
+        g.fillStyle(p.hi, locked ? 0.12 : 0.24); g.fillCircle(x - 1.6 * u, y - 6.3 * u, 1.3 * u);
+        outline(1.3); g.strokeCircle(x, y - 4.8 * u, 4.3 * u);
+        g.fillStyle(p.a, 1);
+        g.fillRoundedRect(x - 6.8 * u, y + 0.2 * u, 13.6 * u, 8.8 * u, { tl: 5, tr: 5, bl: 2.2, br: 2.2 });
+        g.fillStyle(p.c, 0.55);
+        g.fillRoundedRect(x - 1.2 * u, y + 0.8 * u, 2.4 * u, 8.2 * u, 1);
+        outline(1.3);
+        g.strokeRoundedRect(x - 6.8 * u, y + 0.2 * u, 13.6 * u, 8.8 * u, { tl: 5, tr: 5, bl: 2.2, br: 2.2 });
+        g.fillStyle(p.acc, 1); g.fillCircle(x, y + 3.2 * u, 1.1 * u);
         break;
-      case 'person': // персонаж
-        g.fillCircle(x, y - 5 * u, 3.6 * u);
-        g.fillTriangle(x - 6 * u, y + 9 * u, x, y - 1 * u, x + 6 * u, y + 9 * u);
+      }
+      case 'friends': { // друзья — два персонажа
+        const p = pal(0x58d68d, 0xa4f0c1, 0x248a4f, 0x59c2ff);
+        const buddy = (bx, by, colA, colC, sc = 1) => {
+          g.fillStyle(colC, 1); g.fillCircle(bx, by - 3.8 * u * sc, 3.1 * u * sc);
+          g.fillStyle(colA, 1); g.fillCircle(bx - 0.3 * u * sc, by - 4.1 * u * sc, 2.7 * u * sc);
+          outline(1.1, 0.85); g.strokeCircle(bx, by - 3.8 * u * sc, 3.1 * u * sc);
+          g.fillStyle(colA, 1);
+          g.fillRoundedRect(bx - 4.8 * u * sc, by - 0.4 * u * sc, 9.6 * u * sc, 6.8 * u * sc, { tl: 3.6, tr: 3.6, bl: 1.8, br: 1.8 });
+          outline(1.1, 0.85);
+          g.strokeRoundedRect(bx - 4.8 * u * sc, by - 0.4 * u * sc, 9.6 * u * sc, 6.8 * u * sc, { tl: 3.6, tr: 3.6, bl: 1.8, br: 1.8 });
+        };
+        buddy(x - 4.2 * u, y + 0.8 * u, p.a, p.c, 1);
+        buddy(x + 4.2 * u, y + 0.8 * u, locked ? 0x98a5b4 : 0xa8d7ff, locked ? 0x6b7788 : 0x2f6fcb, 1);
+        if (!locked) {
+          g.fillStyle(p.acc, 0.95); g.fillCircle(x, y - 6.8 * u, 1.5 * u);
+          g.fillStyle(0xffffff, 0.8); g.fillCircle(x - 0.4 * u, y - 7.1 * u, 0.5 * u);
+        }
         break;
-      case 'friends': // друзья
-        g.fillCircle(x - 4 * u, y - 4 * u, 3 * u);
-        g.fillCircle(x + 4 * u, y - 4 * u, 3 * u);
-        g.fillTriangle(x - 9 * u, y + 8 * u, x - 4 * u, y, x + 1 * u, y + 8 * u);
-        g.fillTriangle(x - 1 * u, y + 8 * u, x + 4 * u, y, x + 9 * u, y + 8 * u);
-        break;
-      case 'gang': { // банда — трое плечом к плечу
-        g.fillCircle(x - 5 * u, y - 4 * u, 2.6 * u);
-        g.fillCircle(x, y - 5 * u, 2.6 * u);
-        g.fillCircle(x + 5 * u, y - 4 * u, 2.6 * u);
-        g.fillRoundedRect(x - 9 * u, y, 18 * u, 8 * u, 3 * u);
+      }
+      case 'gang': { // банда — трое, центральный лидер
+        const c1 = locked ? 0x98a5b4 : 0xff8a5b;
+        const c2 = locked ? 0xb3bcc8 : 0xffd24a;
+        const c3 = locked ? 0x7f8b99 : 0x59c2ff;
+        if (!locked) { g.fillStyle(0xff9a4a, 0.08); g.fillCircle(x, y, 10 * u); }
+        const member = (bx, by, col, sc, lead) => {
+          g.fillStyle(locked ? 0x5d6978 : 0x000000, 0.18);
+          g.fillEllipse(bx, by + 6.4 * u * sc, 5.4 * u * sc, 1.8 * u * sc);
+          g.fillStyle(col, 1); g.fillCircle(bx, by - 4.1 * u * sc, 2.9 * u * sc);
+          g.fillStyle(0xffffff, locked ? 0.08 : 0.18); g.fillCircle(bx - 0.7 * u * sc, by - 4.8 * u * sc, 1 * u * sc);
+          outline(1.1, 0.85); g.strokeCircle(bx, by - 4.1 * u * sc, 2.9 * u * sc);
+          g.fillStyle(col, 0.95);
+          g.fillRoundedRect(bx - 4.4 * u * sc, by - 0.8 * u * sc, 8.8 * u * sc, 7.1 * u * sc, { tl: 3.2, tr: 3.2, bl: 1.8, br: 1.8 });
+          outline(1.1, 0.85);
+          g.strokeRoundedRect(bx - 4.4 * u * sc, by - 0.8 * u * sc, 8.8 * u * sc, 7.1 * u * sc, { tl: 3.2, tr: 3.2, bl: 1.8, br: 1.8 });
+          if (lead && !locked) {
+            g.fillStyle(0xfff0a0, 1);
+            g.fillTriangle(bx, by - 8.7 * u * sc, bx - 1.4 * u * sc, by - 6.7 * u * sc, bx + 1.4 * u * sc, by - 6.7 * u * sc);
+          }
+        };
+        member(x - 5.4 * u, y + 1.2 * u, c1, 0.92, false);
+        member(x + 5.4 * u, y + 1.2 * u, c3, 0.92, false);
+        member(x, y + 0.2 * u, c2, 1.04, true);
         break;
       }
       case 'event': { // ивент — календарь со звездой
-        g.strokeRoundedRect(x - 8 * u, y - 5 * u, 16 * u, 14 * u, 3 * u);
-        g.lineBetween(x - 8 * u, y, x + 8 * u, y);
-        g.lineBetween(x - 4 * u, y - 5 * u, x - 4 * u, y - 8 * u);
-        g.lineBetween(x + 4 * u, y - 5 * u, x + 4 * u, y - 8 * u);
+        const p = pal(0x6aa9ff, 0xa9d0ff, 0x2f5fae, 0xffcc33);
+        g.fillStyle(locked ? 0x46515f : 0x13233f, 1);
+        g.fillRoundedRect(x - 8.4 * u, y - 5.4 * u, 16.8 * u, 14.6 * u, 2.6 * u);
+        g.fillStyle(p.a, 1);
+        g.fillRoundedRect(x - 7.6 * u, y - 4.6 * u, 15.2 * u, 13 * u, 2.2 * u);
+        // Шапка календаря
+        g.fillStyle(p.c, 1);
+        g.fillRoundedRect(x - 7.6 * u, y - 4.6 * u, 15.2 * u, 4.2 * u, { tl: 2.2, tr: 2.2, bl: 0.6, br: 0.6 });
+        outline(1.5); g.strokeRoundedRect(x - 8.2 * u, y - 5.2 * u, 16.4 * u, 14.2 * u, 2.4 * u);
+        // Кольца
+        g.lineStyle(2, p.acc, 1);
+        g.lineBetween(x - 3.8 * u, y - 7.8 * u, x - 3.8 * u, y - 3.8 * u);
+        g.lineBetween(x + 3.8 * u, y - 7.8 * u, x + 3.8 * u, y - 3.8 * u);
+        // Сетка дней
+        g.fillStyle(p.hi, locked ? 0.12 : 0.18);
+        for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
+          if (r === 1 && c === 1) continue;
+          g.fillRoundedRect(x - 5.4 * u + c * 3.8 * u, y + 0.8 * u + r * 3.2 * u, 2.6 * u, 2.1 * u, 0.6 * u);
+        }
+        // Звезда события
         const epts = [];
         for (let i = 0; i < 10; i++) {
-          const ang = -Math.PI / 2 + i * Math.PI / 5;
-          const rad = (i % 2 === 0 ? 3.6 : 1.6) * u;
-          epts.push(new Phaser.Geom.Point(x + Math.cos(ang) * rad, y + 4.5 * u + Math.sin(ang) * rad));
+          const a = -Math.PI / 2 + i * Math.PI / 5;
+          const r = (i % 2 === 0 ? 3.9 : 1.7) * u;
+          epts.push(new Phaser.Geom.Point(x + Math.cos(a) * r, y + 4.4 * u + Math.sin(a) * r));
         }
-        g.fillPoints(epts, true);
+        g.fillStyle(p.acc, 1); g.fillPoints(epts, true);
+        g.lineStyle(1.1, locked ? 0x3a4352 : 0x0b1020, 0.8); g.strokePoints(epts, true);
         break;
       }
-      case 'upgrade': { // модернизация — молот
-        g.lineStyle(3, color, 1);
-        g.lineBetween(x - 6 * u, y + 8 * u, x + 3 * u, y - 3 * u);
-        g.fillStyle(color, 1);
-        g.fillRoundedRect(x - 1 * u, y - 9 * u, 10 * u, 6 * u, 1.5 * u);
-        g.lineBetween(x + 9 * u, y - 9 * u, x + 9 * u, y - 3 * u);
+      case 'upgrade': { // модернизация — молот и искра
+        const p = pal(0xb7c7db, 0xe6eef8, 0x67798f, 0xff8f3d);
+        if (!locked) { g.fillStyle(0xffa040, hover ? 0.16 : 0.09); g.fillCircle(x, y, 10 * u); }
+        // Рукоять
+        g.lineStyle(3.2, locked ? 0x7b8796 : 0x8a4f1f, 1);
+        g.lineBetween(x - 6.2 * u, y + 8.4 * u, x + 2.8 * u, y - 2.4 * u);
+        g.lineStyle(1.4, locked ? 0xaab4c2 : 0xd98a42, 1);
+        g.lineBetween(x - 5.4 * u, y + 7.8 * u, x + 2.2 * u, y - 1.8 * u);
+        // Боёк
+        g.fillStyle(p.c, 1);
+        g.fillRoundedRect(x - 2.2 * u, y - 9.2 * u, 11.4 * u, 6.6 * u, 1.8 * u);
+        g.fillStyle(p.a, 1);
+        g.fillRoundedRect(x - 1.5 * u, y - 8.5 * u, 10 * u, 3.1 * u, 1.2 * u);
+        outline(1.4); g.strokeRoundedRect(x - 2.2 * u, y - 9.2 * u, 11.4 * u, 6.6 * u, 1.8 * u);
+        g.fillStyle(p.b, 1);
+        g.fillRoundedRect(x + 8.8 * u, y - 8.4 * u, 1.8 * u, 5 * u, 0.8 * u);
+        // Искра апгрейда
+        g.fillStyle(p.acc, 1);
+        g.fillCircle(x + 6.8 * u, y + 5.6 * u, 2.1 * u);
+        g.lineStyle(1.6, p.acc, 1);
+        g.lineBetween(x + 6.8 * u, y + 2.2 * u, x + 6.8 * u, y + 9 * u);
+        g.lineBetween(x + 3.4 * u, y + 5.6 * u, x + 10.2 * u, y + 5.6 * u);
         break;
       }
-      default:
-        g.strokeCircle(x, y, 8 * u);
+      default: {
+        const p = pal(0x63b3ff, 0xa8d7ff, 0x2f6fcb, 0xffd24a);
+        g.fillStyle(p.a, 1); g.fillCircle(x, y, 7.8 * u);
+        outline(1.5); g.strokeCircle(x, y, 7.8 * u);
+        g.fillStyle(p.acc, 1); g.fillCircle(x, y, 2.2 * u);
         break;
+      }
     }
   }
 
@@ -596,48 +920,77 @@ export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniT
     }
     txt.setX((iconW - rightW) / 2);
 
-    // Иконка-якорь ВНУТРИ кнопки слева: авторский PNG, иначе вектор.
-    // Серая на закрытой, белая, жёлтая при наведении (тинт).
-    // Под PNG — тёмный круг с ободком, чтоб не сливался с фоном.
-    let iconGfx = null;
-    let iconImg = null;
-    let iconBg = null;
-    const paintIcon = (color, isHover = false) => {
-      if (!icon) return;
+    // Иконка-якорь ВНУТРИ кнопки слева.
+    // Состояния normal/hover/locked запекаются в RenderTexture один раз при
+    // создании кнопки. На hover — просто setTexture(), ноль геометрии в GPU.
+    let iconSprite = null;
+
+    if (icon) {
       const png = BTN_ICON_PNG[icon];
+      const iconSize = (compactIcon ? 12 : 15);
+      const rtSize = iconR * 2 + 4; // чуть больше круга-фона
+
+      // Запекаем три состояния: normal, hover, locked.
+      // Ключи хранятся в сцене через _btnIconRTKeys для очистки в shutdown.
+      const bakeState = (stateKey, drawColor, isHover, isLocked) => {
+        const key = `__btnIcon_${icon}_${stateKey}_${compactIcon ? 'c' : 'l'}`;
+        if (!this.textures.exists(key)) {
+          const g = this.make.graphics({ x: 0, y: 0, add: false });
+          const cx2 = rtSize / 2, cy2 = rtSize / 2;
+          if (png && this.textures.exists(png)) {
+            // PNG-вариант: круг-подложка + тинтованное изображение
+            g.fillStyle(isHover ? 0x1f2742 : 0x090c18, 0.9);
+            g.fillCircle(cx2, cy2, iconR);
+            g.lineStyle(1.5, isHover ? 0xffd24a : 0x2e3b58, 0.85);
+            g.strokeCircle(cx2, cy2, iconR);
+          } else {
+            // Вектор: рисуем иконку со смещением в центр RT.
+            this._drawBtnIcon(g, icon, cx2, cy2, iconSize, drawColor);
+          }
+          g.generateTexture(key, rtSize, rtSize);
+          g.destroy();
+          // Для PNG поверх фона добавляем отдельную копию спрайта с тинтом —
+          // это делается через iconSprite.setTint() ниже, фон в RT.
+          if (!this._btnIconRTKeys) this._btnIconRTKeys = [];
+          this._btnIconRTKeys.push(key);
+        }
+        return key;
+      };
+
+      const keyNormal = bakeState('normal', locked ? 0x667788 : 0xdfe8ff, false, locked);
+      const keyHover  = bakeState('hover',  0xffff55, true, false);
+      const keyLocked = bakeState('locked', 0x667788, false, true);
+
+      iconSprite = this.add.image(iconX, 0, locked ? keyLocked : keyNormal);
+      container.add(iconSprite);
+
+      // PNG поверх запечённого фона: отдельный Image с тинтом.
+      let iconImgPng = null;
       if (png && this.textures.exists(png)) {
-        if (!iconImg) {
-          iconBg = this.add.graphics();
-          container.add(iconBg);
-          iconImg = this.add.image(iconX, 0, png);
-          // Фит с сохранением пропорций
-          try {
-            const src = this.textures.get(png).getSourceImage();
-            const sw = Math.max(1, (src && src.width) || 1);
-            const sh = Math.max(1, (src && src.height) || 1);
-            iconImg.setScale(Math.min(iconPx / sw, iconPx / sh));
-          } catch (e) { iconImg.setDisplaySize(iconPx, iconPx); }
-          container.add(iconImg);
-        }
-        if (iconBg) {
-          iconBg.clear();
-          iconBg.fillStyle(isHover ? 0x1f2742 : 0x090c18, 0.9);
-          iconBg.fillCircle(iconX, 0, iconR);
-          iconBg.lineStyle(1.5, isHover ? 0xffd24a : 0x2e3b58, 0.85);
-          iconBg.strokeCircle(iconX, 0, iconR);
-        }
-        iconImg.setTint(color);
-        if (iconGfx) iconGfx.clear();
-        return;
+        iconImgPng = this.add.image(iconX, 0, png);
+        try {
+          const src = this.textures.get(png).getSourceImage();
+          const sw = Math.max(1, (src && src.width) || 1);
+          const sh = Math.max(1, (src && src.height) || 1);
+          iconImgPng.setScale(Math.min(iconPx / sw, iconPx / sh));
+        } catch (e) { iconImgPng.setDisplaySize(iconPx, iconPx); }
+        iconImgPng.setTint(locked ? 0x667788 : 0xdfe8ff);
+        container.add(iconImgPng);
       }
-      if (!iconGfx) {
-        iconGfx = this.add.graphics();
-        container.add(iconGfx);
-      }
-      this._drawBtnIcon(iconGfx, icon, iconX, 0, compactIcon ? 12 : 15, color);
-    };
-    paintIcon(locked ? 0x667788 : 0xdfe8ff, false);
-    container._paintIcon = (col) => paintIcon(col, false);
+
+      // paintIcon теперь только меняет ключ текстуры и тинт — без GPU upload.
+      var paintIcon = (color, isHover = false) => {
+        if (!iconSprite) return;
+        const useKey = locked ? keyLocked : (isHover ? keyHover : keyNormal);
+        iconSprite.setTexture(useKey);
+        if (iconImgPng) iconImgPng.setTint(color);
+      };
+      container._paintIcon = (col) => paintIcon(col, false);
+    } else {
+      // Нет иконки — пустышка, чтобы внешний код не падал на _paintIcon.
+      var paintIcon = () => {};
+      container._paintIcon = () => {};
+    }
 
     container.setSize(tw, th);
 
@@ -682,26 +1035,76 @@ export function createGearButton(x, y) {
 
     const draw = () => {
       g.clear();
-      const color = hover ? 0xffff55 : 0xffffff;
-      g.lineStyle(3, color, 1);
-      g.strokeCircle(x, y, 11);
-      g.fillStyle(color, 1);
-      g.fillCircle(x, y, 4);
-      for (let i = 0; i < 8; i++) {
-        const ang = (i / 8) * Math.PI * 2;
-        const inner = 13;
-        const outer = 17;
-        g.lineBetween(
-          x + Math.cos(ang) * inner, y + Math.sin(ang) * inner,
-          x + Math.cos(ang) * outer, y + Math.sin(ang) * outer
-        );
+      const bgCol   = hover ? 0x1e1608 : 0x0e1120;
+      const rimCol  = hover ? 0xffe066 : 0xd8a920;
+      const gearCol = hover ? 0xffe066 : 0xd8a920;
+      const holeCol = hover ? 0x1e1608 : 0x0e1120;
+
+      // Шестиугольная подложка (плоской стороной вверх/вниз)
+      const R = 15;
+      g.fillStyle(bgCol, 0.95);
+      g.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+        if (i === 0) g.moveTo(x + Math.cos(a) * R, y + Math.sin(a) * R);
+        else         g.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R);
       }
+      g.closePath();
+      g.fillPath();
+      g.lineStyle(hover ? 1.8 : 1.4, rimCol, 0.95);
+      g.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+        if (i === 0) g.moveTo(x + Math.cos(a) * R, y + Math.sin(a) * R);
+        else         g.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R);
+      }
+      g.closePath();
+      g.strokePath();
+
+      // Шестерня: 6 зубьев, stroke-стиль — силуэт читается чётко
+      const teeth = 6;
+      const rOuter = 9.5;
+      const rInner = 6.5;
+      const toothHalf = 0.32;
+      g.lineStyle(hover ? 1.8 : 1.5, gearCol, 1);
+      g.beginPath();
+      for (let i = 0; i < teeth; i++) {
+        const a     = (i / teeth) * Math.PI * 2;
+        const aNext = ((i + 1) / teeth) * Math.PI * 2;
+        const aMid  = (a + aNext) / 2;
+        g.moveTo(x + Math.cos(a - toothHalf) * rInner, y + Math.sin(a - toothHalf) * rInner);
+        g.lineTo(x + Math.cos(a - toothHalf) * rOuter, y + Math.sin(a - toothHalf) * rOuter);
+        g.lineTo(x + Math.cos(a + toothHalf) * rOuter, y + Math.sin(a + toothHalf) * rOuter);
+        g.lineTo(x + Math.cos(a + toothHalf) * rInner, y + Math.sin(a + toothHalf) * rInner);
+        g.lineTo(x + Math.cos(aMid) * rInner, y + Math.sin(aMid) * rInner);
+      }
+      g.strokePath();
+
+      // Внешнее кольцо шестерни
+      g.lineStyle(hover ? 1.4 : 1.1, gearCol, 0.5);
+      g.strokeCircle(x, y, rOuter + 1);
+
+      // Центральный круг + тактическое перекрестие
+      const cr = 3.2;
+      g.fillStyle(gearCol, 1);
+      g.fillCircle(x, y, cr);
+      g.fillStyle(holeCol, 1);
+      g.fillCircle(x, y, 1.6);
+      g.lineStyle(1.2, gearCol, 0.9);
+      g.lineBetween(x - 6.5, y, x - cr - 0.8, y);
+      g.lineBetween(x + cr + 0.8, y, x + 6.5, y);
+      g.lineBetween(x, y - 6.5, x, y - cr - 0.8);
+      g.lineBetween(x, y + cr + 0.8, x, y + 6.5);
+
+      // Блик
+      g.fillStyle(0xffffff, hover ? 0.45 : 0.18);
+      g.fillCircle(x - 3.5, y - 4, 1.4);
     };
 
-    const hitArea = this.add.rectangle(x, y, 40, 40, 0xffffff, 0);
+    const hitArea = this.add.rectangle(x, y, 36, 36, 0xffffff, 0);
     hitArea.setInteractive({ useHandCursor: true });
-    hitArea.on('pointerover', () => { hover = true; draw(); });
-    hitArea.on('pointerout', () => { hover = false; draw(); });
+    hitArea.on('pointerover', () => { hover = true;  draw(); });
+    hitArea.on('pointerout',  () => { hover = false; draw(); });
     hitArea.on('pointerdown', () => this.scene.start('SettingsScene'));
     draw();
   }
@@ -709,37 +1112,76 @@ export function createGearButton(x, y) {
 export function createFullscreenButton(x, y) {
     const g = this.add.graphics();
     let hover = false;
-    const drawArrow = (x1, y1, x2, y2) => {
-      const ang = Math.atan2(y2 - y1, x2 - x1);
-      const h = 5;
-      g.lineBetween(x1, y1, x2, y2);
-      g.lineBetween(x2, y2, x2 + Math.cos(ang + Math.PI - 0.5) * h, y2 + Math.sin(ang + Math.PI - 0.5) * h);
-      g.lineBetween(x2, y2, x2 + Math.cos(ang + Math.PI + 0.5) * h, y2 + Math.sin(ang + Math.PI + 0.5) * h);
-    };
 
     const draw = (full) => {
       g.clear();
-      const color = hover ? 0xffff55 : 0xffffff;
-      g.lineStyle(3, color, 1);
-      g.strokeRoundedRect(x - 13, y - 13, 26, 26, 3);
-      const o = 15;
-      if (full) {
-        drawArrow(x - o, y - o, x - 7, y - 7);
-        drawArrow(x + o, y - o, x + 7, y - 7);
-        drawArrow(x - o, y + o, x - 7, y + 7);
-        drawArrow(x + o, y + o, x + 7, y + 7);
-      } else {
-        drawArrow(x - 7, y - 7, x - o, y - o);
-        drawArrow(x + 7, y - 7, x + o, y - o);
-        drawArrow(x - 7, y + 7, x - o, y + o);
-        drawArrow(x + 7, y + 7, x + o, y + o);
+      const bgCol  = hover ? 0x0f1e3a : 0x0e1120;
+      const rimCol = hover ? 0xffe066 : 0x8fb8ff;
+      const col    = hover ? 0xffe066 : 0x8fb8ff;
+
+      // Шестиугольная подложка (та же форма, что у шестерни — единый стиль пары)
+      const R = 15;
+      g.fillStyle(bgCol, 0.95);
+      g.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+        if (i === 0) g.moveTo(x + Math.cos(a) * R, y + Math.sin(a) * R);
+        else         g.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R);
       }
+      g.closePath();
+      g.fillPath();
+      g.lineStyle(hover ? 1.8 : 1.4, rimCol, 0.95);
+      g.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+        if (i === 0) g.moveTo(x + Math.cos(a) * R, y + Math.sin(a) * R);
+        else         g.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R);
+      }
+      g.closePath();
+      g.strokePath();
+
+      // Силуэт монитора: скруглённый прямоугольник экрана + подставка
+      const mW = 16, mH = 11, mR = 2;
+      const mx = x - mW / 2, my = y - mH / 2 - 1;
+      g.lineStyle(1.8, col, 1);
+      g.strokeRoundedRect(mx, my, mW, mH, mR);
+      // Тонкая горизонтальная полоска «статус-бар» внутри экрана
+      g.lineStyle(1, col, 0.35);
+      g.lineBetween(mx + 2, my + mH - 3, mx + mW - 2, my + mH - 3);
+      // Подставка: ножка + основание
+      g.lineStyle(1.6, col, 0.85);
+      g.lineBetween(x, my + mH, x, my + mH + 3);
+      g.lineBetween(x - 4, my + mH + 3, x + 4, my + mH + 3);
+
+      // Стрелки в углах экрана: full=true → к центру (сжать), false → от центра (развернуть)
+      const s = full ? -1 : 1;
+      const corners = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+      const aLen = 3.5; // длина «ножки» стрелки
+      const hLen = 2;   // длина галочки
+      g.lineStyle(1.5, col, 1);
+      corners.forEach(([sx, sy]) => {
+        // угол экрана как опорная точка
+        const ex = x + sx * (mW / 2 - 1);
+        const ey = (my + (sy < 0 ? 1 : mH - 4));
+        // кончик стрелки: внутри экрана если full, снаружи если !full
+        const tx2 = ex + sx * s * aLen;
+        const ty2 = ey + sy * s * aLen;
+        // основная линия стрелки
+        g.lineBetween(ex, ey, tx2, ty2);
+        // галочка (два усика на кончике, перпендикулярно направлению)
+        g.lineBetween(tx2, ty2, tx2 - sx * s * hLen, ty2);
+        g.lineBetween(tx2, ty2, tx2, ty2 - sy * s * hLen);
+      });
+
+      // Блик
+      g.fillStyle(0xffffff, hover ? 0.4 : 0.15);
+      g.fillCircle(x - 3.5, y - 4.5, 1.3);
     };
 
-    const hitArea = this.add.rectangle(x, y, 40, 40, 0xffffff, 0);
+    const hitArea = this.add.rectangle(x, y, 36, 36, 0xffffff, 0);
     hitArea.setInteractive({ useHandCursor: true });
-    hitArea.on('pointerover', () => { hover = true; draw(this.scale.isFullscreen); });
-    hitArea.on('pointerout', () => { hover = false; draw(this.scale.isFullscreen); });
+    hitArea.on('pointerover', () => { hover = true;  draw(this.scale.isFullscreen); });
+    hitArea.on('pointerout',  () => { hover = false; draw(this.scale.isFullscreen); });
     hitArea.on('pointerdown', () => {
       try {
         if (this.scale.isFullscreen) this.scale.stopFullscreen();
@@ -750,3 +1192,17 @@ export function createFullscreenButton(x, y) {
     this.scale.on('leavefullscreen', () => draw(false));
     draw(false);
   }
+
+// Удаляет все RenderTexture-ключи иконок кнопок, запечённых в этой сцене.
+// Вызывается из MenuScene.shutdown() — предотвращает утечку GPU-текстур
+// при повторных заходах в меню.
+export function _clearBtnIconCache(scene) {
+  try {
+    const keys = scene._btnIconRTKeys;
+    if (!keys || !keys.length) return;
+    keys.forEach(k => {
+      try { if (scene.textures.exists(k)) scene.textures.remove(k); } catch (e) {}
+    });
+    scene._btnIconRTKeys = [];
+  } catch (e) {}
+}

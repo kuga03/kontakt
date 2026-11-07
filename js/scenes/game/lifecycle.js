@@ -18,6 +18,7 @@ import { isMutId, hasMut, stripToKnife, applySpawnStats } from '../../data/mutat
 import { navGraph as navMeshGraph } from '../../ai/navMesh.js';
 
 import { gameW } from '../../ui/layout.js';
+import { setGameResolution } from '../../game.js';
 
 const classMap = { Assault, Tank, Medic, Sniper };
 
@@ -48,6 +49,8 @@ export function init() {
   }
 
 export function onShutdown() {
+    // Возвращаем 1x в меню — GPU не нужен суперсэмплинг на статичных экранах.
+    try { setGameResolution(1); } catch (e) {}
     this._flushPlayTime();
     this.input.setDefaultCursor('default');
     // Добиваем висящие перезарядки: setTimeout переживает рестарт сцены.
@@ -124,6 +127,8 @@ export function onShutdown() {
   }
 
 export function create(data) {
+    // Поднимаем разрешение рендера до качественного для игрового процесса.
+    try { setGameResolution('auto'); } catch (e) {}
     this.mode = data.mode || 'TDM';
     this.selectedClass = data.selectedClass || 'Assault';
     // Страховка от закрытого класса (старый сейв/прямой старт):
