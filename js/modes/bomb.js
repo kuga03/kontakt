@@ -284,25 +284,12 @@ export function updateTurret(scene, time, dt) {
       return;
     }
     if (c && !c.dead) {
-      // Турель на спине носильщика (как заряд бомбы): сзади по взгляду,
-      // на уровне лопаток — а не над головой. Центр ~38px над ногами:
-      // габарит 70px ложится на спину, не клиппит землю и голову.
-      let dir = 1;
+      // Турель не несётся на спине: рядом с именем носильщика показывается
+      // значок, а сама модель спрятана до потери/установки.
+      T.x = c.x; T.y = c.y;
       try {
-        if (typeof c.flipX === 'boolean') dir = c.flipX ? -1 : 1;
-        else if (typeof c.aimX === 'number' && typeof c.x === 'number') {
-          dir = c.aimX >= c.x ? 1 : -1;
-        }
-      } catch (e) {}
-      const bx = c.x - dir * 24, by = c.y - 38;
-      T.x = bx; T.y = by;
-      try {
-        T.img.setVelocity(0, 0);
-        T.img.setPosition(bx, by);
-        try {
-          const a = c._smokeHidden ? 0 : 1;
-          if (T.img.alpha !== a) T.img.alpha = a;
-        } catch (e) {}
+        if (T.img.visible) T.img.setVisible(false);
+        if (T.img.body) T.img.body.setVelocity(0, 0);
       } catch (e) {}
       // Установка на СВОЮ базу: стоять в зоне ±100 суммарно 10с.
       const home = c.team === 'blue' ? scene.blueBase : scene.enemyBase;
@@ -327,7 +314,7 @@ export function updateTurret(scene, time, dt) {
           const won = c.team === 'blue';
           try { if (T.installMark) T.installMark.destroy(); } catch (e) {}
           try { T.img.destroy(); } catch (e) {}
-          try { c.isCarrier = false; } catch (e) {}
+          try { c._turretCarrier = false; } catch (e) {}
           scene._turret = null;
           scene.endGame(won ? 'Синие победили' : 'Красные победили', won);
           return;
@@ -351,7 +338,11 @@ export function updateTurret(scene, time, dt) {
       if (Math.abs(p.x - T.x) > 50 || Math.abs(p.y - T.y) > 90) continue;
       T.carrier = p;
       T.install = 0;
-      try { p.isCarrier = true; } catch (e) {}
+      try { p._turretCarrier = true; } catch (e) {}
+      try {
+        T.img.setVisible(false);
+        if (T.img.body) T.img.body.setVelocity(0, 0);
+      } catch (e) {}
       try { scene._playFlagSfx(p.team === 'blue' ? 'ally' : 'foe'); } catch (e) {}
       break;
     }
@@ -364,8 +355,9 @@ export function dropTurret(scene) {
   try {
     const c = T.carrier;
     if (c) {
-      try { c.isCarrier = false; } catch (e) {}
+      try { c._turretCarrier = false; } catch (e) {}
       try {
+        T.img.setVisible(true);
         T.img.setPosition(c.x, c.y - 20);
         if (T.img.body) T.img.body.setVelocity(0, -60);
       } catch (e) {}
@@ -375,7 +367,11 @@ export function dropTurret(scene) {
     T.install = 0;
     try { if (T.installMark) { T.installMark.destroy(); T.installMark = null; } } catch (e) {}
     try { if (T.mark) { T.mark.destroy(); T.mark = null; } } catch (e) {}
-  } catch (e) { T.carrier = null; }
+  } catch (e) {
+    try { if (T && T.carrier) T.carrier._turretCarrier = false; } catch (e2) {}
+    try { if (T && T.img) T.img.setVisible(true); } catch (e2) {}
+    if (T) T.carrier = null;
+  }
 }
 
 // Маркер обезвреживания над лежащей бомбой: обратный отсчёт.

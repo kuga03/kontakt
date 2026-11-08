@@ -231,6 +231,27 @@ export function updateBars(player) {
       }
     }
   } catch (e) {}
+  // Значок турели рядом с именем носильщика (овертайм бомбы): турель не
+  // висит на спине, а отмечается иконкой у ника.
+  try {
+    if (!player._turretNameIcon) {
+      if (player.scene && player.scene.textures && player.scene.textures.exists('турель')) {
+        player._turretNameIcon = player.scene.add.image(0, 0, 'турель');
+        player._turretNameIcon.setDepth(7);
+        player._turretNameIcon.setDisplaySize(14, 14);
+      }
+    }
+    if (player._turretNameIcon) {
+      const showT = !!player._turretCarrier && !player.dead && !player._editorGrounded && player.nameText.visible;
+      if (showT) {
+        const nw = player.nameText.displayWidth || 0;
+        player._turretNameIcon.setPosition(player.nameText.x + nw / 2 + 12, player.nameText.y - 8);
+        if (!player._turretNameIcon.visible) player._turretNameIcon.setVisible(true);
+      } else if (player._turretNameIcon.visible) {
+        player._turretNameIcon.setVisible(false);
+      }
+    }
+  } catch (e) {}
   if (!showBars) {
     try { if (player._ammoMark && player._ammoMark.visible) { player._ammoMark.clear(); player._ammoMark.setVisible(false); } } catch (e) {}
     return;

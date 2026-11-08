@@ -17,7 +17,7 @@
 //      - Видны оконные проемы с силуэтами города/скал, освещение и панели.
 //   5. Свободные просторные фланги: спавны команд имеют открытый доступ во все 3 коридора.
 
-export const CURRENT_GEN_VERSION = 10;
+export const CURRENT_GEN_VERSION = 11;
 
 function addGround(objs, x, y, w, h, texKey) {
   objs.push({ type: 'ground', x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), texKey });
@@ -198,6 +198,8 @@ function buildOutpost(W, H, GT) {
   });
   putOnPlat(objs, bldMid.roof, 0.18, 90, 48, 'map_pipes');
   putOnPlat(objs, bldMid.roof, 0.82, 90, 48, 'map_pipes');
+  // Соединительный мостик между мезонинами реакторного цеха — сквозной маршрут по Y=700
+  addPlat(objs, 1900, 700, 460, 14, 'plat_ind_girder');
 
   // Верхняя диспетчерская вышка по центру (Y = 430, перепад от крыши 560 ровно 130px, ступени по 65px!):
   const tower = addPlat(objs, W * 0.50, 430, 260, 18, 'plat_ind_girder');
@@ -208,8 +210,7 @@ function buildOutpost(W, H, GT) {
   addPlat(objs, W * 0.50 + 150, 495, 70, 16, 'plat_ind_girder');
   putOnPlat(objs, tower, 0.5, 95, 48, 'map_generator');
 
-  // ВЕРХНИЙ ХАЙГРАУНД-МАРШРУТ (Y = 560):
-  // Высокие переходные мосты над улицей, соединяющие крыши цехов!
+  // ВЕРХНИЙ ХАЙГРАУНД-МАРШРУТ (Y = 560): переходные мосты по крышам цехов.
   // Мост 1: между левым цехом (x=1000) и реактором (x=1470), центр 1235, ширина 470
   const bridge1 = addPlat(objs, 1235, 560, 470, 18, 'plat_ind_girder');
   addPillar(objs, 1235, bridge1.top + 18, GT);
@@ -220,16 +221,29 @@ function buildOutpost(W, H, GT) {
   addPillar(objs, W - 1235, bridge2.top + 18, GT);
   putOnPlat(objs, bridge2, 0.5, 80, 45, 'map_sand_barrier');
 
-  // ПОДЪЕМЫ С УЛИЦЫ НА ВЕРХНИЕ МОСТЫ (сбоку у стен зданий, полностью свободные!):
-  // Лесенка у стены левого цеха (x = 1040): 850 -> 755 -> 655 -> 560 (чистый подъем!)
-  addPlat(objs, 1040, 755, 75, 16, 'plat_ind_girder');
-  addPlat(objs, 1040, 655, 75, 16, 'plat_ind_girder');
-  addDecor(objs, 1040, 680, 32, 180, 'map_ladder_truss', -1.5);
+  // СРЕДНИЙ МАРШРУТ (Y = 700): сквозные цеховые галереи/скайбриджи 2-го этажа.
+  // Разрыв по центру (перепрыгиваемый) даёт окно для подъёма с улицы.
+  const midBridge1L = addPlat(objs, 1095, 700, 210, 18, 'plat_ind_girder');
+  const midBridge1R = addPlat(objs, 1375, 700, 210, 18, 'plat_ind_girder');
+  addPillar(objs, 1095, 718, GT);
+  addPillar(objs, 1375, 718, GT);
+  putOnPlat(objs, midBridge1L, 0.45, 65, 40, 'map_pipes');
+  putOnPlat(objs, midBridge1R, 0.55, 65, 40, 'map_pipes');
 
-  // Лесенка у стены правого цеха (x = W - 1040)
-  addPlat(objs, W - 1040, 755, 75, 16, 'plat_ind_girder');
-  addPlat(objs, W - 1040, 655, 75, 16, 'plat_ind_girder');
-  addDecor(objs, W - 1040, 680, 32, 180, 'map_ladder_truss', -1.5);
+  const midBridge2L = addPlat(objs, W - 1375, 700, 210, 18, 'plat_ind_girder');
+  const midBridge2R = addPlat(objs, W - 1095, 700, 210, 18, 'plat_ind_girder');
+  addPillar(objs, W - 1095, 718, GT);
+  addPillar(objs, W - 1375, 718, GT);
+  putOnPlat(objs, midBridge2L, 0.45, 65, 40, 'map_pipes');
+  putOnPlat(objs, midBridge2R, 0.55, 65, 40, 'map_pipes');
+
+  // УЛИЧНЫЕ ПОДЪЕМЫ к среднему/верхнему маршрутам. Ступень стоит в разрыве
+  // галереи 700 (над головой свободно): 850 -> 775 -> 700; с галереи по
+  // наружной ступени здания (630) -> крыша/мост 560.
+  addPlat(objs, 1235, 775, 80, 16, 'plat_ind_girder');
+  addDecor(objs, 1235, 812, 28, 76, 'map_ladder_truss', -1.5);
+  addPlat(objs, W - 1235, 775, 80, 16, 'plat_ind_girder');
+  addDecor(objs, W - 1235, 812, 28, 76, 'map_ladder_truss', -1.5);
 
   // НИЖНИЙ МАРШРУТ (УЛИЦА):
   // Машина стоит на земле (GT = 850), ее верх на 765.
@@ -329,17 +343,31 @@ function buildCanyon(W, H, GT) {
   addPlat(objs, W * 0.50 + 150, 495, 70, 16, 'plat_canyon_wood');
   putOnPlat(objs, tower, 0.5, 90, 50, 'map_dune_rock');
 
-  // Средний маршрут (Y = 700): подвесные деревянные мосты через ущелье
-  const bridge1 = addPlat(objs, 1310, 700, 520, 18, 'plat_canyon_wood');
-  addPillar(objs, 1310, bridge1.top + 18, GT);
-  putOnPlat(objs, bridge1, 0.5, 75, 45, 'map_bags');
-  // Подъем с дна ущелья на мост: 850 -> 775 -> 700
-  addPlat(objs, 1310, 775, 120, 16, 'plat_canyon_wood');
+  // ВЕРХНИЙ МАРШРУТ (Y = 560): канатные/скальные переходы по кромкам плато.
+  const hiBridge1 = addPlat(objs, 1375, 560, 630, 18, 'plat_canyon_wood');
+  addPillar(objs, 1375, 578, 700);
+  putOnPlat(objs, hiBridge1, 0.5, 80, 45, 'map_sand_barrier');
+  const hiBridge2 = addPlat(objs, W - 1375, 560, 630, 18, 'plat_canyon_wood');
+  addPillar(objs, W - 1375, 578, 700);
+  putOnPlat(objs, hiBridge2, 0.5, 80, 45, 'map_sand_barrier');
 
-  const bridge2 = addPlat(objs, W - 1310, 700, 520, 18, 'plat_canyon_wood');
-  addPillar(objs, W - 1310, bridge2.top + 18, GT);
-  putOnPlat(objs, bridge2, 0.5, 75, 45, 'map_bags');
-  addPlat(objs, W - 1310, 775, 120, 16, 'plat_canyon_wood');
+  // СРЕДНИЙ МАРШРУТ (Y = 700): подвесные деревянные мосты с разрывом для подъёма.
+  const bridge1L = addPlat(objs, 1190, 700, 260, 18, 'plat_canyon_wood');
+  const bridge1R = addPlat(objs, 1560, 700, 260, 18, 'plat_canyon_wood');
+  addPillar(objs, 1190, 718, GT);
+  addPillar(objs, 1560, 718, GT);
+  putOnPlat(objs, bridge1L, 0.5, 70, 42, 'map_bags');
+  putOnPlat(objs, bridge1R, 0.5, 70, 42, 'map_bags');
+  // Подъем с дна ущелья: 850 -> 775 -> (разрыв моста 700) -> на галерею
+  addPlat(objs, 1375, 775, 100, 16, 'plat_canyon_wood');
+
+  const bridge2L = addPlat(objs, W - 1560, 700, 260, 18, 'plat_canyon_wood');
+  const bridge2R = addPlat(objs, W - 1190, 700, 260, 18, 'plat_canyon_wood');
+  addPillar(objs, W - 1190, 718, GT);
+  addPillar(objs, W - 1560, 718, GT);
+  putOnPlat(objs, bridge2L, 0.5, 70, 42, 'map_bags');
+  putOnPlat(objs, bridge2R, 0.5, 70, 42, 'map_bags');
+  addPlat(objs, W - 1375, 775, 100, 16, 'plat_canyon_wood');
 
   // Дно каньона: открытое ущелье с тактическими укрытиями каждые 260px
   addCover(objs, 1020, GT - 50, 80, 50, 'map_sand_barrier');
@@ -453,29 +481,38 @@ function buildRoofs(W, H, GT) {
   putOnPlat(objs, bld5.roof, 0.22, 85, 45, 'map_concrete_block');
 
   // Средний маршрут (Y = 700): остекленные воздушные скайбриджи между высотками
-  // Скайбридж 1 (между корпусом 1 и башней 2, центр 1140, ширина 380)
-  const bridge1 = addPlat(objs, 1140, 700, 380, 18, 'plat_office_floor');
-  addPillar(objs, 1140, bridge1.top + 18, GT);
-  putOnPlat(objs, bridge1, 0.5, 85, 45, 'map_concrete_block');
-  addPlat(objs, 1140, 775, 120, 16, 'plat_office_floor');
+  // (разрывы для уличных подъёмов: 850 -> 775 -> 700)
+  // Скайбридж 1 (между корпусом 1 и башней 2), разрыв 1090-1190 для подъёма
+  const bridge1L = addPlat(objs, 1020, 700, 140, 18, 'plat_office_floor');
+  const bridge1R = addPlat(objs, 1260, 700, 140, 18, 'plat_office_floor');
+  addPillar(objs, 1020, 718, GT);
+  addPillar(objs, 1260, 718, GT);
+  putOnPlat(objs, bridge1R, 0.5, 85, 45, 'map_concrete_block');
+  addPlat(objs, 1140, 775, 90, 16, 'plat_office_floor');
 
   // Скайбридж 2 (между башней 2 и небоскребом Mid, центр 1920, ширина 300)
-  const bridge2 = addPlat(objs, 1920, 700, 300, 18, 'plat_office_floor');
-  addPillar(objs, 1920, bridge2.top + 18, GT);
+  const bridge2 = addPlat(objs, 1920, 700, 340, 18, 'plat_office_floor');
+  addPillar(objs, 1920, 718, GT);
 
   // Скайбридж 3 (между небоскребом Mid и башней 4)
-  const bridge3 = addPlat(objs, W - 1920, 700, 300, 18, 'plat_office_floor');
-  addPillar(objs, W - 1920, bridge3.top + 18, GT);
+  const bridge3 = addPlat(objs, W - 1920, 700, 340, 18, 'plat_office_floor');
+  addPillar(objs, W - 1920, 718, GT);
 
-  // Скайбридж 4 (между башней 4 и корпусом 5)
-  const bridge4 = addPlat(objs, W - 1140, 700, 380, 18, 'plat_office_floor');
-  addPillar(objs, W - 1140, bridge4.top + 18, GT);
-  putOnPlat(objs, bridge4, 0.5, 85, 45, 'map_concrete_block');
-  addPlat(objs, W - 1140, 775, 120, 16, 'plat_office_floor');
+  // Скайбридж 4 (между башней 4 и корпусом 5), разрыв 1090-1190 для подъёма
+  const bridge4L = addPlat(objs, W - 1260, 700, 140, 18, 'plat_office_floor');
+  const bridge4R = addPlat(objs, W - 1020, 700, 140, 18, 'plat_office_floor');
+  addPillar(objs, W - 1020, 718, GT);
+  addPillar(objs, W - 1260, 718, GT);
+  putOnPlat(objs, bridge4L, 0.5, 85, 45, 'map_concrete_block');
+  addPlat(objs, W - 1140, 775, 90, 16, 'plat_office_floor');
 
   // Верхний маршрут (Y = 560): переходные эстакады по крышам
   const roofBridge1 = addPlat(objs, 1140, 560, 320, 18, 'platform_city');
   addPillar(objs, 1140, roofBridge1.top + 18, 700);
+  const roofBridge1b = addPlat(objs, 1920, 560, 340, 18, 'platform_city');
+  addPillar(objs, 1920, roofBridge1b.top + 18, 700);
+  const roofBridge2b = addPlat(objs, W - 1920, 560, 340, 18, 'platform_city');
+  addPillar(objs, W - 1920, roofBridge2b.top + 18, 700);
   const roofBridge2 = addPlat(objs, W - 1140, 560, 320, 18, 'platform_city');
   addPillar(objs, W - 1140, roofBridge2.top + 18, 700);
 
@@ -578,16 +615,30 @@ function buildBunker(W, H, GT) {
   addPlat(objs, W * 0.50 + 160, 495, 70, 16, 'plat_bunker_slab');
   putOnPlat(objs, cupola, 0.5, 85, 50, 'map_stalagmite');
 
-  // Средний маршрут (Y = 700): бронированные переходные штольни
-  const ramp1 = addPlat(objs, 1380, 700, 560, 18, 'plat_bunker_slab');
-  addPillar(objs, 1380, ramp1.top + 18, GT);
-  putOnPlat(objs, ramp1, 0.5, 90, 48, 'map_shield');
-  addPlat(objs, 1380, 775, 120, 16, 'plat_bunker_slab');
+  // ВЕРХНИЙ МАРШРУТ (Y = 560): бронированные эстакады поверх штолен.
+  const hiRamp1 = addPlat(objs, 1575, 560, 950, 18, 'plat_bunker_slab');
+  addPillar(objs, 1575, 578, 700);
+  putOnPlat(objs, hiRamp1, 0.5, 85, 48, 'map_shield');
+  const hiRamp2 = addPlat(objs, W - 1575, 560, 950, 18, 'plat_bunker_slab');
+  addPillar(objs, W - 1575, 578, 700);
+  putOnPlat(objs, hiRamp2, 0.5, 85, 48, 'map_shield');
 
-  const ramp2 = addPlat(objs, W - 1380, 700, 560, 18, 'plat_bunker_slab');
-  addPillar(objs, W - 1380, ramp2.top + 18, GT);
-  putOnPlat(objs, ramp2, 0.5, 90, 48, 'map_shield');
-  addPlat(objs, W - 1380, 775, 120, 16, 'plat_bunker_slab');
+  // СРЕДНИЙ МАРШРУТ (Y = 700): переходные штольни с разрывом для подъёма.
+  const ramp1L = addPlat(objs, 1320, 700, 440, 18, 'plat_bunker_slab');
+  const ramp1R = addPlat(objs, 1830, 700, 440, 18, 'plat_bunker_slab');
+  addPillar(objs, 1320, 718, GT);
+  addPillar(objs, 1830, 718, GT);
+  putOnPlat(objs, ramp1L, 0.5, 85, 48, 'map_shield');
+  putOnPlat(objs, ramp1R, 0.5, 85, 48, 'map_shield');
+  addPlat(objs, 1575, 775, 100, 16, 'plat_bunker_slab'); // 850->775->700 (разрыв 1540-1610)
+
+  const ramp2L = addPlat(objs, W - 1830, 700, 440, 18, 'plat_bunker_slab');
+  const ramp2R = addPlat(objs, W - 1320, 700, 440, 18, 'plat_bunker_slab');
+  addPillar(objs, W - 1320, 718, GT);
+  addPillar(objs, W - 1830, 718, GT);
+  putOnPlat(objs, ramp2L, 0.5, 85, 48, 'map_shield');
+  putOnPlat(objs, ramp2R, 0.5, 85, 48, 'map_shield');
+  addPlat(objs, W - 1575, 775, 100, 16, 'plat_bunker_slab');
 
   // Освещение штолен (визуальный декор)
   addDecor(objs, 1120, GT - 64, 32, 128, 'map_lamp_post', -1.2);

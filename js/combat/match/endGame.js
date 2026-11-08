@@ -20,17 +20,20 @@ export function endGame(scene, message, playerWon = false) {
   // счётчики застывают — считаем по ним). Дальше: ворота бонуса + тег в табло.
   scene._playerAfk = playerAfk(scene);
   // Боевые награды СРАЗУ (нужны записи истории ниже): проверка + выдача
-  // (АФК и кампания — мимо, см. medals.js).
+  // (АФК, кампания, выживание — мимо, см. medals.js).
   _newMedals = [];
   try {
-    const _ids = checkBattleMedals(scene, playerWon);
-    if (_ids.length && !demo) _newMedals = awardMedals(_ids);
+    if (scene.mode !== 'TRIAL') {
+      const _ids = checkBattleMedals(scene, playerWon);
+      if (_ids.length && !demo) _newMedals = awardMedals(_ids);
+    }
   } catch (e) {}
   // Снимаем носильщиков (флаги/бомбы/турель): иначе указатели висят на телах,
   // баффы скорости и метки остаются, маркеры зависают.
   try {
     const T0 = scene._turret;
-    if (T0 && T0.carrier) { try { T0.carrier.isCarrier = false; } catch (e) {} T0.carrier = null; }
+    if (T0 && T0.carrier) { try { T0.carrier._turretCarrier = false; } catch (e) {} T0.carrier = null; }
+    try { if (T0 && T0.img) T0.img.setVisible(true); } catch (e) {}
     try { if (T0 && T0.installMark) { T0.installMark.destroy(); T0.installMark = null; } } catch (e) {}
     try { if (T0 && T0.mark) { T0.mark.destroy(); T0.mark = null; } } catch (e) {}
     [scene.blueFlag, scene.redFlag, scene.ctfSuddenFlag, scene.blueBomb, scene.redBomb].forEach(f => {

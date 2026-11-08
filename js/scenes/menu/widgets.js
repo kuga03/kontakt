@@ -957,7 +957,11 @@ export function createButton(x, y, label, callback, locked, lockMsg, uniTw, uniT
         return key;
       };
 
-      const keyNormal = bakeState('normal', locked ? 0x667788 : 0xdfe8ff, false, locked);
+      // Канонические состояния: кэш текстур глобальный, поэтому всегда печём
+      // «обычную» версию цветной, а «заблокированную» — серой, независимо от
+      // состояния конкретной кнопки (иначе первая созданная кнопка «отравляет»
+      // ключ и чужая иконка остаётся серой/цветной навсегда).
+      const keyNormal = bakeState('normal', 0xdfe8ff, false, false);
       const keyHover  = bakeState('hover',  0xffff55, true, false);
       const keyLocked = bakeState('locked', 0x667788, false, true);
 

@@ -350,7 +350,7 @@ export default class LobbyScene extends Phaser.Scene {
     };
 
     infoRow('Режим', mMeta.label || cl.mode, mMeta.color);
-    infoRow('Противников', String(cl.enemies || '?'), 0xff6666);
+    infoRow('Противников', String(cl.bots ?? cl.enemies ?? '?'), 0xff6666);
     if (cl.allies)      infoRow('Союзников', String(cl.allies), 0x66aaff);
     if (cl.scoreLimit)  infoRow('Игра до', String(cl.scoreLimit), 0xffd24a);
     if (cl.reward) {
@@ -447,7 +447,7 @@ export default class LobbyScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(7);
 
     // ── hero preview ─────────────────────────────────────────────────────
-    const previewY = cy - h / 2 + (isCampaign ? 220 : 200);
+    const previewY = cy - h / 2 + (isCampaign ? 200 : 180);
     const previewScale = isCampaign ? 1.42 : 1.28;
     this._spawnHeroPreview(cx, previewY, cd.id, isSelected, previewScale);
 
@@ -533,7 +533,7 @@ export default class LobbyScene extends Phaser.Scene {
     this.add.text(cx, y + 16, cd.label.toUpperCase(), {
       fontSize: '14px', fontStyle: 'bold', color: '#ffd24a'
     }).setOrigin(0.5).setDepth(6);
-    y += 44;
+    y += 54;
 
     // Weapon slots
     const eq = getEquipment(this.selectedClass);
@@ -1011,34 +1011,52 @@ export default class LobbyScene extends Phaser.Scene {
       p.setVelocity(0, 0);
       p._editorGrounded = true;
       p.aimAt(bx + 200, y - 10);
+      // Показать оружие в лобби: если снаряжение не задано, берём дефолт класса
+      if (!p.weapon) {
+        try {
+          const eq = (typeof getEquipment === 'function') ? getEquipment(className) : {};
+          const cdDef = classDefinitions.find(c => c.id === className) || {};
+          const primaryName = (eq && eq.primary) || cdDef.defaultPrimary;
+          if (primaryName && typeof p.addWeapon === 'function') p.addWeapon(primaryName);
+          if (p.selectWeapon) p.selectWeapon(0);
+        } catch (e) {}
+      }
       p.updateBars();
       if (p.updateGun) p.updateGun();
       p.healthBar.setVisible(false);
       p.armorBar.setVisible(false);
       p.nameText.setVisible(false);
-      if (!p.weapon) { p._gunAllowed = false; p._setGunVisible(false); }
+      if (p.weapon) { p._gunAllowed = true; p._setGunVisible(true); }
+      else { p._gunAllowed = false; p._setGunVisible(false); }
+
+      // Убрать шею у персонажа в лобби
+      if (p._neckVis) { try { p._neckVis.setVisible(false); p._neckVis.setAlpha(0); } catch (e) {} }
+      if (p.neck) { try { p.neck.setVisible(false); } catch (e) {} }
 
       // Lift all preview parts above card backgrounds (depth 5) so the
       // hero is always visible inside its card frame.
       const PREVIEW_DEPTH = 6;
-      const liftDepth = (o) => {
+      const GUN_DEPTH = 7;
+      const liftDepth = (o, depth = PREVIEW_DEPTH) => {
         if (!o || !o.active) return;
-        if (o === p.neck) return;
+        if (o === p.neck || o === p._neckVis) return;
         try { if (o.alpha === 0) return; } catch (e) {}
         if (typeof o.getChildren === 'function') {
-          o.getChildren().forEach(liftDepth);
+          try { if (typeof o.setDepth === 'function') o.setDepth(depth); } catch (e) {}
+          o.getChildren().forEach((c) => liftDepth(c, depth));
           return;
         }
-        try { if (typeof o.setDepth === 'function') o.setDepth(PREVIEW_DEPTH); } catch (e) {}
+        try { if (typeof o.setDepth === 'function') o.setDepth(depth); } catch (e) {}
       };
       try {
         const parts = (typeof p._smokeParts === 'function') ? p._smokeParts() : null;
-        if (parts && parts.length) { parts.forEach(liftDepth); }
+        if (parts && parts.length) { parts.forEach((o) => liftDepth(o)); }
         else {
-          (p._allParts || []).forEach(liftDepth);
+          (p._allParts || []).forEach((o) => liftDepth(o));
           if (p.head)   liftDepth(p.head);
-          if (p.gunImg) liftDepth(p.gunImg);
         }
+        if (p.gunImg) liftDepth(p.gunImg, GUN_DEPTH);
+        if (p.gun)    liftDepth(p.gun, GUN_DEPTH);
       } catch (e) {}
 
       if (!isSelected) this._grayPreview(p);

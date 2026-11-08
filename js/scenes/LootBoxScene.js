@@ -185,6 +185,7 @@ export default class LootBoxScene extends Phaser.Scene {
 
     this.events.once('shutdown', () => {
       this._particles = [];
+      this._openPools = null;
       if (this._heroTween) {
         try { this._heroTween.stop(); } catch (e) {}
         this._heroTween = null;
@@ -193,6 +194,9 @@ export default class LootBoxScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Во время крутки рулеток (особенно 2-3 одновременно) фоновые частицы
+    // только добавляют лишнюю работу на кадр — приостанавливаем.
+    if (this.opening && (this._pendingReels | 0) > 0) return;
     this._updateParticles(time, delta);
   }
 
@@ -438,12 +442,18 @@ export default class LootBoxScene extends Phaser.Scene {
       priceCapsule.strokeRoundedRect(-pw / 2, 28, pw, ph, 5);
       container.add(priceCapsule);
 
-      const coinIcon = this.add.image(-pw / 2 + 12, 37, 'icon_coins').setDisplaySize(13, 10);
-      const priceText = this.add.text(2, 37, `${c.price.toLocaleString('ru-RU')}`, {
+      const priceY = 37;
+      const coinIcon = this.add.image(0, priceY, 'icon_coins').setDisplaySize(13, 10).setOrigin(0, 0.5);
+      const priceText = this.add.text(0, priceY, `${c.price.toLocaleString('ru-RU')}`, {
         fontSize: '11px',
         color: '#ffee88',
         fontStyle: 'bold'
       }).setOrigin(0, 0.5);
+      const priceGap = 4;
+      const priceGroupW = coinIcon.displayWidth + priceGap + priceText.displayWidth;
+      const priceStartX = -priceGroupW / 2;
+      coinIcon.setPosition(priceStartX, priceY);
+      priceText.setPosition(priceStartX + coinIcon.displayWidth + priceGap, priceY);
       container.add([coinIcon, priceText]);
 
       paintCard(c.id === this.caseId, false);
@@ -846,6 +856,7 @@ export default class LootBoxScene extends Phaser.Scene {
     try { saveGameState(); } catch (e) {}
     this._showMultiIcons(rewards);
     this._showOkButton();
+    this._openPools = null;
     this.refreshCoins();
     this.opening = false;
     this.refreshOpen();
@@ -921,6 +932,9 @@ export default class LootBoxScene extends Phaser.Scene {
 
   // Пулы кейса: оружие по цене + скины ТОЛЬКО на это оружие.
   _casePools() {
+    // Во время крутки пул не меняется — переиспользуем кэш, чтобы не
+    // фильтровать weaponsList/weaponSkins десятки раз на каждую рулетку.
+    if (this._openPools) return this._openPools;
     const c = this._caseDef();
     const ownedSkinIds = new Set(gameState.weaponSkins || []);
     const allowLegendary = !!c.includeMelee;
@@ -1196,8 +1210,9 @@ export default class LootBoxScene extends Phaser.Scene {
     return TIER_NAMES[Math.min(4, Math.max(0, tierIndex))] || 'ПРЕДМЕТ';
   }
 
-  // Ячейка рулетки с красивым оформлением, тиром редкости, бликами и центрированным артом
-  _reelCell(entry, CELL_W, CELL_H, casePrice) {
+  // Ячейка рулетки с красивым оформлением, тиром редкости, бликами и центрированным артом.
+  // lite=true — облегчённый вариант для мульти-открытия (меньше draw-операций/нагрузка).
+  _reelCell(entry, CELL_W, CELL_H, casePrice, lite = false) {
     let colorInt;
     let tierIdx = 0;
     if (entry.kind === 'skin') {
@@ -1232,25 +1247,29 @@ export default class LootBoxScene extends Phaser.Scene {
     bg.lineStyle(2.5, colorInt, 1);
     bg.strokeRoundedRect(-W / 2, -H / 2, W, H, 10);
 
-    // Тонкий внутренний блик
-    bg.lineStyle(1, 0xffffff, 0.12);
-    bg.strokeRoundedRect(-W / 2 + 2, -H / 2 + 2, W - 4, H - 4, 8);
+    if (!lite) {
+      // Тонкий внутренний блик
+      bg.lineStyle(1, 0xffffff, 0.12);
+      bg.strokeRoundedRect(-W / 2 + 2, -H / 2 + 2, W - 4, H - 4, 8);
+    }
 
     // Бейдж тира (название редкости с просторным отступом от полоски)
     const tierName = this._tierLabel(tierIdx);
     const badgeY = -H / 2 + 22;
     const badgeText = this.add.text(0, badgeY, tierName, {
-      fontSize: '11px',
+      fontSize: lite ? '12px' : '11px',
       color: css,
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    const bw = Math.max(84, Math.ceil(badgeText.displayWidth + 18));
-    const bh = 18;
-    bg.fillStyle(0x070914, 0.85);
-    bg.fillRoundedRect(-bw / 2, badgeY - bh / 2, bw, bh, 5);
-    bg.lineStyle(1, colorInt, 0.4);
-    bg.strokeRoundedRect(-bw / 2, badgeY - bh / 2, bw, bh, 5);
+    if (!lite) {
+      const bw = Math.max(84, Math.ceil(badgeText.displayWidth + 18));
+      const bh = 18;
+      bg.fillStyle(0x070914, 0.85);
+      bg.fillRoundedRect(-bw / 2, badgeY - bh / 2, bw, bh, 5);
+      bg.lineStyle(1, colorInt, 0.4);
+      bg.strokeRoundedRect(-bw / 2, badgeY - bh / 2, bw, bh, 5);
+    }
 
     container.add(bg);
     container.add(badgeText);
@@ -1385,6 +1404,9 @@ export default class LootBoxScene extends Phaser.Scene {
       }
     } catch (e) {}
 
+    // Кэшируем пулы на время открытия: rollReward + ячейки рулеток
+    // иначе по 30+ раз фильтруют weaponsList/weaponSkins за одну операцию.
+    this._openPools = this._casePools();
     const rewards = [];
     for (let i = 0; i < this.openCount; i++) rewards.push(this.rollReward());
 
@@ -1536,11 +1558,14 @@ export default class LootBoxScene extends Phaser.Scene {
 
   // Запуск крутки рулетки
   startReel(reward, layout) {
+    const { y: REEL_Y, scale = 1, delay = 0, isMaster = true } = layout || {};
+    // Мульти-открытие (2-3 кейса): меньше ячеек и облегчённый рендер,
+    // иначе одновременные рулетки дают сильный просад FPS (особенно на мобилках).
+    const isMulti = scale < 1;
     const CELL_W = 340;
     const CELL_H = 200;
-    const cellCount = 11;
-    const finalIdx = 8;
-    const { y: REEL_Y, scale = 1, delay = 0, isMaster = true } = layout || {};
+    const cellCount = isMulti ? 8 : 11;
+    const finalIdx = isMulti ? 5 : 8;
     const _cx = gameW(this) / 2;
 
     const finalEntry = this._poolEntryFor(reward);
@@ -1584,7 +1609,7 @@ export default class LootBoxScene extends Phaser.Scene {
 
     for (let i = 0; i < cellCount; i++) {
       const entry = i === finalIdx ? finalEntry : this._randomPoolEntry();
-      const cell = this._reelCell(entry, CELL_W, CELL_H, this._caseDef().price);
+      const cell = this._reelCell(entry, CELL_W, CELL_H, this._caseDef().price, isMulti);
       cell.setPosition(i * CELL_W + CELL_W / 2, 0);
       reel.add(cell);
     }
@@ -1722,6 +1747,7 @@ export default class LootBoxScene extends Phaser.Scene {
     this._multiLines = [];
     this._showOkButton();
 
+    this._openPools = null;
     this.refreshCoins();
     this.opening = false;
     this.refreshOpen();

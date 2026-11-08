@@ -1070,6 +1070,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (this._ammoMark) { try { this._ammoMark.destroy(); } catch (e) {} this._ammoMark = null; }
     this.nameText.destroy();
     if (this.nameBadge) { try { this.nameBadge.destroy(); } catch (e) {} this.nameBadge = null; }
+    if (this._turretNameIcon) { try { this._turretNameIcon.destroy(); } catch (e) {} this._turretNameIcon = null; }
     this.head.destroy();
     this.neck.destroy();
     if (this.torso) this.torso.destroy();

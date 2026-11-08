@@ -415,14 +415,6 @@ export function buildHud(scene) {
       }).setOrigin(0.5).setScrollFactor(0).setDepth(96),
       640, 62
     );
-    // Нейтральный заряд у таймера (таймер ~55px шириной — не задевает).
-    if (scene.textures.exists('bomb_neutral')) {
-      scene.addHudElement(
-        scene.add.image(598, 62, 'bomb_neutral')
-          .setOrigin(1, 0.5).setScrollFactor(0).setDepth(96),
-        598, 62
-      ).setDisplaySize(36, 17);
-    }
   }
 
   // CTF: таймер раунда под счётом (как у KOTH/BOMB).
@@ -652,6 +644,18 @@ export function buildHud(scene) {
         align: 'right'
       }).setOrigin(1, 0).setScrollFactor(0).setDepth(98),
       1120, 30
+    );
+    scene.trialPerksHud = scene.addHudElement(
+      scene.add.text(18, 78, '', {
+        fontSize: '13px',
+        color: '#b8ffd0',
+        stroke: '#000000',
+        strokeThickness: 3,
+        align: 'left',
+        lineSpacing: 2,
+        wordWrap: { width: 260 }
+      }).setOrigin(0, 0).setScrollFactor(0).setDepth(98),
+      18, 78
     );
   }
 }

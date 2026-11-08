@@ -26,11 +26,19 @@ export function trialWaveSize(wave) {
 }
 
 export function trialWaveHpMult(wave) {
-  return 1 + (wave - 1) * 0.18;
+  // 1 волна: 3/10 от базового HP, далее по нарастающей (смягчено)
+  return 0.3 + (wave - 1) * 0.1;
 }
 
 export function trialWaveDmgMult(wave) {
-  return Math.min(1 + (wave - 1) * 0.08, 1.8);
+  // Плавный рост урона с ранних волн (смягчено)
+  return Math.min(0.4 + (wave - 1) * 0.07, 1.8);
+}
+
+// Множитель скорострельности врагов (умножается на fireRate оружия):
+// 1 волна = 1/10 от нормы (x10 медленнее), далее ускоряется к норме
+export function trialWaveFireRateMult(wave) {
+  return Math.max(10 - (wave - 1) * 1.2, 1.0);
 }
 
 export function trialTypesForWave(wave) {
@@ -103,16 +111,21 @@ export function spawnTrialEnemy(scene, isBoss = false) {
   });
   enemy.setTexture('enemy');
 
+  const fireRateMult = trialWaveFireRateMult(wave);
+
   if (isBoss) {
     enemy.setTint(0xff2222);
     enemy.setScale(1.35);
     enemy._isBoss = true;
-    enemy.maxHp = Math.round(enemy.maxHp * trialWaveHpMult(wave) * 4.5);
+    const bossHpScale = 2.0 + Math.max(0, wave - 5) * 0.3; // 1-й босс (волна 5) заметно слабее
+    enemy.maxHp = Math.round(enemy.maxHp * trialWaveHpMult(wave) * bossHpScale);
     enemy.hp = enemy.maxHp;
-    enemy.damageMult = (enemy.damageMult || 1) * 1.3;
+    enemy.damageMult = (enemy.damageMult || 1) * (1.0 + Math.min(0.25, wave * 0.03));
     try {
       enemy.inventory = [];
       addWeapon(enemy, 'minigun');
+      const bossFire = Math.max(fireRateMult, 1.6); // ранние боссы стреляют сдержаннее
+      (enemy.inventory || []).forEach(w => { if (w && !w.isMelee) w.fireRateMult = (w.fireRateMult || 1) * bossFire; });
     } catch (e) {}
     scene._activeBoss = enemy;
     createBossHealthBar(scene, enemy);
@@ -120,7 +133,7 @@ export function spawnTrialEnemy(scene, isBoss = false) {
     enemy.setTint(0xff8800);
     // Скоростной рукопашник: быстрее бегает, холодное оружие в руках
     enemy.speed = (enemy.speed || 240) * 1.35;
-    enemy.maxHp = Math.round(enemy.maxHp * trialWaveHpMult(wave) * 0.9);
+    enemy.maxHp = Math.round(enemy.maxHp * trialWaveHpMult(wave) * 0.75);
     enemy.hp = enemy.maxHp;
     try {
       enemy.inventory = [];
@@ -129,9 +142,23 @@ export function spawnTrialEnemy(scene, isBoss = false) {
     } catch (e) {}
   } else {
     enemy.setTint(0xff5555);
-    enemy.maxHp = Math.round(enemy.maxHp * trialWaveHpMult(wave) * (strong ? 1.3 : 1));
+    enemy.maxHp = Math.round(enemy.maxHp * trialWaveHpMult(wave) * (strong ? 1.15 : 1));
     enemy.hp = enemy.maxHp;
-    enemy.damageMult = (enemy.damageMult || 1) * trialWaveDmgMult(wave) * (type === 'Sniper' ? 1.4 : 1);
+    enemy.damageMult = (enemy.damageMult || 1) * trialWaveDmgMult(wave) * (type === 'Sniper' ? 1.25 : 1);
+
+    // 1-я волна: стоковые пушки, скорострельность 1/10 (x10 медленнее)
+    if (wave === 1) {
+      try {
+        enemy.inventory = [];
+        addWeapon(enemy, 'LAR');
+        enemy.activeWeaponIndex = 0;
+      } catch (e) {}
+    }
+    try {
+      (enemy.inventory || []).forEach(w => {
+        if (w && !w.isMelee) w.fireRateMult = (w.fireRateMult || 1) * fireRateMult;
+      });
+    } catch (e) {}
   }
 
   enemy.spawn = { x, y };
@@ -415,6 +442,14 @@ export function openPerkSelection(scene) {
 
     const onSelect = () => {
       perk.apply(scene);
+      scene._survivalPerkList = scene._survivalPerkList || [];
+      scene._survivalPerkList.push({ id: perk.id, title: perk.title, color: perk.color });
+      try {
+        if (scene.trialPerksHud) {
+          const names = scene._survivalPerkList.map(p => p.title).join('\n• ');
+          scene.trialPerksHud.setText(scene._survivalPerkList.length ? `НАВЫКИ:\n• ${names}` : '');
+        }
+      } catch (e) {}
       elems.forEach(el => el.destroy());
       scene._choosingPerk = false;
       scene.physics.resume();

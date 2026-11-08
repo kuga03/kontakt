@@ -23,36 +23,18 @@ export function jump(player) {
     try {
       player._jumpAt = player.scene ? player.scene.time.now : 0;
     } catch (e) {}
-    // Носильщик бомбы прыгает ниже (−36% высоты ≈ ×0.8 скорости):
-    // 90-е ящики на lanes ему не взять, lanes держим ≤60.
-    // У носильщика флага — ни штрафа на прыжок, ни на движение.
-    const isBombCarrier = player.isCarrier && !player.isFlagCarrier;
-    const cm = isBombCarrier ? 0.8 : 1;
-    player.setVelocityY((grounded ? -470 : -420) * cm);
+    player.setVelocityY(grounded ? -470 : -420);
   }
 }
 
 export function move(player, direction) {
   const crouchMul = player.crouching ? 0.5 : 1;
-  // Носильщик бомбы медленнее на 25% (по ТЗ 20–30%).
-  // k574: вынесено в тактику (дефолт тот же 0.75) — чтобы МЕРИТЬ, сколько
-  // капсов стоит это правило: замер probe_conv показал, что носильщик гибнет
-  // в полосе x≈2815 на hp 6..19, и скорость — единственная непроверенная
-  // ручка в этой полосе.
-  let _carryMulK = 1;
-  // Носильщик бомбы медленнее на 25% (по ТЗ 20–30%).
-  // k574: вынесено в тактику (дефолт тот же 0.75) — чтобы МЕРИТЬ, сколько
-  // капсов стоит это правило: замер probe_conv показал, что носильщик гибнет
-  // в полосе x≈2815 на hp 6..19, и скорость — единственная непроверенная
-  // ручка в этой полосе.
-  const isBombCarrier = player.isCarrier && !player.isFlagCarrier;
-  const carryMul = isBombCarrier ? _carryMulK : 1;
   // Адреналин флага (+10) — только под огнём (3с после урона): иначе
   // вор идёт быстрее погони всегда и уносит без урона. Сам бонус
   // выдаёт/снимает Flag (pickUp/drop/return/die) как раньше — здесь
   // только глушим его эффект вне боя. Бухгалтерия знаков не тронута.
   let pct = player.moveSpeedPct || 0;
-  player.setVelocityX(direction * player.moveSpeed * (1 + pct / 100) * crouchMul * carryMul);
+  player.setVelocityX(direction * player.moveSpeed * (1 + pct / 100) * crouchMul);
 }
 
 export function stop(player) {

@@ -9,6 +9,8 @@ const CALLSIGNS = [
   'Молот', 'Призрак', 'Кобра', 'Сокол', 'Титан', 'Вихрь', 'Зубр', 'Фантом'
 ];
 
+const ROUTES = ['low', 'mid', 'high'];
+
 function rndColor() {
   const c = () => 80 + Math.floor(Math.random() * 140);
   return (c() << 16) | (c() << 8) | c();
@@ -66,10 +68,13 @@ export default class EnemyAI {
 
     const dx = target.x - p.x;
     const dy = target.y - p.y;
+    const isMeleeW = !!(p.weapon && (p.weapon.isMelee || p.weapon.category === 'melee'));
     const weaponRange = (p.weapon && p.weapon.range) ? p.weapon.range : 700;
 
-    // Цель стрельбы: ТОЛЬКО реальный живой враг (не флаг, не союзник, не точка).
-    let shootTarget = this._nearestEnemy();
+    // Цель стрельбы: видимый враг в приоритете (не целимся сквозь стены).
+    // При отсутствии прямой видимости — никто: прицел уходит в цель движения,
+    // а стрельбу блокирует LOS (быстрее установить видимость, подойдя).
+    let shootTarget = this._pickShootTarget(weaponRange);
     if (shootTarget && (shootTarget.team === p.team || shootTarget.dead || !shootTarget.active)) {
       shootTarget = null;
     }
@@ -85,11 +90,12 @@ export default class EnemyAI {
     } catch (e) {}
 
     // Враг держим на дистанции 0.3..1.0 дальности оружия: ближе — отходим, в поясе — стоим.
+    // С ближним оружием — подходим вплотную к врагу (не держим дистанцию).
     const targetIsEnemy = !!(target && (target.maxHp !== undefined || target.dead !== undefined) &&
       target.team && target.team !== p.team);
     const distToT = Math.hypot(dx, dy);
-    const minD = weaponRange * 0.3;
-    const maxD = weaponRange * 1.0;
+    const minD = isMeleeW ? 0 : weaponRange * 0.3;
+    const maxD = isMeleeW ? Math.max(36, weaponRange * 0.55) : weaponRange * 1.0;
 
     const midAir = !!(this._nav && this._nav.phase === 1 && !this._nav.done);
     const grounded = !!(p.body && (p.body.blocked.down || p.body.touching.down));
@@ -115,7 +121,7 @@ export default class EnemyAI {
     if (lowCover) {
       if (inObjectiveZone) {
         wantCoverDuck = true;
-      } else if (hasEnemyThreat) {
+      } else if (!isMeleeW && hasEnemyThreat) {
         if (isReloading) {
           wantCoverDuck = true;
         } else if (isCriticalHp) {
@@ -157,10 +163,13 @@ export default class EnemyAI {
       try { p.stop(); } catch (e) {}
     } else if (midAir) {
       this._navigate(target, time, dx);
-    } else if (inBand && !holdTooLong) {
+    } else if (!isMeleeW && inBand && !holdTooLong) {
       try { p.stop(); } catch (e) {}
-    } else if (targetIsEnemy && distToT < minD - 20) {
+    } else if (!isMeleeW && targetIsEnemy && distToT < minD - 20) {
       this._fallbackMove(-Math.sign(dx || 1));
+    } else if (isMeleeW && targetIsEnemy && distToT <= 42) {
+      // Вплотную к цели — стоим и бьём
+      try { p.stop(); } catch (e) {}
     } else {
       this._navigate(target, time, dx);
     }
@@ -174,11 +183,14 @@ export default class EnemyAI {
       }
     }
 
-    if (shootTarget) {
-      // Прицел.
-      try { p.aimAt(shootTarget.x, shootTarget.y); } catch (e) {}
+    // Прицел: видимый враг > цель движения (без наведения сквозь стены/платформы).
+    const aimAt = shootTarget || (targetIsEnemy ? target : target);
+    if (aimAt) {
+      try { p.aimAt(aimAt.x, aimAt.y); } catch (e) {}
+    }
 
-      // Стрельба: только если есть прямая видимость до цели (стены режут).
+    if (shootTarget) {
+      // Стрельба: только при прямой видимости (shootTarget уже видим).
       let _shootLos = true;
       try {
         if (typeof scene.hasLineOfSight === 'function') {
@@ -196,8 +208,8 @@ export default class EnemyAI {
       }
     }
 
-    // Гранаты (редко): только по реальному врагу в прямой видимости.
-    const _grenadeTarget = this._nearestEnemy();
+    // Гранаты (редко): только по видимому реальному врагу.
+    const _grenadeTarget = this._pickShootTarget(weaponRange + 200) || this._nearestEnemy(true);
     let _grenadeLos = false;
     if (_grenadeTarget) {
       try {
@@ -464,7 +476,58 @@ export default class EnemyAI {
     try { if (dir > 0) p.move(1); else p.move(-1); } catch (e) {}
   }
 
-  _nearestEnemy() {
+  // ── Координация и навигация по флангам (3 лейна) ─────────────────────────
+
+  _botId() {
+    if (this._botIdCache != null) return this._botIdCache;
+    const p = this.p;
+    let h = 0;
+    const s = String((p && p.playerName) || '');
+    for (let i = 0; i < s.length; i++) h = ((h * 31) + s.charCodeAt(i)) | 0;
+    // добавляем координату спавна для уникальности одноимённых
+    try { h = (h ^ ((p.spawn && p.spawn.x) | 0)) | 0; } catch (e) {}
+    this._botIdCache = Math.abs(h);
+    return this._botIdCache;
+  }
+
+  _hasLosTo(tx, ty, fromY) {
+    try {
+      if (typeof this.scene.hasLineOfSight !== 'function') return true;
+      const p = this.p;
+      const fy = fromY != null ? fromY : (p.y + (p.crouching ? -6 : -24));
+      return !!this.scene.hasLineOfSight(p.x, fy, tx, ty);
+    } catch (e) { return true; }
+  }
+
+  // Цель стрельбы: видимый враг (LOS) в приоритете; без видимости — null,
+  // чтобы не целиться сквозь стены/платформы. «Быстрее получить LOS»:
+  // двигаемся к ближайшему врагу на своём ярусе (через цель перемещения).
+  _pickShootTarget(weaponRange) {
+    const p = this.p;
+    const scene = this.scene;
+    const wr = weaponRange || ((p.weapon && p.weapon.range) ? p.weapon.range : 700);
+    const players = scene.players || [];
+    let bestVis = null, bestVisD = Infinity;
+    let bestVisFar = null, bestVisFarD = Infinity;
+    for (let i = 0; i < players.length; i++) {
+      const o = players[i];
+      if (o === p || !o || o.dead || o.active === false) continue;
+      if (o.team === p.team) continue;
+      const d = Math.hypot(o.x - p.x, o.y - p.y);
+      if (d > wr + 120) continue;
+      const oy = o.y - 24;
+      if (!this._hasLosTo(o.x, oy)) continue;
+      const sameTier = Math.abs(o.y - p.y) <= 140;
+      if (sameTier) {
+        if (d < bestVisD) { bestVisD = d; bestVis = o; }
+      } else if (!bestVis && d < bestVisFarD) {
+        bestVisFarD = d; bestVisFar = o;
+      }
+    }
+    return bestVis || bestVisFar || null;
+  }
+
+  _nearestEnemy(losOnly) {
     const p = this.p;
     const scene = this.scene;
     let best = null, bestD = Infinity;
@@ -475,9 +538,22 @@ export default class EnemyAI {
       if (Math.abs(o.y - p.y) > 140) continue;
       const d = Math.hypot(o.x - p.x, o.y - p.y);
       if (d > wr + 120) continue;
+      if (losOnly && !this._hasLosTo(o.x, o.y - 24)) continue;
       if (d < bestD) { bestD = d; best = o; }
     }
     if (best) return best;
+    bestD = Infinity; best = null;
+    for (const o of (scene.players || [])) {
+      if (o === p || !o || o.dead || o.active === false) continue;
+      if (o.team === p.team) continue;
+      if (Math.abs(o.y - p.y) > 140) continue;
+      const d = Math.hypot(o.x - p.x, o.y - p.y);
+      if (losOnly && !this._hasLosTo(o.x, o.y - 24)) continue;
+      if (d < bestD) { bestD = d; best = o; }
+    }
+    if (best) return best;
+    if (losOnly) return null;
+    // последний фолбэк: любой враг (другой фланг)
     bestD = Infinity; best = null;
     for (const o of (scene.players || [])) {
       if (o === p || !o || o.dead || o.active === false) continue;
@@ -486,6 +562,162 @@ export default class EnemyAI {
       if (d < bestD) { bestD = d; best = o; }
     }
     return best;
+  }
+
+  _getLanes(teamSide) {
+    try {
+      const scene = this.scene;
+      const data = scene._lanes || scene._modeLanes || (scene.campaignLevel && scene.campaignLevel._lanes) || (scene.level && scene.level._lanes) || (scene.mapData && scene.mapData._lanes);
+      if (!data) return null;
+      return data[teamSide || this.p.team] || null;
+    } catch (e) { return null; }
+  }
+
+  _laneChain(route) {
+    const lanes = this._getLanes(this.p.team);
+    if (!lanes) return null;
+    const r = (route && lanes[route]) ? route : (this._ctfRoute && lanes[this._ctfRoute] ? this._ctfRoute : null);
+    return r ? lanes[r] : null;
+  }
+
+  // Вейпоинт по назначенному коридору в сторону цели (для 3-фланговых карт).
+  // Возвращает промежуточную точку, чтобы развести ботов по low/mid/high;
+  // у цели (<directDist) отдаёт саму цель. Гистерезис: не прыгаем назад по цепочке.
+  _routeTarget(goal, route, time, directDist) {
+    if (!goal || !Number.isFinite(goal.x) || !Number.isFinite(goal.y)) return goal;
+    const chain = this._laneChain(route);
+    if (!chain || !chain.length) return goal;
+    const p = this.p;
+    const dd = directDist == null ? 300 : directDist;
+    const gdx = goal.x - p.x;
+    const toGoal = Math.hypot(gdx, goal.y - p.y);
+    if (toGoal <= dd) return goal;
+
+    // Индекс ближайшей к боту точки цепочки (вперёд от последней, гистерезис).
+    let from = (this._laneIdx | 0);
+    if (from < 0 || from >= chain.length) from = 0;
+    if (time - (this._laneIdxAt || 0) > 3500) from = 0;
+    let bestI = from, bestD = Infinity;
+    const lo = Math.max(0, from - 1), hi = Math.min(chain.length - 1, from + 4);
+    for (let i = lo; i <= hi; i++) {
+      const n = chain[i];
+      const d = Math.hypot(n[0] - p.x, n[1] - p.y);
+      if (d < bestD) { bestD = d; bestI = i; }
+    }
+    // Если далеко от цепочки — переякориться глобально (редко).
+    if (bestD > 520) {
+      bestI = 0; bestD = Infinity;
+      for (let i = 0; i < chain.length; i++) {
+        const n = chain[i];
+        const d = Math.hypot(n[0] - p.x, n[1] - p.y);
+        if (d < bestD) { bestD = d; bestI = i; }
+      }
+    }
+
+    const dir = gdx >= 0 ? 1 : -1;
+    let pick = bestI;
+    // Берём точку заметно впереди по направлению к цели, но не дальше самой цели.
+    for (let step = 1; step <= 4; step++) {
+      const j = bestI + dir * step;
+      if (j < 0 || j >= chain.length) break;
+      const n = chain[j];
+      // не уводим за цель по X
+      if ((goal.x - n[0]) * dir < -80) break;
+      pick = j;
+      const nd = Math.hypot(n[0] - p.x, n[1] - p.y);
+      if (nd > 220) break;
+    }
+    // Если стоим прямо на точке — толкаем дальше по маршруту.
+    const cur = chain[pick];
+    if (Math.hypot(cur[0] - p.x, cur[1] - p.y) < 70) {
+      const j = pick + dir;
+      if (j >= 0 && j < chain.length && (goal.x - chain[j][0]) * dir >= -120) pick = j;
+    }
+    this._laneIdx = pick;
+    this._laneIdxAt = time;
+    const wp = chain[pick];
+    return { x: wp[0], y: wp[1] - 2, _laneWp: true };
+  }
+
+  _teamBots(team) {
+    const out = [];
+    const pl = this.scene.players || [];
+    for (let i = 0; i < pl.length; i++) {
+      const o = pl[i];
+      if (!o || o.dead || o.active === false) continue;
+      if (o.team !== team) continue;
+      if (o.ai) out.push(o.ai);
+    }
+    return out;
+  }
+
+  _routeLoad(route, goalX) {
+    // Сколько своих атакующих уже ближе к середине/цели по этому маршруту.
+    let n = 0;
+    const bots = this._teamBots(this.p.team);
+    for (let i = 0; i < bots.length; i++) {
+      const a = bots[i];
+      if (a === this || !a || a._ctfRole === 'holdhigh') continue;
+      if ((a._ctfRoute || 'mid') === route) n++;
+    }
+    // Лёгкий штраф, если мы сами далеко — не влияет на абсолют, только на выбор.
+    return n;
+  }
+
+  _pickLeastLoadedRoute(goalX, prefer) {
+    let best = prefer && ROUTES.includes(prefer) ? prefer : ROUTES[this._botId() % 3];
+    let bestN = Infinity;
+    for (let i = 0; i < ROUTES.length; i++) {
+      const r = ROUTES[i];
+      const n = this._routeLoad(r, goalX);
+      if (n < bestN || (n === bestN && r === (prefer || best))) { bestN = n; best = r; }
+    }
+    return best;
+  }
+
+  // Динамическая координация CTF (троттлинг ~700мс, дёшево).
+  _coordCtf(time, ownFlag, enemyFlag) {
+    if (time - (this._coordAt || 0) < 700) return;
+    this._coordAt = time;
+    const p = this.p;
+    try {
+      const bots = this._teamBots(p.team).filter(a => a && a.p && !a.p.dead);
+      if (bots.length <= 1) return;
+      // Роли по состоянию флага.
+      const ownStolen = !!(ownFlag && ownFlag.carrier && ownFlag.carrier.team !== p.team);
+      const ownDropped = !!(ownFlag && !ownFlag.carrier && Math.hypot(ownFlag.x - (ownFlag.baseX || 0), ownFlag.y - (ownFlag.baseY || 0)) > 60);
+      const allyCarries = !!(enemyFlag && enemyFlag.carrier && enemyFlag.carrier.team === p.team && enemyFlag.carrier !== p);
+      const iCarry = !!((enemyFlag && enemyFlag.carrier === p) || (this.scene.ctfSuddenFlag && this.scene.ctfSuddenFlag.carrier === p));
+
+      // Назначить/подтвердить маршруты атакующим, разводя по наименее занятому флангу.
+      // holdhigh держит свой маршрут (обычно high), если он один.
+      let hold = bots.find(a => a._ctfRole === 'holdhigh');
+      if (!hold && bots.length >= 3) {
+        // Сохраняем назначение со спавна, если было; иначе один high.
+        hold = bots.find(a => a._ctfRoute === 'high') || bots[0];
+        if (hold) hold._ctfRole = 'holdhigh';
+      }
+      const goalX = enemyFlag ? enemyFlag.x : (p.team === 'blue' ? this.scene.mapWidth - 220 : 220);
+      for (let i = 0; i < bots.length; i++) {
+        const a = bots[i];
+        if (!a || a === hold || a.p === enemyFlag?.carrier || a.p === this.scene.ctfSuddenFlag?.carrier) continue;
+        if (!a._ctfRoute) a._ctfRoute = ROUTES[a._botId() % 3];
+        // Перебалансировка, только если на маршруте явный затор (>=2 лишних) и не держим цель.
+        if (!ownStolen && !ownDropped && !allyCarries) {
+          const load = a._routeLoad(a._ctfRoute, goalX);
+          if (load >= 3 && time - (a._rebalanceAt || 0) > 4000) {
+            a._ctfRoute = a._pickLeastLoadedRoute(goalX, null);
+            a._laneIdx = 0;
+            a._rebalanceAt = time;
+          }
+        }
+        if (a._ctfRole !== 'holdhigh') a._ctfRole = (ownStolen || ownDropped) ? 'react' : 'attack';
+      }
+
+      // При угрозе своему флагу — роль роли не фиксируем жёстко тут, _pickTarget
+      // уже шлёт на возврат/перехват; это лишь метка.
+      if (iCarry) this._ctfRole = 'carry';
+    } catch (e) {}
   }
 
   _pickTarget(time) {
@@ -504,14 +736,13 @@ export default class EnemyAI {
       const enemyFlag = p.team === 'blue' ? scene.redFlag : scene.blueFlag;
       const ownFlag = p.team === 'blue' ? scene.blueFlag : scene.redFlag;
       const goldFlag = scene.ctfSuddenFlag;
+      try { this._coordCtf(time, ownFlag, enemyFlag); } catch (e) {}
+      const homeBaseX = ownFlag ? ownFlag.baseX : (p.team === 'blue' ? 220 : scene.mapWidth - 220);
 
-      // 1. Сам несу флаг (вражеский или золотой) — бежим сдавать на базу
+      // 1. Сам несу флаг (вражеский или золотой) — бежим сдавать на базу (по своему коридору).
       if ((enemyFlag && enemyFlag.carrier === p) || (goldFlag && goldFlag.carrier === p)) {
-        if (ownFlag && Number.isFinite(ownFlag.baseX) && Number.isFinite(ownFlag.baseY)) {
-          return { x: ownFlag.baseX, y: ownFlag.baseY };
-        }
-        const bx = p.team === 'blue' ? 220 : (scene.mapWidth - 220);
-        return { x: bx, y: scene.mapHeight - 80 };
+        const home = { x: homeBaseX, y: scene.mapHeight - 80 };
+        return this._routeTarget(home, this._ctfRoute || 'mid', time, 360);
       }
 
       // 2. Свой флаг украден врагом — срочно перехватываем вора!
@@ -536,49 +767,48 @@ export default class EnemyAI {
           if (myEnemies && Math.hypot(myEnemies.x - carrier.x, myEnemies.y - carrier.y) < 550) {
             return myEnemies;
           }
-          const homeBaseX = p.team === 'blue' ? 220 : scene.mapWidth - 220;
           const toHomeDir = homeBaseX > carrier.x ? 1 : -1;
-          let botHash = 0;
-          for (const ch of String(p.playerName || '')) botHash += ch.charCodeAt(0);
-          const slot = (botHash % 3);
+          const slot = (this._botId() % 3);
           let escortX = carrier.x;
           if (slot === 0) escortX += toHomeDir * 140;
           else if (slot === 1) escortX -= toHomeDir * 120;
-          else escortX += (botHash % 2 === 0 ? 80 : -80);
+          else escortX += (this._botId() % 2 === 0 ? 80 : -80);
           return { x: escortX, y: carrier.y };
         }
-        if (!goldFlag.carrier) return goldFlag;
+        if (!goldFlag.carrier) {
+          return (this._ctfRole === 'holdhigh') ? this._routeTarget(goldFlag, 'high', time, 260) : this._routeTarget(goldFlag, this._ctfRoute || 'mid', time, 260);
+        }
       }
 
-      // 5. Вражеский флаг: если у врага (застрял/украден) или свободен — идём за ним
+      // 5. Вражеский флаг
       if (enemyFlag) {
         if (enemyFlag.carrier && enemyFlag.carrier !== p) {
           if (enemyFlag.carrier.team !== p.team) {
             return enemyFlag.carrier;
           } else {
-            // Союзник (или игрок) несёт флаг — не толпимся в одной точке!
-            // Часть команды идёт наперехват врагов между носителем и базой,
-            // а эскорт держит тактическую дистанцию (спереди/сзади/сбоку).
+            // Союзник несёт флаг — эскорт/расчистка.
             const carrier = enemyFlag.carrier;
             const myEnemies = this._nearestEnemy();
             if (myEnemies && Math.hypot(myEnemies.x - carrier.x, myEnemies.y - carrier.y) < 550) {
               return myEnemies; // Перехватываем угрозу рядом с носителем
             }
-            // Вычисляем направление движения к своей базе
-            const homeBaseX = ownFlag ? ownFlag.baseX : (p.team === 'blue' ? 220 : scene.mapWidth - 220);
+            // holdhigh держит высокий фланг впереди по пути домой, остальные — эскорт строем.
+            if (this._ctfRole === 'holdhigh') {
+              const toHomeDir = homeBaseX > carrier.x ? 1 : -1;
+              return this._routeTarget({ x: carrier.x + toHomeDir * 260, y: carrier.y }, 'high', time, 180);
+            }
             const toHomeDir = homeBaseX > carrier.x ? 1 : -1;
-            // У каждого бота индивидуальный оффсет строя по хэшу имени
-            let botHash = 0;
-            for (const ch of String(p.playerName || '')) botHash += ch.charCodeAt(0);
-            const slot = (botHash % 3); // 0: авангард (впереди), 1: арьергард (позади), 2: фланг
+            const slot = (this._botId() % 3); // 0: авангард, 1: арьергард, 2: фланг
             let escortX = carrier.x;
-            if (slot === 0) escortX += toHomeDir * 140; // бежит впереди, расчищая путь
-            else if (slot === 1) escortX -= toHomeDir * 120; // прикрывает тыл
-            else escortX += (botHash % 2 === 0 ? 80 : -80);
+            if (slot === 0) escortX += toHomeDir * 140;
+            else if (slot === 1) escortX -= toHomeDir * 120;
+            else escortX += (this._botId() % 2 === 0 ? 80 : -80);
             return { x: escortX, y: carrier.y };
           }
         }
-        return enemyFlag;
+        // Флаг свободен — атакуем по назначенному флангу (3 коридора).
+        const route = (this._ctfRole === 'holdhigh') ? 'high' : (this._ctfRoute || ROUTES[this._botId() % 3]);
+        return this._routeTarget(enemyFlag, route, time, 280);
       }
     }
 
@@ -588,85 +818,104 @@ export default class EnemyAI {
       const enemyBomb = p.team === 'blue' ? scene.redBomb : scene.blueBomb;
       const plantBase = p.team === 'blue' ? scene.enemyBase : scene.blueBase;
       const homeBase = p.team === 'blue' ? scene.blueBase : scene.enemyBase;
+      const defend = this._bombRole === 'defend';
+      const bombRoute = this._ctfRoute || ROUTES[this._botId() % 3];
 
       // 1. Бот САМ несёт бомбу — бежим ставить на вражескую базу!
       if (ourBomb && ourBomb.carrier === p) {
         if (plantBase && Number.isFinite(plantBase.x)) {
-          return { x: plantBase.x, y: plantBase.y, _isPlantZone: true };
+          return this._routeTarget({ x: plantBase.x, y: plantBase.y, _isPlantZone: true }, bombRoute, time, 280);
         }
       }
 
-      // 2. Вражеская бомба брошена в поле (не дома и без носителя) — ПРИОРИТЕТ: бежим разминировать!
+      // 2. Вражеская бомба брошена в поле (не дома и без носителя) — ПРИОРИТЕТ: разминировать!
       if (enemyBomb && !enemyBomb.carrier && !enemyBomb.home) {
         return { x: enemyBomb.x, y: enemyBomb.y, _isDefuseTarget: true };
       }
 
-      // 3. Враг несёт свою бомбу — бежим перехватить вражеского носителя!
+      // 3. Враг несёт свою бомбу — бежим перехватить носителя!
       if (enemyBomb && enemyBomb.carrier && enemyBomb.carrier.team !== p.team) {
+        // Дефендер встречает ближе к своей базе/пути, атакующий — со своей позиции.
+        if (defend && homeBase) return enemyBomb.carrier;
         return enemyBomb.carrier;
       }
 
-      // 4. Наша бомба брошена в поле — бежим подбирать её!
+      // 4. Наша бомба брошена в поле — подбираем (атакующие в приоритете), дефендер может страховать.
       if (ourBomb && !ourBomb.carrier && !ourBomb.home) {
-        return ourBomb;
+        return defend ? { x: ourBomb.x, y: ourBomb.y } : this._routeTarget(ourBomb, bombRoute, time, 220);
       }
 
-      // 5. Союзник несёт нашу бомбу — эскортируем носителя и расчищаем точку закладки
+      // 5. Союзник несёт нашу бомбу — эскорт и расчистка точки.
       if (ourBomb && ourBomb.carrier && ourBomb.carrier.team === p.team) {
         const carrier = ourBomb.carrier;
         const myEnemies = this._nearestEnemy();
-        // Враг близко к носителю — атакуем угрозу
         if (myEnemies && Math.hypot(myEnemies.x - carrier.x, myEnemies.y - carrier.y) < 500) {
           return myEnemies;
         }
-        // Иначе часть эскорта бежит рядом с носителем, а часть — вперёд на базу расчищать точку
-        let botHash = 0;
-        for (const ch of String(p.playerName || '')) botHash += ch.charCodeAt(0);
-        if ((botHash % 2 === 0) && plantBase && Number.isFinite(plantBase.x)) {
-          // Авангард: бежит расчищать точку закладки
-          return { x: plantBase.x, y: plantBase.y, _isPlantZone: true };
-        } else {
-          // Эскорт: прикрывает носителя
+        if (defend) {
+          // Дефендер прикрывает тыл/свою половину, а не ломится в авангард.
           const escortDir = (plantBase && plantBase.x > carrier.x) ? 1 : -1;
-          return { x: carrier.x + escortDir * 100, y: carrier.y };
+          return { x: carrier.x - escortDir * 110, y: carrier.y };
         }
+        if ((this._botId() % 2 === 0) && plantBase && Number.isFinite(plantBase.x)) {
+          return this._routeTarget({ x: plantBase.x, y: plantBase.y, _isPlantZone: true }, bombRoute, time, 220);
+        }
+        const escortDir = (plantBase && plantBase.x > carrier.x) ? 1 : -1;
+        return { x: carrier.x + escortDir * 100, y: carrier.y };
       }
 
-      // 6. Наша бомба ждёт на нашей базе
+      // 6. Наша бомба дома: атакующий идёт за ней по флангу, дефендер держит позицию у своей.
       if (ourBomb && !ourBomb.carrier && ourBomb.home) {
-        return ourBomb;
+        if (defend && homeBase && Math.hypot(p.x - homeBase.x, p.y - homeBase.y) < 420) {
+          const e = this._nearestEnemy();
+          if (e) return e;
+          return { x: homeBase.x, y: homeBase.y };
+        }
+        return this._routeTarget(ourBomb, bombRoute, time, 240);
       }
 
-      // 7. Если всё остальное не сработало, идём к вражеской бомбе
+      // 7. Фолбэк
       if (enemyBomb) return enemyBomb;
     }
 
     // KOTH: распределённый захват и защита контрольных точек
     if (mode === 'KOTH' && Array.isArray(scene.kothPoints) && scene.kothPoints.length) {
-      let botHash = 0;
-      for (const ch of String(p.playerName || '')) botHash += ch.charCodeAt(0);
+      const slot = this._botId() % 3;
 
-      // 1. Точки свои, но под атакой противника (спорные) — защита базы/точек
+      // 1. Точки свои, но под атакой противника (спорные) — защита
       const contestedOwn = scene.kothPoints.filter(pt => pt.holder === p.team && (pt._st === 'contest' || pt.prog !== 0));
-      if (contestedOwn.length > 0 && (botHash % 3 === 0)) {
+      if (contestedOwn.length > 0 && slot === 0) {
         const pt = contestedOwn[0];
         return { x: pt.x, y: pt.y, _isKothZone: true, _point: pt };
       }
 
-      // 2. Чужие или нейтральные точки — захват
+      // 2. Чужие или нейтральные точки — захват, распределяя по занятости.
       const unowned = scene.kothPoints.filter(pt => pt.holder !== p.team).slice().sort((a, b) =>
         Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y));
       if (unowned.length > 0) {
-        // Распределяем команду между ближайшей и следующей не захваченной точкой
-        const pick = (unowned.length > 1 && (botHash % 2 === 1)) ? unowned[1] : unowned[0];
+        // Считаем, сколько союзников ближе всего к каждой точке, берём менее занятую из двух ближайших.
+        let pick = unowned[0];
+        if (unowned.length > 1) {
+          const load = (pt) => {
+            let n = 0;
+            const pl = scene.players || [];
+            for (let i = 0; i < pl.length; i++) {
+              const m = pl[i];
+              if (!m || m === p || m.dead || m.active === false || m.team !== p.team || !m.ai) continue;
+              if (Math.hypot(m.x - pt.x, m.y - pt.y) < Math.hypot(m.x - unowned[0].x, m.y - unowned[0].y) + 120) n++;
+            }
+            return n;
+          };
+          const a = unowned[0], b = unowned[1];
+          if (load(b) < load(a) || (slot === 1 && Math.hypot(b.x - p.x, b.y - p.y) < Math.hypot(a.x - p.x, a.y - p.y) * 1.35)) pick = b;
+        }
         return { x: pick.x, y: pick.y, _isKothZone: true, _point: pick };
       }
 
-      // 3. Все точки уже захвачены своей командой!
-      // Распределяемся на удержание/патруль точек и перехват приближающихся врагов
+      // 3. Все точки наши — удержание + перехват.
       const myPts = scene.kothPoints.slice().sort((a, b) =>
         Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y));
-      const defPt = myPts[botHash % myPts.length];
+      const defPt = myPts[this._botId() % myPts.length];
       if (defPt) {
         const nearEnemy = this._nearestEnemy();
         if (nearEnemy && Math.hypot(nearEnemy.x - defPt.x, nearEnemy.y - defPt.y) < 420) {
@@ -680,27 +929,24 @@ export default class EnemyAI {
     const neededPickup = this._findNeededPickup();
     if (neededPickup) return neededPickup;
 
-    // По умолчанию — ближайший враг в пределах дальности и на том же фланге.
+    // По умолчанию — ближайший враг: видимый на своём ярусе в приоритете
+    // (чтобы быстрее установить LOS), иначе ближайший на своём ярусе, иначе любой.
     let best = null, bestD = Infinity;
     const wr = (p.weapon && p.weapon.range) ? p.weapon.range : 700;
-    for (const o of (scene.players || [])) {
-      if (o === p || !o || o.dead || o.active === false) continue;
-      if (o.team === p.team) continue;
-      if (Math.abs(o.y - p.y) > 140) continue;
-      const d = Math.hypot(o.x - p.x, o.y - p.y);
-      if (d > wr + 120) continue;
-      if (d < bestD) { bestD = d; best = o; }
-    }
-    if (best) return best;
-    // fallback: любой враг на том же фланге
-    bestD = Infinity; best = null;
-    for (const o of (scene.players || [])) {
-      if (o === p || !o || o.dead || o.active === false) continue;
-      if (o.team === p.team) continue;
-      if (Math.abs(o.y - p.y) > 140) continue;
-      const d = Math.hypot(o.x - p.x, o.y - p.y);
-      if (d < bestD) { bestD = d; best = o; }
-    }
+    const pickEnemy = (sameTier, losOnly) => {
+      let b = null, bd = Infinity;
+      for (const o of (scene.players || [])) {
+        if (o === p || !o || o.dead || o.active === false) continue;
+        if (o.team === p.team) continue;
+        if (sameTier && Math.abs(o.y - p.y) > 140) continue;
+        const d = Math.hypot(o.x - p.x, o.y - p.y);
+        if (sameTier && d > wr + 120) continue;
+        if (losOnly && !this._hasLosTo(o.x, o.y - 24)) continue;
+        if (d < bd) { bd = d; b = o; }
+      }
+      return b;
+    };
+    best = pickEnemy(true, true) || pickEnemy(true, false) || pickEnemy(false, false);
     if (best) return best;
     // последний фолбэк: любой враг (другой фланг)
     bestD = Infinity; best = null;

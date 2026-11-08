@@ -114,12 +114,14 @@ export default class MenuScene extends Phaser.Scene {
     }
     const genomeLocked = !gameState.geneUnlocked;
     const campaignTotal = campaignLevels.length;
-    const campaignLabel = gameState.campaignLevel > campaignTotal
+    const campaignDone = gameState.campaignLevel > campaignTotal;
+    const cheatUnlock = !!gameState.cheatAllUnlocked;
+    const campaignLabel = campaignDone
       ? 'КАМПАНИЯ ✓'
       : `КАМПАНИЯ — УР. ${gameState.campaignLevel}`;
 
-    const trialLocked = gameState.level < 2;
-    const ffaLocked = gameState.level < 3;
+    const trialLocked = gameState.level < 2 && !cheatUnlock;
+    const ffaLocked = gameState.level < 5 && !cheatUnlock;
 
     // Левое крыло: Арсенал
     const leftBtns = [
@@ -133,8 +135,8 @@ export default class MenuScene extends Phaser.Scene {
     // Центр: Режимы
     const centerSubs = [
       { label: campaignLabel, icon: 'flag', cb: () => this.scene.start('LobbyScene', { mode: 'CAMPAIGN' }) },
-      { label: 'ВЫЖИВАНИЕ', icon: 'skull', cb: () => this.scene.start('GameScene', { mode: 'TRIAL' }), locked: trialLocked, lockMsg: 'ур. 2' },
-      { label: 'СВОБОДНАЯ ИГРА', icon: 'swords', cb: () => this.scene.start('LobbyScene', { mode: 'FFA' }), locked: ffaLocked, lockMsg: 'ур. 3' }
+      { label: 'ВЫЖИВАНИЕ', icon: 'skull', cb: () => this.scene.start('GameScene', { mode: 'TRIAL' }), locked: trialLocked, lockMsg: trialLocked ? 'ур. 2' : null },
+      { label: 'СВОБОДНАЯ ИГРА', icon: 'swords', cb: () => this.scene.start('LobbyScene', { mode: 'FFA' }), locked: ffaLocked, lockMsg: ffaLocked ? 'ур. 5' : null }
     ];
 
     const onlineSubs = [
@@ -145,16 +147,12 @@ export default class MenuScene extends Phaser.Scene {
 
     // Правое крыло: Штаб и Операции
     const evDef = eventMutatorDef();
-    const evWeekend = isWeekend();
-    const evLocked = gameState.level < 3 || !evWeekend;
-    const evLabel = evWeekend
-      ? `ИВЕНТ: ${evDef.name.toUpperCase()}`
-      : `${evDef.name.toUpperCase()} · ${fmtCountdown((nextWeekendStart() || new Date()).getTime() - Date.now())}`;
+    const evLocked = !cheatUnlock;
 
     const rightBtns = [
       {
-        label: evLabel, icon: 'event', glow: evWeekend && gameState.level >= 3, pulse: evWeekend && gameState.level >= 3,
-        locked: evLocked, lockMsg: gameState.level < 3 ? 'ур. 3' : null,
+        label: 'ИВЕНТ', icon: 'event', glow: false, pulse: false,
+        locked: evLocked, lockMsg: evLocked ? 'СКОРО' : null,
         cb: () => {
           const cls = (gameState.lastClass && ['Assault', 'Tank', 'Medic', 'Sniper'].includes(gameState.lastClass)) ? gameState.lastClass : 'Assault';
           this.scene.start('GameScene', {
@@ -164,8 +162,8 @@ export default class MenuScene extends Phaser.Scene {
           });
         }
       },
-      { label: 'ДРУЗЬЯ И КЛАН', icon: 'friends', cb: () => this.scene.start('FriendsScene', { view: 'friends' }) },
-      { label: 'ВОЙНА БАНД', icon: 'gang', cb: () => this.scene.start('GangScene') }
+      { label: 'ДРУЗЬЯ И КЛАН', icon: 'friends', locked: !cheatUnlock, lockMsg: cheatUnlock ? null : 'СКОРО', cb: () => this.scene.start('FriendsScene', { view: 'friends' }) },
+      { label: 'РАЙОНЫ', icon: 'gang', locked: !campaignDone && !cheatUnlock, lockMsg: (campaignDone || cheatUnlock) ? null : 'Разблокирует после компании', cb: () => this.scene.start('GangScene') }
     ];
     try { turfTick(); } catch (e) {}
 
@@ -246,6 +244,19 @@ export default class MenuScene extends Phaser.Scene {
           ease: 'Sine.easeInOut'
         });
       }
+      if (item.overlayLockMsg && btn && item.locked) {
+        const t = this.add.text(0, 0, item.overlayLockMsg, {
+          fontSize: '13px',
+          color: '#ffee88',
+          fontStyle: 'bold',
+          stroke: '#000000',
+          strokeThickness: 4,
+          align: 'center',
+          wordWrap: { width: btnW - 12 }
+        }).setOrigin(0.5);
+        btn.add(t);
+        t.setDepth(100);
+      }
     });
 
     // Карточка ежедневного подарка в правом крыле
@@ -259,12 +270,12 @@ export default class MenuScene extends Phaser.Scene {
     clanCard.lineStyle(1, 0x3a4868, 0.85);
     clanCard.strokeRoundedRect(COL_RIGHT - btnW / 2, clanCardY - 24, btnW, 50, 8);
 
-    const clanLine1 = (gameState.clan && gameState.clan.tag)
-      ? `КЛАН: [${gameState.clan.tag}] ${gameState.clan.name || ''}`
-      : 'КЛАН: БЕЗ КЛАНА';
-    this.add.text(COL_RIGHT, clanCardY - 10, clanLine1, {
-      fontSize: '11px', color: '#ffd24a', fontStyle: 'bold'
-    }).setOrigin(0.5);
+    if (gameState.clan && gameState.clan.tag) {
+      const clanLine1 = `КЛАН: [${gameState.clan.tag}] ${gameState.clan.name || ''}`;
+      this.add.text(COL_RIGHT, clanCardY - 10, clanLine1, {
+        fontSize: '11px', color: '#ffd24a', fontStyle: 'bold'
+      }).setOrigin(0.5);
+    }
 
     this.add.text(COL_RIGHT, clanCardY + 10, `🔥 СЕРИЯ ВХОДОВ В ИГРУ: ${gameState.dailyStreak | 0} ДН.`, {
       fontSize: '10px', color: '#c4d4f8', fontStyle: 'bold'
@@ -286,8 +297,7 @@ export default class MenuScene extends Phaser.Scene {
     // Контракты (Баттл-пасс) по нижнему краю по центру
     this.createContractsRow();
 
-    // Кнопки под правым крылом: Новости и Мои Уровни
-    this.createButton(UX(this, 1035), 650, 'НОВОСТИ', () => this._openNewsModal(), false, null, 116, 34, 13);
+    // Мои уровни (Новости переехали в верхнюю панель на место Доната)
     try { this._donutLevels(UX(this, 1165), 648); } catch (e) {}
 
     // Тост достижений

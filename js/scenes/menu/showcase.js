@@ -313,41 +313,47 @@ export function createTopBar() {
     fontSize: '11px', color: '#c4d0ec', fontStyle: 'bold'
   }).setOrigin(0, 0.5);
 
-  // Правая группа элементов (утилиты, магазин, настройки)
-  // Донат-витрина (пончик)
-  const donutBtn = this.add.container(W - 340, 6);
-  const donBg = this.add.graphics();
-  donBg.fillStyle(0x221a08, 0.95);
-  donBg.fillRoundedRect(0, 0, 100, 30, 8);
-  donBg.lineStyle(1.5, 0xd8a920, 0.9);
-  donBg.strokeRoundedRect(0, 0, 100, 30, 8);
-  donutBtn.add(donBg);
+  // Правая группа элементов (утилиты, магазин, настройки) — раздвинуты для читаемости
+  // Новости (та же обводка, что была у Доната)
+  const newsBtn = this.add.container(W - 400, 6);
+  const newsBg = this.add.graphics();
+  newsBg.fillStyle(0x221a08, 0.95);
+  newsBg.fillRoundedRect(0, 0, 100, 30, 8);
+  newsBg.lineStyle(1.5, 0xd8a920, 0.9);
+  newsBg.strokeRoundedRect(0, 0, 100, 30, 8);
+  newsBtn.add(newsBg);
 
-  const donIcon = this.add.text(18, 15, '🍩', { fontSize: '18px' }).setOrigin(0.5);
-  const donTxt = this.add.text(34, 15, 'ДОНАТ', {
-    fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
-  }).setOrigin(0, 0.5);
-  donutBtn.add([donIcon, donTxt]);
+  const newsIcon = this.add.text(16, 15, '📰', { fontSize: '16px' }).setOrigin(0.5);
+  const newsTxt = this.add.text(50, 15, 'НОВОСТИ', {
+    fontSize: '12px', color: '#ffd24a', fontStyle: 'bold'
+  }).setOrigin(0.5);
+  newsBtn.add([newsIcon, newsTxt]);
 
-  donutBtn.setSize(100, 30);
-  donutBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 100, 30), Phaser.Geom.Rectangle.Contains);
-  donutBtn.input.cursor = 'pointer';
-  donutBtn.on('pointerdown', () => this.scene.start('DonateScene'));
-  donutBtn.on('pointerover', () => {
-    donBg.lineStyle(2, 0xffe066, 1);
-    donBg.strokeRoundedRect(0, 0, 100, 30, 8);
-    donTxt.setColor('#ffffff');
-    donutBtn.setScale(1.05);
+  newsBtn.setSize(100, 30);
+  newsBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 100, 30), Phaser.Geom.Rectangle.Contains);
+  newsBtn.input.cursor = 'pointer';
+  newsBtn.on('pointerdown', () => this._openNewsModal());
+  newsBtn.on('pointerover', () => {
+    newsBg.clear();
+    newsBg.fillStyle(0x221a08, 0.95);
+    newsBg.fillRoundedRect(0, 0, 100, 30, 8);
+    newsBg.lineStyle(2, 0xffe066, 1);
+    newsBg.strokeRoundedRect(0, 0, 100, 30, 8);
+    newsTxt.setColor('#ffffff');
+    newsBtn.setScale(1.05);
   });
-  donutBtn.on('pointerout', () => {
-    donBg.lineStyle(1.5, 0xd8a920, 0.9);
-    donBg.strokeRoundedRect(0, 0, 100, 30, 8);
-    donTxt.setColor('#ffd24a');
-    donutBtn.setScale(1);
+  newsBtn.on('pointerout', () => {
+    newsBg.clear();
+    newsBg.fillStyle(0x221a08, 0.95);
+    newsBg.fillRoundedRect(0, 0, 100, 30, 8);
+    newsBg.lineStyle(1.5, 0xd8a920, 0.9);
+    newsBg.strokeRoundedRect(0, 0, 100, 30, 8);
+    newsTxt.setColor('#ffd24a');
+    newsBtn.setScale(1);
   });
 
   // Кнопка быстрого перехода в Профиль (с комфортным отступом от истории боёв)
-  const profTextBtn = this.add.container(W - 228, 6);
+  const profTextBtn = this.add.container(W - 275, 6);
   const ptBg = this.add.graphics();
   ptBg.fillStyle(0x131a30, 0.92);
   ptBg.fillRoundedRect(0, 0, 82, 30, 8);
@@ -375,9 +381,9 @@ export function createTopBar() {
     ptTxt.setColor('#c4d4f8');
   });
 
-  // Иконки утилит справа: Достижения, История, Полный экран, Настройки
-  this.createHistoryIcon(W - 118, 21);
-  this.createAchIcon(W - 86, 21);
-  this.createFullscreenButton(W - 54, 21);
-  this.createGearButton(W - 22, 21);
+  // Иконки утилит справа: История, Достижения, Полный экран, Настройки
+  this.createHistoryIcon(W - 158, 21);
+  this.createAchIcon(W - 115, 21);
+  this.createFullscreenButton(W - 72, 21);
+  this.createGearButton(W - 29, 21);
 }

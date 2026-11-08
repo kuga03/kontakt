@@ -195,10 +195,11 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
       { rw: 0.36, rh: 0.52 },
       { rw: 0.32, rh: 0.68 },
     ],
+    // Связка труб: две нижние почти на всю ширину (~58% H) + верхняя по центру (~88% H)
     map_pipes: [
-      { rw: 0.25, rh: 0.45 },
-      { rw: 0.50, rh: 0.78 },
-      { rw: 0.25, rh: 0.45 },
+      { rw: 0.23, rh: 0.58 },
+      { rw: 0.54, rh: 0.88 },
+      { rw: 0.23, rh: 0.58 },
     ],
     map_dune_rock: [
       { rw: 0.28, rh: 0.48 },
@@ -230,9 +231,10 @@ export function createCover(scene, x, y, width, height, texOrAlpha = 1, opts = {
       { rw: 0.50, rh: 0.82 },
       { rw: 0.25, rh: 0.54 },
     ],
+    // Стол: кресло/монитор дают высокую левую часть, тумба справа ниже монитора
     map_office_desk: [
-      { rw: 0.35, rh: 0.82 },
-      { rw: 0.65, rh: 0.64 },
+      { rw: 0.38, rh: 0.82 },
+      { rw: 0.62, rh: 0.78 },
     ],
     map_server_rack: [
       { rw: 1.0, rh: 0.95 },

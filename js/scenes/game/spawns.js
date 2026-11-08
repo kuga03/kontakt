@@ -487,7 +487,7 @@ export function createEnemies() {
     // иначе носителя убивают по кругу и матч не заканчивается).
     // Кап 15 ботов суммарно (синхронно с CTF выше): опция лобби «8+8»
     // даёт 8+7=15 без подмены. FPS-контроль — строкой [AUTO] fps в дампе.
-    let redCount = isTDM ? this.redBots : isBOMB ? (this.redBots <= 0 ? 0 : Math.max(1, this.redBots - 1)) : (isKOTH ? this.redBots : count);
+    let redCount = isTDM ? this.redBots : isBOMB ? (this.campaignMission ? Math.max(0, this.redBots) : (this.redBots <= 0 ? 0 : Math.max(1, this.redBots - 1))) : (isKOTH ? this.redBots : count);
     // «Без союзников»: красные как выбрано, синих ботов ноль (только игрок).
     // Кампании не касается (состав из уровня). Синие: 0 в лобби — то же самое.
     const _soloT = !!(gameState.noAllies && !this.campaignMission);

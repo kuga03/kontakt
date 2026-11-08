@@ -107,6 +107,8 @@ const defaultState = {
   expLosses: 0,
   // Демо-бой: игроком управляет ИИ (включается чит-кодом demo).
   demoMode: false,
+  // Чит-код all2: разблокирует все заблокированные кнопки в меню.
+  cheatAllUnlocked: false,
   lastClass: 'Assault',
   // Геном и даты скинов — сразу в дефолте, чтобы не плодить заплатки.
   // genes — ОБЪЕКТ {id: уровень} (см. genes.js:getGeneLevel), НЕ массив;
@@ -433,6 +435,7 @@ for (const k of ['expWins', 'expLosses']) {
 }
 if (typeof gameState.demoMode !== 'boolean') gameState.demoMode = false;
 if (typeof gameState.noAllies !== 'boolean') gameState.noAllies = false;
+if (typeof gameState.cheatAllUnlocked !== 'boolean') gameState.cheatAllUnlocked = false;
 // weekly удалён (мёртвая система): валидации нет, старые сейвы
 // с weekly-полем грузятся — поле игнорится allowlist-merge выше.
 if (!gameState.pass || typeof gameState.pass !== 'object') {

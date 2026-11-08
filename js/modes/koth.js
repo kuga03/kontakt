@@ -130,6 +130,12 @@ export function updateKoth(scene, time) {
       pt._shownF = fracNow;
       pt._shownS = signNow;
       paintKoth(scene, pt);
+    } else if (pt.bar) {
+      // Состояние не менялось, но зум камеры мог: держим размер полосы постоянным.
+      try {
+        const z = (scene.cameras && scene.cameras.main && scene.cameras.main.zoom) || 1;
+        pt.bar.setScale(1 / z);
+      } catch (e) {}
     }
     if (pt.holder && !scene._kothOvertime) {
       pt.tick += dt;
@@ -199,13 +205,19 @@ export function paintKoth(scene, pt) {
     }
     // Полоса захвата — чётко ПОД флагом (с зазором под основанием),
     // а не на одном уровне с ним: иначе древко проходит сквозь бар.
-    // B — на своей платформе (её gy).
+    // B — на своей платформе (её gy). Рисуем в локальных координатах
+    // и компенсируем зум камеры, чтобы размер не зависел от дальности.
     if (pt.bar) {
       const b = pt.bar;
       b.clear();
       const bw = 120, bh = 12;
       const gyB = (pt.gy != null ? pt.gy : baseY);
-      const bx = pt.x - bw / 2, by = gyB + 8;
+      b.setPosition(pt.x, gyB + 8);
+      try {
+        const z = (scene.cameras && scene.cameras.main && scene.cameras.main.zoom) || 1;
+        b.setScale(1 / z);
+      } catch (e) {}
+      const bx = -bw / 2, by = 0;
       b.fillStyle(0x0a0a18, 0.85);
       b.fillRect(bx, by, bw, bh);
       b.lineStyle(1.5, col, 1);
