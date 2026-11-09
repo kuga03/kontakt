@@ -69,7 +69,8 @@ function serveStatic(req, res) {
         // сама инвалидирует кэш, чистка вручную не нужна.
         'Cache-Control': req.url.includes('?v=')
           ? 'public, max-age=31536000, immutable'
-          : 'no-store'
+          : 'no-store',
+        'Access-Control-Allow-Origin': '*'
       });
       res.end(data);
     });

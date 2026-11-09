@@ -46,14 +46,10 @@ export function createShowcase(cx, w, badgeMaxW) {
     pedG.lineBetween(rx1, ry1, rx2, ry2);
   }
 
-  // Плавающий бейдж звания и рейтинга над оперативником
+  // Плавающий бейдж звания над оперативником
   const bY = 138;
-  const rating = Math.max(0, gameState.onlineRating | 0);
-  const rNum = rating >= 10000
-    ? (rating / 1000).toFixed(1).replace('.', ',') + 'k'
-    : `${rating}`;
 
-  const badgeW = 270;
+  const badgeW = 180;
   const badgeH = 46;
   const rBg = this.add.graphics();
   rBg.fillStyle(0x0b0e1a, 0.92);
@@ -65,47 +61,13 @@ export function createShowcase(cx, w, badgeMaxW) {
   rBg.fillRoundedRect(cx - badgeW / 2 + 10, bY - badgeH / 2, badgeW - 20, 2.5, 1);
 
   // Звание и класс
-  this.add.text(cx - 30, bY - 8, getRank(gameState.level), {
+  this.add.text(cx, bY - 8, getRank(gameState.level), {
     fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
   }).setOrigin(0.5);
 
   const classBadgeColor = cd.color != null ? (typeof cd.color === 'string' ? cd.color : '#' + cd.color.toString(16).padStart(6, '0')) : '#4da6ff';
-  this.add.text(cx - 30, bY + 9, cd.label.toUpperCase(), {
+  this.add.text(cx, bY + 9, cd.label.toUpperCase(), {
     fontSize: '11px', color: classBadgeColor, fontStyle: 'bold'
-  }).setOrigin(0.5);
-
-  // Капсула рейтинга справа внутри бейджа
-  const cupPillX = cx + 82;
-  const cupPill = this.add.graphics();
-  cupPill.fillStyle(0x181a28, 0.95);
-  cupPill.fillRoundedRect(cupPillX - 44, bY - 14, 88, 28, 6);
-  cupPill.lineStyle(1, 0xd8a920, 0.85);
-  cupPill.strokeRoundedRect(cupPillX - 44, bY - 14, 88, 28, 6);
-
-  const ccx = cupPillX - 26;
-  const ccy = bY;
-  if (this.textures.exists('значок очки рейтинга')) {
-    const cupImg = this.add.image(ccx, ccy, 'значок очки рейтинга');
-    try {
-      const csrc = this.textures.get('значок очки рейтинга').getSourceImage();
-      const csw = Math.max(1, (csrc && csrc.width) || 1);
-      const csh = Math.max(1, (csrc && csrc.height) || 1);
-      cupImg.setScale(Math.min(22 / csw, 22 / csh));
-    } catch (e) { cupImg.setDisplaySize(20, 22); }
-  } else {
-    const cup = this.add.graphics();
-    cup.fillStyle(0xffd24a, 1);
-    cup.fillPoints([
-      new Phaser.Geom.Point(ccx - 5, ccy - 5), new Phaser.Geom.Point(ccx + 5, ccy - 5),
-      new Phaser.Geom.Point(ccx + 2.5, ccy + 2.5), new Phaser.Geom.Point(ccx - 2.5, ccy + 2.5)
-    ], true);
-    cup.lineStyle(1.5, 0xffd24a, 1);
-    cup.lineBetween(ccx, ccy + 2.5, ccx, ccy + 6);
-    cup.lineBetween(ccx - 4, ccy + 6, ccx + 4, ccy + 6);
-  }
-
-  this.add.text(cupPillX + 8, bY, `${rNum}`, {
-    fontSize: '13px', color: '#ffd24a', fontStyle: 'bold'
   }).setOrigin(0.5);
 
   // Герой — живой анимированный риг по центру сцены
@@ -323,33 +285,37 @@ export function createTopBar() {
   newsBg.strokeRoundedRect(0, 0, 100, 30, 8);
   newsBtn.add(newsBg);
 
-  const newsIcon = this.add.text(16, 15, '📰', { fontSize: '16px' }).setOrigin(0.5);
-  const newsTxt = this.add.text(50, 15, 'НОВОСТИ', {
+  const newsIcon = this.add.text(14, 15, '📰', { fontSize: '16px' }).setOrigin(0.5);
+  const newsTxt = this.add.text(60, 15, 'НОВОСТИ', {
     fontSize: '12px', color: '#ffd24a', fontStyle: 'bold'
   }).setOrigin(0.5);
   newsBtn.add([newsIcon, newsTxt]);
 
-  newsBtn.setSize(100, 30);
-  newsBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 100, 30), Phaser.Geom.Rectangle.Contains);
-  newsBtn.input.cursor = 'pointer';
-  newsBtn.on('pointerdown', () => this._openNewsModal());
-  newsBtn.on('pointerover', () => {
+  // Zone над всем контейнером — надёжный hit-area (Container + hitArea
+  // на некоторых сборках Phaser ловит только верхнюю часть).
+  const newsHit = this.add.zone(50, 15, 100, 30).setInteractive({ useHandCursor: true });
+  newsBtn.add(newsHit);
+  newsHit.on('pointerdown', () => this._openNewsModal());
+  newsHit.on('pointerover', () => {
     newsBg.clear();
     newsBg.fillStyle(0x221a08, 0.95);
     newsBg.fillRoundedRect(0, 0, 100, 30, 8);
     newsBg.lineStyle(2, 0xffe066, 1);
     newsBg.strokeRoundedRect(0, 0, 100, 30, 8);
     newsTxt.setColor('#ffffff');
-    newsBtn.setScale(1.05);
+    try {
+      if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+        this.sound.play('sfx_hover', { volume: 0.2 });
+      }
+    } catch (e) {}
   });
-  newsBtn.on('pointerout', () => {
+  newsHit.on('pointerout', () => {
     newsBg.clear();
     newsBg.fillStyle(0x221a08, 0.95);
     newsBg.fillRoundedRect(0, 0, 100, 30, 8);
     newsBg.lineStyle(1.5, 0xd8a920, 0.9);
     newsBg.strokeRoundedRect(0, 0, 100, 30, 8);
     newsTxt.setColor('#ffd24a');
-    newsBtn.setScale(1);
   });
 
   // Кнопка быстрого перехода в Профиль (с комфортным отступом от истории боёв)
@@ -366,16 +332,27 @@ export function createTopBar() {
   }).setOrigin(0.5);
   profTextBtn.add(ptTxt);
 
-  profTextBtn.setSize(82, 30);
-  profTextBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 82, 30), Phaser.Geom.Rectangle.Contains);
-  profTextBtn.input.cursor = 'pointer';
-  profTextBtn.on('pointerdown', () => this.scene.start('FriendsScene', { view: 'self', returnTo: 'MenuScene' }));
-  profTextBtn.on('pointerover', () => {
+  // Zone над всем контейнером — надёжный hit-area.
+  const ptHit = this.add.zone(41, 15, 82, 30).setInteractive({ useHandCursor: true });
+  profTextBtn.add(ptHit);
+  ptHit.on('pointerdown', () => this.scene.start('FriendsScene', { view: 'self', returnTo: 'MenuScene' }));
+  ptHit.on('pointerover', () => {
+    ptBg.clear();
+    ptBg.fillStyle(0x131a30, 0.92);
+    ptBg.fillRoundedRect(0, 0, 82, 30, 8);
     ptBg.lineStyle(1.5, 0xffd24a, 1);
     ptBg.strokeRoundedRect(0, 0, 82, 30, 8);
     ptTxt.setColor('#ffff55');
+    try {
+      if (this.cache.audio.exists('sfx_hover') && !this.sound.locked) {
+        this.sound.play('sfx_hover', { volume: 0.2 });
+      }
+    } catch (e) {}
   });
-  profTextBtn.on('pointerout', () => {
+  ptHit.on('pointerout', () => {
+    ptBg.clear();
+    ptBg.fillStyle(0x131a30, 0.92);
+    ptBg.fillRoundedRect(0, 0, 82, 30, 8);
     ptBg.lineStyle(1, 0x3a4870, 0.9);
     ptBg.strokeRoundedRect(0, 0, 82, 30, 8);
     ptTxt.setColor('#c4d4f8');

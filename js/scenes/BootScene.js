@@ -550,8 +550,10 @@ export default class BootScene extends Phaser.Scene {
   }
 
   // Отдельный шаг загрузки — проверка файлов. Технически: целостность
-  // критичных ассетов (нет ли недокачанных/битых) + сверка версии с сервером
-  // (version.json). Визуально: строка состояния с галочкой/предупреждением.
+  // критичных ассетов (нет ли недокачанных/битых) + сверка версии.
+  // ПК: как раньше — сверка с локальным version.json (бандл/сервер), офлайн
+  // не блокирует. Мобильный APK: до входа в меню обязательно сверяем версию
+  // на GitHub (ota.json) — без подтверждения актуальности в меню не пускаем.
   _checkFiles() {
     try { this._updateBar('Проверка файлов', 0.9); } catch (e) {}
     const needTex = ['fon_menu', 'fon_btn', 'fon_btn_pressed', 'badge_blue', 'badge_red', 'icon_coins'];
@@ -561,7 +563,15 @@ export default class BootScene extends Phaser.Scene {
       needTex.forEach(k => { if (!this.textures.exists(k)) assetsOk = false; });
       needAudio.forEach(k => { if (!this.cache.audio.exists(k)) assetsOk = false; });
     } catch (e) { assetsOk = false; }
-    const done = (vOk) => this._showCheckResult(assetsOk && vOk);
+    const done = (vOk, reason) => this._showCheckResult(assetsOk && vOk, reason);
+
+    if (this._isNativeMobile()) {
+      this._verifyGithubVersion().then((res) => {
+        done(!!(res && res.ok), res ? res.reason : 'network');
+      }).catch(() => done(false, 'network'));
+      return;
+    }
+
     // Сверка версии с сервером (version.json). Офлайн/без файла — только ассеты.
     try {
       fetch('version.json', { cache: 'no-store' })
@@ -575,34 +585,103 @@ export default class BootScene extends Phaser.Scene {
     } catch (e) { done(true); }
   }
 
-  _showCheckResult(up) {
-    const t = this._barText;
-    if (t) {
-      t.setText('');
-    }
+  _isNativeMobile() {
+    try {
+      const C = window.Capacitor;
+      if (C && typeof C.isNativePlatform === 'function') return !!C.isNativePlatform();
+      if (C && typeof C.getPlatform === 'function') return C.getPlatform() !== 'web';
+    } catch (e) {}
+    return false;
+  }
+
+  _verifyGithubVersion() {
+    if (this._barText) this._barText.setText('Проверка версии на GitHub...');
+    const sources = [
+      // Публичный прокси/эндпоинт версии (CORS). Приоритетный — работает при приватном репо.
+      { url: 'https://still-hat-9163.kuga03.workers.dev/', type: 'json' },
+      { url: 'https://kuga03.github.io/kontakt/ota.json', type: 'json' },
+      { url: 'https://raw.githubusercontent.com/kuga03/kontakt/main/ota.json', type: 'json' },
+      { url: 'https://raw.githubusercontent.com/kuga03/kontakt/main/version.json', type: 'json' },
+      { url: 'https://api.github.com/repos/kuga03/kontakt/contents/ota.json?ref=main', type: 'ghapi' },
+      { url: 'https://api.github.com/repos/kuga03/kontakt/contents/version.json?ref=main', type: 'ghapi' },
+      // Собственный игровой сервер (self-hosted/Render): отдаёт /version.json из репо-файлов.
+      { url: 'https://kontakt-eijf.onrender.com/version.json', type: 'json' }
+    ];
+    const withTimeout = (p, ms) => Promise.race([
+      p,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+    ]);
+    const parseVer = async (src) => {
+      const sep = src.url.indexOf('?') >= 0 ? '&' : '?';
+      const res = await withTimeout(fetch(src.url + sep + 't=' + Date.now(), {
+        cache: 'no-store',
+        headers: src.type === 'ghapi' ? { 'Accept': 'application/vnd.github.v3+json' } : {}
+      }), 12000);
+      if (!res || !res.ok) return null;
+      const data = await withTimeout(res.json(), 8000);
+      if (src.type === 'ghapi') {
+        if (!data || !data.content) return null;
+        try {
+          const txt = atob(String(data.content).replace(/\s/g, ''));
+          const obj = JSON.parse(txt);
+          return (obj && typeof obj.version === 'string') ? obj.version : null;
+        } catch (e) { return null; }
+      }
+      return (data && typeof data.version === 'string') ? data.version : null;
+    };
+    return (async () => {
+      let sawNetwork = false;
+      for (const src of sources) {
+        try {
+          const ver = await parseVer(src);
+          if (typeof ver === 'string' && ver) {
+            if (ver !== GAME_VERSION) return { ok: false, reason: 'outdated' };
+            return { ok: true, reason: null };
+          }
+          sawNetwork = true;
+        } catch (e) { sawNetwork = true; }
+      }
+      return { ok: false, reason: sawNetwork ? 'network' : 'network' };
+    })();
+  }
+
+  _showCheckResult(up, reason) {
     if (this._barFill) this._barFill.width = Math.max(0, this._barW);
     if (up) {
+      if (this._barText) this._barText.setText('');
       // Пауза, чтобы результат прочитали, затем в меню.
       this.time.delayedCall(1100, () => this.scene.start('MenuScene'));
-    } else {
-      this._showRefreshButton();
+      return;
     }
+    if (this._isNativeMobile()) {
+      if (this._barText) {
+        this._barText.setText(reason === 'outdated'
+          ? 'Доступна новая версия. Обновите игру.'
+          : 'Не удалось проверить версию. Нужен интернет.');
+        try { this._barText.setColor('#ffcc66'); } catch (e) {}
+      }
+      this._showRefreshButton(reason === 'outdated' ? 'update' : 'retry');
+      return;
+    }
+    // ПК: поведение как раньше (без доп. текста, кнопка обновления).
+    if (this._barText) this._barText.setText('');
+    this._showRefreshButton('update');
   }
 
   // Кнопка «Обновить»: перезагружает страницу, чтобы докачать свежие файлы
   // (versioned-URL иммутабельны — добавляем метку в query, иначе кэш отдаёт
   // старое). До меню не пускает.
-  _showRefreshButton() {
+  _showRefreshButton(mode) {
     try {
       const W = gameW(this), H = this.scale.height;
       const bw = 240, bh = 56;
       const bx = W / 2, by = H / 2 + 78;
       const bg = this.add.rectangle(bx, by, bw, bh, 0x287a45)
         .setStrokeStyle(2, 0x88ff88);
-      this.add.text(bx, by, 'ОБНОВИТЬ', {
+      this.add.text(bx, by, mode === 'retry' ? 'ПОВТОРИТЬ' : 'ОБНОВИТЬ', {
         fontSize: '20px', color: '#ffffff', fontStyle: 'bold'
       }).setOrigin(0.5);
-      this.add.text(bx, by + 42, 'докачает новую версию', {
+      this.add.text(bx, by + 42, mode === 'retry' ? 'проверит версию снова' : 'докачает новую версию', {
         fontSize: '12px', color: '#8899bb'
       }).setOrigin(0.5);
       bg.setInteractive({ useHandCursor: true });

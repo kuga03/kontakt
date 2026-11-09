@@ -37,7 +37,7 @@ const RES_KEY = 'screenRes';
 const FPS_OPTIONS = [
   { id: '30', label: '30 FPS' },
   { id: '60', label: '60 FPS' },
-  { id: '0', label: 'Без ограничения' }
+  { id: '0', label: 'Без лимита' }
 ];
 
 const FPS_KEY = 'fpsCap';
@@ -121,6 +121,7 @@ export default class SettingsScene extends Phaser.Scene {
     this._keyModal = null;
     this._selectModal = null;
     this._ratesModal = null;
+    this._nickModal = null;
     this._actionButtons = [];
 
     this._initBackground();
@@ -163,21 +164,21 @@ export default class SettingsScene extends Phaser.Scene {
       if (id === active) return;
       saveScreenRes(id);
       window.location.reload();
-    }, 210);
+    }, 224);
 
     const fpsActive = getFpsCap();
     this._selectButton(UX(this, CX1), 262, 'Частота кадров', FPS_OPTIONS, fpsActive, (id) => {
       if (id === fpsActive) return;
       saveFpsCap(id);
       window.location.reload();
-    }, 210);
+    }, 224);
 
     // Вертикальная синхронизация: lock цикла на 60. Применяется перезагрузкой.
-    this._toggle(UX(this, CX1), 324, 'Синхронизация', getVsync, saveVsync, true, 210);
+    this._toggle(UX(this, CX1), 324, 'Синхронизация', getVsync, saveVsync, true, 224);
     // Показ FPS в углу экрана (в матчах): без перезагрузки.
-    this._toggle(UX(this, CX1), 366, 'Показ FPS', getShowFps, saveShowFps, false, 210);
+    this._toggle(UX(this, CX1), 366, 'Показ FPS', getShowFps, saveShowFps, false, 224);
     // Замер FPS под нагрузкой (проверка настроек графики).
-    this._actionButton(UX(this, CX1), 416, 'ТЕСТ FPS', () => this.scene.start('BenchmarkScene'), 15, 210, 0x1f6a3d);
+    this._actionButton(UX(this, CX1), 416, 'ТЕСТ FPS', () => this.scene.start('BenchmarkScene'), 14, 224, 0x1f6a3d);
 
     // --- Панель ЗВУК И ИГРОК: музыка и звуки, шаг 10%, 0 = Выкл. ---
     this._panelSubhead(UX(this, CX2), 142, 'ЗВУК');
@@ -197,11 +198,7 @@ export default class SettingsScene extends Phaser.Scene {
       };
       paintNick();
       this._actionButton(UX(this, CX2), 408, 'Изменить ник', () => {
-        const value = window.prompt('Введите ник (до 16 символов):', gameState.playerName);
-        if (value != null && value.trim()) {
-          renamePlayer(value.trim().slice(0, 16));
-          paintNick();
-        }
+        this._openNickModal(paintNick);
       }, 14, 170, 0x443377);
     }
 
@@ -256,7 +253,7 @@ export default class SettingsScene extends Phaser.Scene {
       this._paintCrossPreview = paintCrossPreview;
 
       const mkCross = (y, paint, next) => {
-        this._optionRow(CX, y, paint, next, 210, crossPainters);
+        this._optionRow(CX, y, paint, next, 206, crossPainters);
       };
       mkCross(252, b => { b.setText(`Вид: ${crossLabel(getCrosshair().shape, CROSS_SHAPES)} ▸`); }, nextCrossShape);
       mkCross(284, b => { b.setText(`Цвет: ${crossLabel(getCrosshair().color, CROSS_COLORS)} ▸`); }, nextCrossColor);
@@ -279,50 +276,46 @@ export default class SettingsScene extends Phaser.Scene {
       if (id === qActive) return;
       setQuality(id);
       window.location.reload();
-    }, 220);
-    this._toggle(UX(this, CX4), 264, 'Тряска камеры', getCamShake, setCamShake, false, 220);
-    this._toggle(UX(this, CX4), 308, 'Вибрация', getVibration, setVibration, false, 220);
+    }, 214);
+    this._toggle(UX(this, CX4), 264, 'Тряска камеры', getCamShake, setCamShake, false, 214);
+    this._toggle(UX(this, CX4), 308, 'Вибрация', getVibration, setVibration, false, 214);
 
     // --- Футёр «ИГРА» (слева): чит-код и сбросы. ---
-    this.add.text(UX(this, 130), 526, 'Чит-код', {
-      fontSize: '16px', color: '#aabbff'
-    }).setOrigin(0.5);
-
-    this.cheatMsg = this.add.text(UX(this, 260), 570, '', {
+    this.cheatMsg = this.add.text(UX(this, 260), 578, '', {
       fontSize: '12px', color: '#ffee88', wordWrap: { width: 390 }, align: 'center'
     }).setOrigin(0.5);
 
     this.cheatArming = false;
     this.cheatBuffer = '';
-    this._actionButton(UX(this, 330), 526, 'Ввести чит-код', () => {
+    this._actionButton(UX(this, 260), 544, 'Ввести чит-код', () => {
       this.cheatArming = true;
       this.cheatBuffer = '';
       this.cheatMsg.setColor('#ffee88');
       this.cheatMsg.setText('Вводи код с клавиатуры, Enter — готово');
-    }, 14, 160, 0x443377);
+    }, 14, 185, 0x443377);
 
     this._actionButton(UX(this, 155), 640, 'Сбросить кампанию', () => {
       if (!this.campResetPending) {
         this.campResetPending = true;
-        if (this.campResetBtn && this.campResetBtn._txt) this.campResetBtn._txt.setText('Точно? Ещё раз');
+        if (this.campResetBtn && this.campResetBtn._setLabel) this.campResetBtn._setLabel('Точно? Ещё раз');
         if (this.campResetBtn && this.campResetBtn._paint) this.campResetBtn._paint(true, 0x8a3a3a);
         return;
       }
       resetCampaign();
       this.scene.start('MenuScene');
-    }, 13, 180, 0x5a3a2a);
+    }, 13, 186, 0x5a3a2a);
     this.campResetBtn = this._actionButtons[this._actionButtons.length - 1];
 
     this._actionButton(UX(this, 365), 640, 'Сбросить прогресс', () => {
       if (!this.resetPending) {
         this.resetPending = true;
-        if (this.resetBtn && this.resetBtn._txt) this.resetBtn._txt.setText('Точно? Ещё раз');
+        if (this.resetBtn && this.resetBtn._setLabel) this.resetBtn._setLabel('Точно? Ещё раз');
         if (this.resetBtn && this.resetBtn._paint) this.resetBtn._paint(true, 0x8a3a3a);
         return;
       }
       resetProgress();
       this.scene.start('MenuScene');
-    }, 13, 180, 0x5a2a2a);
+    }, 13, 186, 0x5a2a2a);
     this.resetBtn = this._actionButtons[this._actionButtons.length - 1];
 
     // --- Футёр «УПРАВЛЕНИЕ» (справа): схема, раскладка и сброс клавиш в ряд. ---
@@ -332,13 +325,13 @@ export default class SettingsScene extends Phaser.Scene {
       setControlScheme(id);
     }, 220);
 
-    this._actionButton(UX(this, 885), 595, 'РАСКЛАДКА КЛАВИШ', () => this._openKeyModal(), 14, 210, 0x2a4a7a);
+    this._actionButton(UX(this, 880), 595, 'РАСКЛАДКА КЛАВИШ', () => this._openKeyModal(), 14, 224, 0x2a4a7a);
 
-    this._actionButton(UX(this, 1115), 595, 'Сброс клавиш', () => {
+    this._actionButton(UX(this, 1120), 595, 'Сброс клавиш', () => {
       resetKeys();
       this._toast('Клавиши сброшены');
       if (this._keyModal) this._keyModal.repaint();
-    }, 14, 170, 0x553333);
+    }, 14, 180, 0x553333);
 
     this._cheatKeyHandler = (event) => {
       if (!this.cheatArming) return;
@@ -411,6 +404,7 @@ export default class SettingsScene extends Phaser.Scene {
         if (this._cheatKeyHandler) this.input.keyboard.off('keydown', this._cheatKeyHandler);
         else this.input.keyboard.off('keydown');
       } catch (e) {}
+      try { this._closeNickModal(); } catch (e) {}
       try {
         (this._dropOutsideHandlers || []).forEach(h => this.input.off('pointerdown', h));
       } catch (e) {}
@@ -572,9 +566,10 @@ export default class SettingsScene extends Phaser.Scene {
       bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 6);
       txt.setStyle({ color: hot ? '#ffffaa' : '#e8f0ff' });
     };
+    const repaint = () => { paint(txt); this._fitText(txt, w - 16); };
     draw(false);
-    paint(txt);
-    painters.push(() => paint(txt));
+    repaint();
+    painters.push(repaint);
     cont.add([bg, txt]);
     cont.setSize(w, h);
     cont.setInteractive({ useHandCursor: true });
@@ -582,7 +577,7 @@ export default class SettingsScene extends Phaser.Scene {
     cont.on('pointerout', () => draw(false));
     cont.on('pointerdown', () => {
       next();
-      paint(txt);
+      repaint();
       if (typeof this._paintCrossPreview === 'function') this._paintCrossPreview();
     });
   }
@@ -593,7 +588,7 @@ export default class SettingsScene extends Phaser.Scene {
     const cont = this.add.container(x, y);
     const bg = this.add.graphics();
     const txt = this.add.text(0, 0, '', {
-      fontSize: '14px', color: '#ffffff'
+      fontSize: '13px', color: '#ffffff'
     }).setOrigin(0.5);
     const paint = (hot) => {
       const on = !!get();
@@ -603,16 +598,15 @@ export default class SettingsScene extends Phaser.Scene {
       bg.lineStyle(1.2, hot ? 0x7aa8ff : 0x3a3a6a, 1);
       bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 7);
       // Индикатор состояния
-      const ix = w / 2 - 22;
+      const ix = w / 2 - 20;
       bg.fillStyle(on ? 0x35d07f : 0x555577, 1);
-      bg.fillCircle(ix, 0, 6);
+      bg.fillCircle(ix, 0, 5.5);
       if (on) { bg.fillStyle(0xffffff, 0.4); bg.fillCircle(ix - 1.5, -1.5, 2); }
       txt.setText(`${label}: ${on ? 'вкл' : 'выкл'}`);
       txt.setStyle({ color: hot ? '#ffffaa' : '#ffffff' });
       // Сдвиг текста влево, чтобы не наезжал на индикатор
-      txt.setX(-8);
-      if (txt.displayWidth > w - 46 && txt.displayWidth > 0) txt.setScale(Math.min(1, (w - 46) / txt.displayWidth));
-      else txt.setScale(1);
+      txt.setX(-9);
+      this._fitText(txt, w - 50);
     };
     paint(false);
     cont.add([bg, txt]);
@@ -735,6 +729,7 @@ export default class SettingsScene extends Phaser.Scene {
       bg.lineStyle(1.2, listening ? 0xffff55 : (hot ? 0x8fb8ff : 0x3a3a6a), 1);
       bg.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 6);
       txt.setStyle({ color: listening ? '#ffff55' : (hot ? '#ffffff' : '#ffee88') });
+      this._fitText(txt, w - 14);
     };
     paint(false);
     return { cont, txt, bg, paint, _listening: false, set listening(v) { this._listening = v; paint(false, v); }, get listening() { return this._listening; } };
@@ -746,6 +741,7 @@ export default class SettingsScene extends Phaser.Scene {
     const txt = this.add.text(x, y, label, {
       fontSize: '14px', color: '#ffffff', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(303);
+    this._fitText(txt, w - 18);
     const cont = this.add.zone(x, y, w, h).setInteractive({ useHandCursor: true }).setDepth(303);
     const paint = (hot) => {
       bg.clear();
@@ -929,20 +925,19 @@ export default class SettingsScene extends Phaser.Scene {
   // Кнопка-селектор: подпись сверху, значение кнопкой. Список — в модалке.
   _selectButton(x, y, label, options, currentId, onSelect, w = 210) {
     this.add.text(x, y - 30, label, {
-      fontSize: '14px', color: '#aabbff'
+      fontSize: '13px', color: '#aabbff'
     }).setOrigin(0.5);
     const h = 30;
     const cont = this.add.container(x, y);
     const bg = this.add.graphics();
     const txt = this.add.text(0, 0, '', {
-      fontSize: '14px', color: '#ffffff'
+      fontSize: '13px', color: '#ffffff'
     }).setOrigin(0.5);
     const paint = (hot) => {
       const o = options.find(v => v.id === currentId) || options[0];
       const text = `${o.label}  ▾`;
       txt.setText(text);
-      if (txt.displayWidth > w - 24 && txt.displayWidth > 0) txt.setScale(Math.min(1, (w - 24) / txt.displayWidth));
-      else txt.setScale(1);
+      this._fitText(txt, w - 22);
       bg.clear();
       bg.fillStyle(hot ? 0x22264a : 0x161836, 0.95);
       bg.fillRoundedRect(-w / 2, -h / 2, w, h, 7);
@@ -1017,6 +1012,112 @@ export default class SettingsScene extends Phaser.Scene {
     this._selectModal = { close };
   }
 
+  // Модалка смены ника: ввод прямо в игре (без window.prompt — запрещено в Яндекс Играх).
+  _openNickModal(onSaved) {
+    if (this._nickModal) return;
+    const cx = gameW(this) / 2, cy = 360;
+    const elems = [];
+    const W = 460, H = 240;
+    const overlay = this.add.rectangle(cx, cy, gameW(this), 720, 0x000000, 0.72).setDepth(310);
+    overlay.setInteractive();
+    const panel = this.add.graphics().setDepth(311);
+    panel.fillGradientStyle(0x1a1a36, 0x1a1a36, 0x0e0e24, 0x0e0e24, 1);
+    panel.fillRoundedRect(cx - W / 2, cy - H / 2, W, H, 12);
+    panel.fillStyle(0x443377, 0.9);
+    panel.fillRoundedRect(cx - W / 2 + 3, cy - H / 2 + 3, W - 6, 36, { tl: 9, tr: 9, bl: 0, br: 0 });
+    panel.lineStyle(2, 0x0a0a1a, 1);
+    panel.strokeRoundedRect(cx - W / 2, cy - H / 2, W, H, 12);
+    panel.lineStyle(1, 0xffffff, 0.12);
+    panel.strokeRoundedRect(cx - W / 2 + 3, cy - H / 2 + 3, W - 6, H - 6, 9);
+    elems.push(overlay, panel);
+    elems.push(this.add.text(cx, cy - H / 2 + 20, 'ИЗМЕНИТЬ НИК', {
+      fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(312));
+    elems.push(this.add.text(cx, cy - H / 2 + 58, 'Введи ник (до 16 символов) · Enter — сохранить', {
+      fontSize: '13px', color: '#99aacc'
+    }).setOrigin(0.5).setDepth(312));
+
+    const state = { value: String(gameState.playerName || '').slice(0, 16) };
+    const boxY = cy - 2;
+    const boxW = W - 70, boxH = 44;
+    const box = this.add.rectangle(cx, boxY, boxW, boxH, 0x0a0a2a, 1).setDepth(312)
+      .setStrokeStyle(2, 0xffd24a, 1);
+    box.setInteractive({ useHandCursor: true });
+    elems.push(box);
+    const inputText = this.add.text(cx - boxW / 2 + 16, boxY, '', {
+      fontSize: '20px', color: '#ffffff'
+    }).setOrigin(0, 0.5).setDepth(313);
+    elems.push(inputText);
+
+    const refresh = () => {
+      try { inputText.setText(state.value + '|'); } catch (e) {}
+    };
+    refresh();
+
+    const submit = () => {
+      const val = (state.value || '').trim().slice(0, 16);
+      if (val) {
+        renamePlayer(val);
+        if (typeof onSaved === 'function') onSaved();
+      }
+      this._closeNickModal();
+    };
+
+    const close = () => this._closeNickModal();
+
+    const okB = this._modalActionBtn(cx - 90, cy + H / 2 - 38, 'СОХРАНИТЬ', 0x2a5a2a, 150);
+    okB.bg.setDepth(312); okB.txt.setDepth(313); okB.cont.setDepth(313);
+    okB.cont.on('pointerdown', submit);
+    elems.push(okB.cont, okB.txt, okB.bg);
+
+    const cancelB = this._modalActionBtn(cx + 90, cy + H / 2 - 38, 'ОТМЕНА', 0x553333, 150);
+    cancelB.bg.setDepth(312); cancelB.txt.setDepth(313); cancelB.cont.setDepth(313);
+    cancelB.cont.on('pointerdown', close);
+    elems.push(cancelB.cont, cancelB.txt, cancelB.bg);
+
+    overlay.on('pointerdown', close);
+
+    const keyHandler = (event) => {
+      if (!this._nickModal) return;
+      try {
+        if (event.ctrlKey || event.altKey || event.metaKey) return;
+        if (event.key === 'Escape') {
+          close();
+          if (event.preventDefault) event.preventDefault();
+          return;
+        }
+        if (event.key === 'Enter') {
+          submit();
+          if (event.preventDefault) event.preventDefault();
+          return;
+        }
+        if (event.keyCode === 8 || event.key === 'Backspace') {
+          state.value = state.value.slice(0, -1);
+          refresh();
+          if (event.preventDefault) event.preventDefault();
+          return;
+        }
+        if (typeof event.key === 'string' && event.key.length === 1 && state.value.length < 16) {
+          state.value += event.key;
+          refresh();
+        }
+      } catch (e) {}
+    };
+    this.input.keyboard.on('keydown', keyHandler);
+
+    this._nickModal = { elems, keyHandler };
+  }
+
+  _closeNickModal() {
+    const m = this._nickModal;
+    if (!m) return;
+    this._nickModal = null;
+    try {
+      if (m.keyHandler) this.input.keyboard.off('keydown', m.keyHandler);
+    } catch (e) {}
+    try { (m.elems || []).forEach(o => { try { o.destroy(); } catch (e) {} }); } catch (e) {}
+  }
+
   // Универсальная красивая кнопка-действие (рамка, блик, ховер).
   _actionButton(x, y, label, callback, fontSize = 15, w = 180, accent = 0x252560) {
     const h = Math.max(30, Math.round(fontSize * 2.1));
@@ -1027,10 +1128,7 @@ export default class SettingsScene extends Phaser.Scene {
       color: '#ffffff',
       fontStyle: 'bold'
     }).setOrigin(0.5);
-    // Подгоняем текст по ширине
-    if (txt.displayWidth > w - 20 && txt.displayWidth > 0) {
-      txt.setScale(Math.min(1, (w - 20) / txt.displayWidth));
-    }
+    this._fitText(txt, w - 20);
     const paint = (hot, forceAccent) => {
       const ac = forceAccent != null ? forceAccent : accent;
       bg.clear();
@@ -1042,6 +1140,7 @@ export default class SettingsScene extends Phaser.Scene {
       bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
       txt.setStyle({ color: hot ? '#ffff88' : '#ffffff' });
     };
+    const setLabel = (t) => { txt.setText(t); this._fitText(txt, w - 20); };
     paint(false);
     cont.add([bg, txt]);
     cont.setSize(w, h);
@@ -1056,6 +1155,7 @@ export default class SettingsScene extends Phaser.Scene {
     cont.on('pointerdown', callback);
     cont._txt = txt;
     cont._paint = paint;
+    cont._setLabel = setLabel;
     this._actionButtons.push(cont);
     return cont;
   }
@@ -1111,6 +1211,15 @@ export default class SettingsScene extends Phaser.Scene {
     this.scale.on('enterfullscreen', this._fsEnterHandler);
     this.scale.on('leavefullscreen', this._fsLeaveHandler);
     draw(false);
+  }
+
+  // Подгон текста по ширине (сброс масштаба + сжатие при переполнении).
+  _fitText(txt, maxW) {
+    try {
+      txt.setScale(1);
+      const w = txt.displayWidth || 0;
+      if (maxW > 0 && w > maxW) txt.setScale(maxW / w);
+    } catch (e) {}
   }
 
   // Совместимость со старым API (используется внутри сцены, но лучше держать).

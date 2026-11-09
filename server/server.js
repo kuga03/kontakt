@@ -106,7 +106,22 @@ const server = http.createServer((req, res) => {
     }
     return;
   }
-  // Манифест/бандл OTA — до статики (иначе уйдёт в 404 как файла нет).
+  // Версия игры для проверки (клиент/boot-gate в APK): читает version.json/ota.json.
+  if (req.url === '/version' || req.url === '/version/' || req.url === '/version.json') {
+    const cors = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': '*'
+    };
+    if (req.method === 'OPTIONS') { res.writeHead(204, cors); res.end(); return; }
+    let ver = null;
+    try { const j = JSON.parse(fs.readFileSync(path.join(GAME_ROOT, 'version.json'), 'utf8')); if (j && j.version) ver = j.version; } catch (e) {}
+    if (!ver) try { const j = JSON.parse(fs.readFileSync(path.join(GAME_ROOT, 'ota.json'), 'utf8')); if (j && j.version) ver = j.version; } catch (e) {}
+    const json = JSON.stringify({ version: ver || 'unknown' });
+    res.writeHead(ver ? 200 : 404, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...cors });
+    res.end(json);
+    return;
+  }
   if (OTA.handleOta(req, res)) return;
   serveStatic(req, res);
 });

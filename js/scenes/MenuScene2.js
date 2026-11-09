@@ -100,7 +100,7 @@ export default class MenuScene extends Phaser.Scene {
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    this.add.text(_cx, 97, 'ТАКТИЧЕСКИЙ ОНЛАЙН-ШУТЕР', {
+    this.add.text(_cx, 97, 'ТАКТИЧЕСКИЙ ШУТЕР', {
       fontSize: '10px',
       color: '#ffd24a',
       fontStyle: 'bold'
@@ -527,9 +527,11 @@ export default class MenuScene extends Phaser.Scene {
       const ffaBtn = this.createButton(cx + subW / 2 + 4, btnY2, ffa.label, ffa.cb, ffa.locked, ffa.lockMsg, subW, 40, 16, ffa.icon);
       track.push(survBtn, ffaBtn);
     } else {
-      // Сетевая игра: Выбрать матч (живое лобби)
-      const matchBtn = this.createButton(cx, btnY1, 'ВЫБРАТЬ МАТЧ (ЛОББИ)', () => this.scene.start('NetLobbyScene'), false, null, w - 24, 44, 19, 'list');
-      if (matchBtn && matchBtn._btnTxt) matchBtn._btnTxt.setColor('#ffd24a');
+      // Сетевая игра: Выбрать матч (живое лобби). Заблокировано до выхода сети;
+      // открывается чит-кодом all2 (gameState.cheatAllUnlocked).
+      const netLocked = !gameState.cheatAllUnlocked;
+      const matchBtn = this.createButton(cx, btnY1, 'ВЫБРАТЬ МАТЧ (ЛОББИ)', netLocked ? null : () => this.scene.start('NetLobbyScene'), netLocked, netLocked ? 'Скоро' : null, w - 24, 44, 19, 'list');
+      if (!netLocked && matchBtn && matchBtn._btnTxt) matchBtn._btnTxt.setColor('#ffd24a');
       track.push(matchBtn);
 
       const subW = Math.round((w - 32) / 2);
