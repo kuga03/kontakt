@@ -13,7 +13,7 @@ on:
       - "version.json"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   ota:
@@ -50,36 +50,41 @@ jobs:
 
       - name: Pack OTA zip
         id: pack
+        shell: bash
         run: |
           node scripts/make-ota-zip.cjs ota-bundle.zip > pack.json
           cat pack.json
           echo "sha256=$(node -p "require('./pack.json').sha256")" >> "$GITHUB_OUTPUT"
 
-      - name: Publish bundle + manifest to R2
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-          R2_PUBLIC_BASE: ${{ secrets.R2_PUBLIC_BASE }} # e.g. https://pub-xxxx.r2.dev or custom domain
+      - name: Make manifest
         shell: bash
         run: |
-          set -euo pipefail
           V='${{ steps.ver.outputs.version }}'
           SLUG='${{ steps.ver.outputs.slug }}'
           SHA='${{ steps.pack.outputs.sha256 }}'
-          BUNDLE_KEY="bundles/bundle-${SLUG}.zip"
-          npx wrangler r2 object put "${R2_BUCKET}/${BUNDLE_KEY}" --file=ota-bundle.zip --content-type=application/zip --remote
-          BUNDLE_URL="${R2_PUBLIC_BASE%/}/${BUNDLE_KEY}"
+          BUNDLE_URL="https://github.com/${{ github.repository }}/releases/download/v${SLUG}/ota-bundle.zip"
           cat > ota-manifest.json <<JSON
           {"version":"${V}","url":"${BUNDLE_URL}","checksum":"${SHA}"}
           JSON
           cat ota-manifest.json
-          npx wrangler r2 object put "${R2_BUCKET}/manifest.json" --file=ota-manifest.json --content-type=application/json --remote
+
+      - name: Publish GitHub Release (public assets)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.slug }}
+          name: ${{ steps.ver.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: |
+            ota-bundle.zip
+            ota-manifest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summary
         shell: bash
         run: |
-          echo "### OTA published" >> "$GITHUB_STEP_SUMMARY"
+          echo "### OTA published (public repo, no R2/Cloudflare secrets needed)" >> "$GITHUB_STEP_SUMMARY"
           echo "- version: ${{ steps.ver.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- sha256: ${{ steps.pack.outputs.sha256 }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- manifest: ${R2_PUBLIC_BASE%/}/manifest.json (set Worker MANIFEST_URL to this once)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- manifest: https://github.com/${{ github.repository }}/releases/latest/download/ota-manifest.json" >> "$GITHUB_STEP_SUMMARY"

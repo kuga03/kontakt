@@ -597,14 +597,14 @@ export default class BootScene extends Phaser.Scene {
   _verifyGithubVersion() {
     if (this._barText) this._barText.setText('Проверка версии на GitHub...');
     const sources = [
-      // Публичный прокси/эндпоинт версии (CORS). Приоритетный — работает при приватном репо.
+      // Публичный манифест OTA (GitHub Releases, репо публичный) — основной источник.
+      { url: 'https://github.com/kuga03/kontakt/releases/latest/download/ota-manifest.json', type: 'json' },
+      { url: 'https://raw.githubusercontent.com/kuga03/kontakt/main/version.json', type: 'json' },
+      { url: 'https://raw.githubusercontent.com/kuga03/kontakt/main/ota.json', type: 'json' },
+      // Запасные источники (воркер/сервер/Pages/API).
       { url: 'https://still-hat-9163.kuga03.workers.dev/', type: 'json' },
       { url: 'https://kuga03.github.io/kontakt/ota.json', type: 'json' },
-      { url: 'https://raw.githubusercontent.com/kuga03/kontakt/main/ota.json', type: 'json' },
-      { url: 'https://raw.githubusercontent.com/kuga03/kontakt/main/version.json', type: 'json' },
-      { url: 'https://api.github.com/repos/kuga03/kontakt/contents/ota.json?ref=main', type: 'ghapi' },
       { url: 'https://api.github.com/repos/kuga03/kontakt/contents/version.json?ref=main', type: 'ghapi' },
-      // Собственный игровой сервер (self-hosted/Render): отдаёт /version.json из репо-файлов.
       { url: 'https://kontakt-eijf.onrender.com/version.json', type: 'json' }
     ];
     const withTimeout = (p, ms) => Promise.race([
