@@ -1,0 +1,85 @@
+name: OTA Release (bundle + manifest)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version string (defaults to version.json)'
+        required: false
+        type: string
+  push:
+    branches: ["main"]
+    paths:
+      - "version.json"
+
+permissions:
+  contents: read
+
+jobs:
+  ota:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            V="${{ inputs.version }}"
+          else
+            V=$(node -p "require('./version.json').version")
+          fi
+          SLUG=$(echo "$V" | tr ' /' '__' | tr -cd 'A-Za-z0-9._-')
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+          echo "Version: $V ($SLUG)"
+
+      - name: Build web (www)
+        run: npm run www
+
+      - name: Pack OTA zip
+        id: pack
+        run: |
+          node scripts/make-ota-zip.cjs ota-bundle.zip > pack.json
+          cat pack.json
+          echo "sha256=$(node -p "require('./pack.json').sha256")" >> "$GITHUB_OUTPUT"
+
+      - name: Publish bundle + manifest to R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_BASE: ${{ secrets.R2_PUBLIC_BASE }} # e.g. https://pub-xxxx.r2.dev or custom domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          V='${{ steps.ver.outputs.version }}'
+          SLUG='${{ steps.ver.outputs.slug }}'
+          SHA='${{ steps.pack.outputs.sha256 }}'
+          BUNDLE_KEY="bundles/bundle-${SLUG}.zip"
+          npx wrangler r2 object put "${R2_BUCKET}/${BUNDLE_KEY}" --file=ota-bundle.zip --content-type=application/zip --remote
+          BUNDLE_URL="${R2_PUBLIC_BASE%/}/${BUNDLE_KEY}"
+          cat > ota-manifest.json <<JSON
+          {"version":"${V}","url":"${BUNDLE_URL}","checksum":"${SHA}"}
+          JSON
+          cat ota-manifest.json
+          npx wrangler r2 object put "${R2_BUCKET}/manifest.json" --file=ota-manifest.json --content-type=application/json --remote
+
+      - name: Summary
+        shell: bash
+        run: |
+          echo "### OTA published" >> "$GITHUB_STEP_SUMMARY"
+          echo "- version: ${{ steps.ver.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- sha256: ${{ steps.pack.outputs.sha256 }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- manifest: ${R2_PUBLIC_BASE%/}/manifest.json (set Worker MANIFEST_URL to this once)" >> "$GITHUB_STEP_SUMMARY"

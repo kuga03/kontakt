@@ -8,7 +8,7 @@
   "plugins": {
     "CapacitorUpdater": {
       "autoUpdate": "atBackground",
-      "updateUrl": "https://kuga03.github.io/kontakt/ota.json",
+      "updateUrl": "https://still-hat-9163.kuga03.workers.dev/",
       "statsUrl": "",
       "appReadyTimeout": 20000,
       "responseTimeout": 30000,

@@ -2,3 +2,9 @@
 Если файл проекта превышает 500 строк, никогда не читай его целиком. 
 Используй поиск по ключевым словам (grep/aider), чтобы локализовать проблему, 
 или читай файл небольшими частями (строками), чтобы не превысить лимиты API.
+
+## Релиз, версия и автообновление (единый источник)
+- Единый источник версии: `version.json` (поле `version`). `GAME_VERSION` в `js/scenes/menu/*` и `ota.json` должны совпадать с ним при релизе.
+- Мобильный APK (boot-gate, `js/scenes/BootScene._verifyGithubVersion`): перед входом в меню сверяет версию с публичным манифестом (приоритет — воркер `https://still-hat-9163.kuga03.workers.dev/`, CORS). При несовпадении/недоступности на мобильном блокирует вход; на ПК поведение не менять.
+- OTA (Capacitor Updater, `capacitor.config.json` → `plugins.CapacitorUpdater.updateUrl`, сейчас воркер `still-hat-9163...`): манифест воркера должен отдавать `{ "version", "url", "checksum"? }` (url — публичный zip бандла `www/`). Автоматизация без ручной работы: `.github/workflows/ota-release.yml` (собирает `www`, пакует `scripts/make-ota-zip.cjs`, заливает в R2, публикует `manifest.json`). Воркер — `cloudflare/ota-worker.js` (читает `MANIFEST_URL` → R2 manifest.json). Секреты CI: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `R2_BUCKET`, `R2_PUBLIC_BASE`. Одноразово задеплоить воркер с `MANIFEST_URL=<R2_PUBLIC_BASE>/manifest.json`.
+- При смене версии править разом: `version.json`, `ota.json`, `GAME_VERSION` (menu/*). Нативный APK перевыпускать только при смене нативных плагинов/SDK.

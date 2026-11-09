@@ -129,8 +129,16 @@ function buildZip(files) {
   return Buffer.concat([...chunks, centralBuf, eocd]);
 }
 
-// Версия игры = счётчик ?v=N из index.html -> semver 1.0.N.
+// Версия игры: единый источник — version.json/ota.json (GAME_VERSION). Фолбэк — ?v=N из index.html.
 function readVersion() {
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(GAME_ROOT, 'version.json'), 'utf8'));
+    if (j && typeof j.version === 'string' && j.version) return j.version;
+  } catch (e) {}
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(GAME_ROOT, 'ota.json'), 'utf8'));
+    if (j && typeof j.version === 'string' && j.version) return j.version;
+  } catch (e) {}
   try {
     const html = fs.readFileSync(path.join(GAME_ROOT, 'index.html'), 'utf8');
     const m = html.match(/\?v=(\d+)/);
